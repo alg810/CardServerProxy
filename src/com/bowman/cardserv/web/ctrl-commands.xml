@@ -1,0 +1,96 @@
+<ctrl-commands ver="1.0">
+
+  <!-- predefined option sources: @connectors, @connected-users, @active-users, @known-users, @offline-users, @profiles -->
+  <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper --> 
+
+  <command name="reset-connector" label="Reset connector" description="Reset entire service map for one connector. Full reset also clears the can-decode list (by default only cannot-decode is cleared).">
+    <command-param name="name" label="" allow-arbitrary="false">
+      <option value="ALL"/>
+      <option source="@connectors"/>
+    </command-param>
+    <command-param name="full" label="Full reset" allow-arbitrary="false">
+      <option value="true"/>
+      <option value="false"/>
+    </command-param>
+  </command>
+
+  <command name="reset-service" label="Reset service id"
+           description="Reset one service for all connectors in profile (use hex sid, sid:ident or sid:chid format, e.g: 0000, 0000:000000 or 0000:0000).">
+    <command-param name="id" label="" allow-arbitrary="true"/>
+    <command-param name="profile" label="for profile" allow-arbitrary="false">
+      <option source="@profiles"/>
+    </command-param>
+  </command>
+
+  <command name="retry-connector" label="Retry connector" description="Attempt reconnect for a connector (temporarily enables connector if disabled).">
+    <command-param name="name" label="" allow-arbitrary="false">
+      <option source="@connectors"/>
+    </command-param>
+  </command>
+
+  <command name="disable-connector" label="Disable connector" description="Temporarily disable a connector (until next config load or manual retry).">
+    <command-param name="name" label="" allow-arbitrary="false">
+      <option source="@connectors"/>
+    </command-param>
+  </command>
+
+  <command name="set-profile-debug" label="Set profile debug" description="Temporarily sets debug flag for one or all profile (setting to false deletes user transaction logs).">
+    <command-param name="value" label="" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="profile" label="for profile" allow-arbitrary="false">
+      <option value="ALL"/>
+      <option value="*"/>
+      <option source="@profiles"/>      
+    </command-param>
+  </command>
+
+  <command name="set-user-debug" label="Set user debug" description="Temporarily sets debug flag for one user (true enables log-emm, log-ecm, log-zap etc - for that user only).">
+    <command-param name="value" label="" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="name" label="for user" allow-arbitrary="false">
+      <option source="@connected-users"/>      
+    </command-param>
+  </command>
+
+  <command name="kick-user" label="Kick user" description="Close all sessions for selected user.">
+    <command-param name="name" label="" allow-arbitrary="false">
+      <option source="@connected-users"/>
+    </command-param>
+  </command>
+
+  <command name="osd-message" label="Send osd message" description="Send mgcamd OSD message to selected user.">
+    <command-param name="text" label="" allow-arbitrary="true"/>
+    <command-param name="name" label="to user" allow-arbitrary="false">
+      <option value="ALL"/>
+      <option source="@connected-users"/>
+    </command-param>
+  </command>
+
+  <command name="remove-seen" label="Remove seen user" description="Remove users from last-seen log.">
+    <command-param name="name" label="" allow-arbitrary="false">
+      <option value="ALL"/>
+      <option source="@known-users"/>
+    </command-param>
+  </command>
+
+  <command name="remove-failed" label="Remove failed logins matching wildcard" description="Remove entries from the login-failures log that matches the specified glob mask (e.g: *, usr* or *@192.168.0.*).">
+    <command-param name="mask" label="" allow-arbitrary="true"/>
+  </command>  
+
+  <command name="gen-keystore" label="Generate keystore" description="Create a java keystore file with a self-signed certificate for SSL (will attempt to use keytool from current jre installation).">
+    <command-param name="password" label="password" allow-arbitrary="true"/>
+    <command-param name="host" label="host" allow-arbitrary="true"/>
+    <command-param name="validity" label="validity (days)" allow-arbitrary="true"/>
+  </command>
+
+  <command name="clear-warnings" label="Clear warnings" description="Clear all user transaction warning events."/>
+
+  <command name="clear-events" label="Clear CWS events" description="Clear all CWS events."/>
+
+  <command name="shutdown" label="Shutdown proxy" description="Stop this proxy node." confirm="true"/>
+
+</ctrl-commands>

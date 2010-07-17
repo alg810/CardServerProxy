@@ -1,0 +1,11 @@
+<xml-user-manager ver="1.0">
+
+	<!-- example userfile for XmlUserManager, same format as for SimpleUserManager -->
+  <!-- to encrypt this file: java -jar lib/fishenc.jar users.example.xml outfile.enc secretkey -->
+
+  <user name="test" password="test" ip-mask="192.168.0.*" profiles="cable" admin="true"/>
+  <user name="test2" password="test2" profiles="cable terrestrial" map-exclude="true"/>
+  <user name="test3" password="test3" max-connections="4"/> 
+  <user name="test4" password="test4" enabled="false" debug="true"/> 
+  
+</xml-user-manager>

@@ -1,0 +1,19 @@
+<ctrl-commands ver="1.0">
+
+  <!-- predefined sources: @connectors, @connected-users, @active-users, @known-users, @offline-users, @profiles -->
+  <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper --> 
+
+  <command name="delete-box" label="Delete box" description="Permanently remove a box entry from the registry." confirm="true">
+    <command-param name="id" label="" allow-arbitrary="true" />
+  </command>
+
+  <command name="close-tunnel" label="Close ssh tunnel" description="Close any open ssh tunnel for a box." confirm="true">
+    <command-param name="id" label="" allow-arbitrary="true" />
+  </command>
+
+  <command name="abort-operation" label="Abort operation" description="Abort any running remote command for a box." confirm="true">
+    <command-param name="id" label="" allow-arbitrary="true" />
+    <command-param name="op" label="op" allow-arbitrary="true" />
+  </command>
+
+</ctrl-commands>

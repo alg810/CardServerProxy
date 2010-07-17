@@ -1,0 +1,14 @@
+ConaxConnector changelog:
+------------------------
+
+2010-01-03: 
+- Fixed: Sequence number wasn't set in some special cases.
+
+2009-08-23:
+- Fixed: Sequence numbers would cause issues after reaching 0xFFFF.
+
+2009-06-21
+- Added: Use card serial as node. Example: card serial is: 2874540201, remove last digit and convert to hex. The result 
+  is 11223344, use this as: <node>11 22 33 44</node>. This configuration is especially useful if your node number 
+  changes on reboot.
+ 

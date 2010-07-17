@@ -1,0 +1,36 @@
+<external-cws-connectors ver="1.0">
+
+  <!-- example external connector config (format exactly like in proxy.xml cws-connectors element) -->
+
+  <newcamd-connector name="card1" enabled="true" metric="0"> <!-- lower metric = priority, 1 is default -->
+    <host>remote.host.com</host>
+    <port>13111</port>
+    <user>asdf</user>
+    <password>asdf</password>
+    <client-id>67 62</client-id> <!-- identify as gbox2cs, defaults to 00 00 if omitted (generic) -->
+    <au-users>test1 test4</au-users> <!-- any and all emms sent by these users will be forwarded to this card -->
+
+    <!-- no profile known yet (or card changes randomly), assign it to a profile depending on the ca-id when connecting -->
+    <caid-profile-map>0b00=cable 0500=terrestrial</caid-profile-map>
+  </newcamd-connector>
+  
+  <!-- specifying profile forces connector mapping regardless of card ca-id -->
+  <newcamd-connector name="card2" profile="satellite1" enabled="false">
+    <host>dreambox</host>
+    <port>10001</port>
+    <user>tst</user>
+    <password>tst</password>
+    <des-key>14 13 12 11 10 09 08 07 06 05 04 03 02 01</des-key>
+    <au-users>test2</au-users>
+
+    <!-- avoid auto service mapping for these sids on this card only, use with care -->
+    <can-decode-services>4fa 3e0 123 28e</can-decode-services>
+    <cannot-decode-services>1ba 2ef 401</cannot-decode-services>
+  </newcamd-connector>
+
+  <radegast-connector name="rtest" profile="satellite1" enabled="true">
+    <host>10.0.0.5</host>
+    <port>10003</port>
+  </radegast-connector>
+
+</external-cws-connectors>

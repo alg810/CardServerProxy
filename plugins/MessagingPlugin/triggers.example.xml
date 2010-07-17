@@ -1,0 +1,52 @@
+<external-msg-triggers ver="1.0">
+
+  <!-- if the user is an admin and flagged "warning"-transaction occurs for him, send notification -->
+  <msg-trigger match-warnings="true" admin-only="true">
+    <msg format="TR warning: {0}"/>
+  </msg-trigger>
+
+  <!-- format masks
+    {0} full preformatted text (similar to whats shown in the status web for cws events and tr warnings)
+    {1} name (user, connector or proxy name depending on the type of event matched)
+    {2} profile name
+    {3} service name and sid (if an ecm transaction was matched, otherwise blank)
+    {4} formatted time of the event/transaction
+    {5} just the event text (e.g "disconnected" for cws event or "service name - time - flags" for ecm tr)
+  -->
+
+  <!-- if a user zaps to sid 04f2 in profile profileX, send immediate msg with the channel name -->
+  <msg-trigger match-flags="Z" match-sids="04f2" match-profiles="profileX">
+    <msg format="You zapped to: {3}"/>
+  </msg-trigger>
+
+  <!-- if a cws connect failure or invalid card event occurs, send notification to the cws owner user -->
+  <msg-trigger match-events="4 8" cws-owner-only="true">
+    <msg format="CWS Event: {0}"/>
+  </msg-trigger>
+        
+  <!-- CWS Events
+    2 = Successfully connected
+    3 = Disconnected
+    4 = Connection attempt failed
+    5 = Warning (timeout)
+    6 = Lost service
+    8 = Invalid card data (on connect)
+    10 = Proxy node startup notification
+  -->
+
+  <!-- if a user zaps to a blocked or unavailable service, tell them so -->
+  <msg-trigger match-flags="Z N">
+    <msg format="Service '{3}' is not available"/>
+  </msg-trigger>
+
+  <!-- if these cws events occur, notify the user 'adminuser' -->
+  <msg-trigger match-events="4 6 8">
+    <msg format="CWS Event: {0}" target="adminuser"/>
+  </msg-trigger>
+
+  <!-- every time 'someuser' zaps in profile profileX, send him the msg -->
+  <msg-trigger match-flags="Z" match-profiles="profileX" match-usernames="someuser">
+    <msg format="You've got mail!"/>
+  </msg-trigger>
+
+</external-msg-triggers>

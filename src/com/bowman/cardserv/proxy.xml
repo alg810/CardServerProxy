@@ -1,0 +1,115 @@
+<cardserv-proxy ver="{0}">
+
+  <ca-profiles>
+    <default-des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14</default-des-key>
+
+    <extended-newcamd listen-port="15112"/>
+
+    <profile name="myprofile" ca-id="0000" network-id="0000" provider-idents="00 00 00" enabled="true" debug="true">
+      <newcamd listen-port="11112">
+        <no-validation>true</no-validation>
+      </newcamd>
+      <radegast listen-port="11113">
+        <allow-list>192.168.0.*</allow-list>
+      </radegast>
+      <services-file>etc/services</services-file>
+    </profile>
+  </ca-profiles>
+
+  <logging log-ecm="true" log-emm="true" log-zapping="false" hide-ip-addresses="false">
+    <log-file rotate-count="3" rotate-max-size="1024">log/cardserv.log</log-file>
+    <log-level>INFO</log-level>
+    <silent>true</silent>
+    <debug>false</debug>
+  </logging>
+  
+  <rmi>
+    <display-name>Csproxy1</display-name>
+    <status-web>
+      <listen-port>8082</listen-port>
+      <ssl enabled="false"> 
+        <keystore password="secret">etc/csp_keystore</keystore>
+      </ssl>
+      <war-file>lib/cs-status.war</war-file>
+      <super-users>admin</super-users>
+    </status-web>
+  </rmi>  
+
+  <user-manager class="com.bowman.cardserv.SimpleUserManager">
+    <auth-config>
+      <user name="admin" password="secret" max-connections="3" admin="true"/>
+      <user name="user1" password="secret1" profiles="myprofile"/>
+    </auth-config>
+  </user-manager>
+
+  <connection-manager>
+    <reconnect-interval>60</reconnect-interval>
+    <default-des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14</default-des-key>
+    <default-keepalive-interval>55</default-keepalive-interval>
+
+    <service-map>
+      <mapper>         
+        <auto-reset-threshold>20</auto-reset-threshold> 
+      </mapper>
+      <mapper profile="myprofile">
+        <reset-services></reset-services>
+        <block-services></block-services>
+      </mapper>
+    </service-map>
+
+    <cws-connectors>
+
+      <csp-connector name="test0" enabled="false">
+        <url>https://otherproxy.host.com:8443</url>
+        <user>user</user>
+        <password>password</password>
+        <request-cache-updates>false</request-cache-updates>
+      </csp-connector>
+
+      <newcamd-connector name="test1" profile="myprofile" enabled="false">
+        <host>192.168.0.3</host>
+        <port>10001</port>
+        <user>proxyuser</user>
+        <password>password</password>
+        <asynchronous>true</asynchronous>
+      </newcamd-connector>
+      
+      <radegast-connector name="test2" profile="myprofile" enabled="false">
+        <host>192.168.0.4</host>
+        <port>10003</port>      
+      </radegast-connector>
+
+      <chameleon-connector name="test3" enabled="false">
+        <host>192.168.0.5</host>
+        <port>10001</port>
+        <user>mgcamduser</user>
+        <password>password</password>
+      </chameleon-connector>
+            
+    </cws-connectors>
+    
+  </connection-manager>
+
+  <proxy-plugins>
+    <plugin class="com.bowman.cardserv.LoggingPlugin" enabled="false">
+      <plugin-config>
+        <log-dir>log/traffic</log-dir>
+        <log-level>ALL</log-level>
+        <ip-filter>*</ip-filter>
+      </plugin-config>
+    </plugin>
+    <plugin class="com.bowman.cardserv.DcwFilterPlugin" enabled="true" jar-file="dcwfilterplugin.jar"/>
+    <plugin class="com.bowman.cardserv.ProviderIdentPlugin" enabled="true" jar-file="provideridentplugin.jar"/>
+    <plugin class="com.bowman.cardserv.IrdetoPlugin" enabled="true" jar-file="irdetoplugin.jar"/>
+  </proxy-plugins>
+ 
+  <cache-handler class="com.bowman.cardserv.ClusteredCache">
+    <cache-config>
+      <cw-max-age>19</cw-max-age>
+      <max-cache-wait>3500 ms</max-cache-wait>
+      <local-port>54277</local-port>
+      <sync-period>0</sync-period>
+    </cache-config>
+  </cache-handler>
+
+</cardserv-proxy>

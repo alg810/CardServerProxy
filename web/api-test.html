@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>CSP HTTP/XML API</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css"/>
+  <script type="text/javascript" src="js/bowweb.js"></script>
+
+  <script type="text/javascript">
+
+    var helper = new BowWeb.AjaxHelper(function() { }, '(loading)', 'info');
+    var xsltTr = new BowWeb.XsltTransformer("/xslt/cws-status-resp.xsl");
+
+    window.onload = function() {
+      document.getElementById('postbtn').onclick = function() {
+        helper.executeRequest('/xmlHandler', document.getElementById('code').value.trim(), respHandler);
+      };
+      document.getElementById('loginbtn').onclick = function() {
+        var user = document.getElementById('username').value;
+        var passwd = document.getElementById('password').value;
+        var xml = '<?xml version="1.0" encoding="UTF-8"?><cws-status-req><cws-login>\n';
+        xml += '<user name="' + user + '" password="' + passwd + '"/>\n';
+        xml += '</cws-login></cws-status-req>\n';
+        helper.executeRequest('/xmlHandler', xml, respHandler);
+      }
+    };
+
+    function respHandler(xml, text) {
+      document.getElementById('resp').value = text; 
+      xsltTr.transform(xml, 'content');
+    }
+
+    String.prototype.trim = function() { return this.replace(/^\s+|\s+$/g, ''); };
+
+  </script>
+</head>
+
+<body>
+	<fieldset>
+		<legend><strong>Request XML</strong></legend><br />
+    Username: <input type="text" id="username" value="test"/>&nbsp;
+    Password: <input type="password" id="password" value="test"/>&nbsp;
+    <input type="button" value="Get session" id="loginbtn"/><br /><br />
+    <textarea id="code" cols="135" rows="20">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;cws-status-req ver=&quot;1.0&quot;&gt;
+&lt;session session-id=&quot;fcjrij9z&quot;/&gt;
+&lt;proxy-status include=&quot;true&quot;/&gt;
+&lt;error-log include=&quot;true&quot;/&gt;
+&lt;user-warning-log include=&quot;true&quot;/&gt;
+&lt;all-services include=&quot;true&quot;/&gt;
+&lt;watched-services include=&quot;true&quot;/&gt;
+&lt;ca-profiles include=&quot;true&quot;/&gt;
+&lt;cws-connectors include=&quot;true&quot;/&gt;
+&lt;proxy-users include=&quot;true&quot;/&gt;
+&lt;ctrl-commands include=&quot;true&quot;/&gt;
+&lt;last-seen include=&quot;true&quot;/&gt;
+&lt;/cws-status-req&gt;</textarea><br />
+		<br />
+		<input type="button" id="postbtn" value="Post Request"/><br />
+    <br />
+  </fieldset><br />
+  <br />
+
+  <fieldset>
+    <legend><strong>Response XML</strong> </legend><div id="info"> </div><br />
+    <textarea id="resp" cols="135" rows="20">
+
+    </textarea>
+  </fieldset><br />
+  <br />
+
+  <fieldset style="border-left: none; border-right: none;">
+    <legend><strong>Response XSLT transformed</strong></legend><br />
+    <div id="content"> </div><br />
+  </fieldset>
+  <br />
+
+</body>
+</html>

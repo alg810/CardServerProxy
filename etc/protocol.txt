@@ -1,0 +1,643 @@
+/*
+
+The Newcamd Cardserver Protocol
+
+This document is intented for developers, who'd like to program their own
+clients for the Newcamd cardserver. I got several requests in the past to
+make this information available and since it's no "state" secret as with many
+other software of this type, I hope, you'll find this document useful. There
+is some example code about the encryption used and about TCP connections in
+general at the bottom of this document.
+
+
+Document conventions
+
+In this document, when talking about a particular bit, big endianess is always
+assumed, so the bit order within one byte is 76543210. Also when talking about
+server and client, cardserver is always the server, newcamd is a client.
+
+
+Changes
+
+newcamd-cardserver-tng5: add 16 bit packet length (byte 1 and 2, unencrypted)
+and a 16 bit sequence number (byte 3 and 4, encrypted)
+
+newcamd-cardserver-tng12:
+add 4 bytes for general data in the packet encryption process (bytes 5-8,
+encrypted)
+In ECM request messages, this general data field has to be set to the service
+id of the channel, which needs to be decrypted. It is mandatory that the
+client sets this correctly. I MEAN IT PEOPLE!! Failure to comply with this
+requirement will result in the change of the newcamd<->cardserver protocol to
+a non-public variant.
+
+newcamd v5.22:
+keepalive packet added
+
+newcamd v5.25:
+changed the customData field from 4 to 8 bytes, the sid occupies the first two
+bytes and has to be set correctly by the client (see above), the remaining
+6 bytes are for future enhancements and have to be set to zero for now
+
+
+Encryption
+
+Newcamd uses encrypted tcp connections to communicate with its cardservers,
+for every card a dedicated tcp connection is used. The encryption used is
+Triple-DES in outer cipher block chaining mode (CBC). See a good book about
+cryptography for details. Remember, DES keys are 7 bytes (56 bits), Triple-DES
+keys are 14 bytes (112 bits).
+There are three encryption keys: The key from the config file, which is never
+actually used as is, the login key (configfile key ^ 14 random bytes) and the
+session key, which is used after the login (configfile key ^ userpassword).
+Since newcamd-v5.25 12 bytes are added before the actual package in the
+encryption process (see above: Changes).
+
+
+Packet description (before encryption)
+
+Messages sent back and forth between newcamd and a cardserver always consist of
+a three byte header and (optional) data bytes. The header always starts with a
+command tag byte. This is always the first byte (byte 1) of a message.
+In case of an ECM or EMM this is simply the table id of the ECM (0x80, 0x81)
+or EMM (0x82 - 0x8f). Other commands use cmd tags starting from 0xe0 like this:
+
+#define CWS_FIRSTCMDNO 0xe0
+
+typedef enum
+{
+        MSG_CLIENT_2_SERVER_LOGIN = CWS_FIRSTCMDNO,
+        MSG_CLIENT_2_SERVER_LOGIN_ACK,
+        MSG_CLIENT_2_SERVER_LOGIN_NAK,
+        MSG_CARD_DATA_REQ,
+        MSG_CARD_DATA,
+        MSG_SERVER_2_CLIENT_NAME,
+        MSG_SERVER_2_CLIENT_NAME_ACK,
+        MSG_SERVER_2_CLIENT_NAME_NAK,
+        MSG_SERVER_2_CLIENT_LOGIN,
+        MSG_SERVER_2_CLIENT_LOGIN_ACK,
+        MSG_SERVER_2_CLIENT_LOGIN_NAK,
+        MSG_ADMIN,
+        MSG_ADMIN_ACK,
+        MSG_ADMIN_LOGIN,
+        MSG_ADMIN_LOGIN_ACK,
+        MSG_ADMIN_LOGIN_NAK,
+        MSG_ADMIN_COMMAND,
+        MSG_ADMIN_COMMAND_ACK,
+        MSG_ADMIN_COMMAND_NAK,
+	MSG_KEEPALIVE = CWS_FIRSTCMDNO + 0x1d,
+} net_msg_type_t;
+
+The upper 4 bits of byte 2 have no effect on messages from newcamd to
+cardserver. On ECM responses from the cardserver, the upper 4 bits of byte 2
+indicate the card provider that was used to operate on the ECM. On EMM
+responses from the card server, bit 4 indicates to the client, if the card
+accepted the EMM (signature correct, bit4 = 1) or if it didn't (bit4 = 0).
+Bit 5 indicates if any if the card's provider id's might have been changed
+by the EMM. If the clients reads bit 5 of byte 2 = 1, it should send a new
+card data request MSG_CARD_DATA_REQ and the server will answer with
+MSG_CARD_DATA. This is currently implemented only for Seca (emm return code
+90 19 = PPUA changed) and Irdeto (all c3 updates).
+
+The lower 4 bits of byte 2 and all bits of byte 3 form a 12-bit length field.
+This indicates the total number of bytes to follow byte 3. So the total length
+of any packet is always len = (((msg[1] & 0x0f) << 8) | msg[2]) + 3;
+
+This means, in case you hadn't noticed, that ECMs can be sent to the cardserver 
+just as they were received from the demuxer, starting with 80/81 <4 bit> <12 bit
+section length>. EMMs usually can be sent the same way, however, there are a few
+exceptions in CA systems where a "card" EMM has to be assembled with nano 
+commands in ascending order from several "demux" EMMs (Viaccess, Cryptoworks).
+
+ECMs and EMMs responses from the cardserver always start with the same command
+tag used to send the ECM/EMM to the card server. An EMM response never includes
+any additional data, so it will always look like 82 00 00 (wrong signature) or
+82 10 00 (correct signature), with 82 being the original table id of the EMM
+(this could be any value betwwen 0x82 and 0x8f).
+An ECM response always begins with the original ECM, followed by either 16 or
+no additional data bytes. No additional data bytes mean, the card wasn't able
+to decrypt the channel. If 16 additional data bytes are received by the client,
+the card was able to decrypt the channel, the 16 data bytes are the two control
+words, first even, then odd. The redundancy within a control word (bytes 4 and
+8) is eliminated by the cardserver, so you can be sure, no information about
+your particular card is send to the clients.
+
+
+Client to Server Login
+
+This describes how to login into a particular card. Remember each card has its
+own dedicated TCP port, this is how you choose, which card you want.
+
+Client <- Server 1/5 - 090f - Thu Jan  8 17:20:17 CET 2004
+encryption: none
+----------------------------------------------------------
+00: 77 9d cc 5d d2 0d 59 2e dc ed b8 17 c1 ab         w  ]  Y.      
+
+After opening a TCP connection to the server, the client first receives 14
+random bytes. These bytes are to be XORed to the Triple-DES key from the config
+file. (newcamd: CWS = ..., cardserver: DESKEY = ...). The result forms the
+Triple DES key to be used to send Username and Password to the cardserver, I
+call it the login key.
+
+Client -> Server 1/5 - 090f - Thu Jan  8 17:20:18 CET 2004
+encryption: login
+----------------------------------------------------------
+00: e0 00 29 64 75 6d 6d 79 00 24 31 24 61 62 63 64     )dummy $1$abcd
+10: 65 66 67 68 24 6e 70 53 45 54 51 73 72 49 6d 33   efgh$npSETQsrIm3
+20: 35 4d 51 66 69 55 49 41 64 6e 2e 00               5MQfiUIAdn. 
+
+Next the client has to send a packet with cmd = MSG_CLIENT_2_SERVER_LOGIN
+including username and password in the data field.
+The username is sent as a C-String (NULL terminated), the password
+follows directly after the zero termination byte of the username. The
+password has to be put through the glibc crypt() function, using salt
+$1$abcdefgh$. The password in the data field has to be NULL terminated and the
+packet encrypted with the login key.
+
+cryptPw = crypt(plainPw, "$1$abcdefgh$");
+
+Client <- Server 1/5 - 090f - Thu Jan  8 17:20:18 CET 2004
+encryption: login
+----------------------------------------------------------
+00: e1 00 00                                             
+
+The cardserver now checks username and password and answers with a
+MSG_CLIENT_2_SERVER_LOGIN_ACK or MSG_CLIENT_2_SERVER_LOGIN_NAK packet. If
+instead it just closes the TCP connection, you're DES key was probably
+incorrect and the cardserver didn't understand a word you were saying :)
+At this point, you have to change to the session DES key.
+The session key will be the key from the config file (newcamd: CWS = ...,
+cardserver: DESKEY = ...) xored with the password of the connection just
+established.
+
+for (i = 0; i < strlen(cryptPw); i++) deskey[i%14] ^= cryptPw[i];
+
+Client -> Server 1/5 - 090f - Thu Jan  8 17:20:18 CET 2004
+encryption: session
+----------------------------------------------------------
+00: e3 00 00                                             
+
+The clients sends the next command, MSG_CARD_DATA_REQ, no additional data,
+encrypted with the new DES key.
+
+Client <- Server 1/5 - 090f - Thu Jan  8 17:20:18 CET 2004
+encryption: session
+----------------------------------------------------------
+00: e4 00 17 01 09 0f 00 00 00 00 XX XX XX XX 01 00        a
+10: 00 00 00 00 00 00 XX XX XX 00
+
+It receives a packet MSG_CARD_DATA from the cardserver 
+which looks like this:
+
+byte 1:    MSG_CARD_DATA
+byte 2/3:  data length
+byte 4:    userid of the user
+byte 5/6:  caid of the card
+byte 7-14: card number (only for userid == 1, all 00 otherwise)
+byte 15:   number of providers on the card (noProv)
+for (i = 0; i < noProv; i++)
+{
+  byte 16+11*i - 18+11*i: provider ident
+  byte 19+11*i - 26+11*i: provider id (only for userid == 1, all 00 otherwise)
+}
+
+Receiving the card data concludes the login procedure. Now ECM/EMMs can be
+sent to this card.
+
+
+Server to Client Login
+
+If the cardserver wants to open a connection to a client (because a card was
+just inserted into a card reader for example) it opens a TCP connection to
+CWS_INCOMING_PORT of newcamd.
+
+Client -> Server 1/5 - 090f - Thu Jan  8 17:02:24 CET 2004
+encryption: none
+----------------------------------------------------------
+00: 77 9d cc 5d d2 0d 59 2e dc ed b8 17 c1 ab         w  ]  Y.      
+
+The client has to send 14 random bytes to form the
+login DES key later on (see Client to Server Login).
+
+Client <- Server 1/5 - 090f - Thu Jan  8 17:02:24 CET 2004
+encryption: none
+----------------------------------------------------------
+00: e5 00 08 68 64 62 6f 78 00 07 df                     hdbox   
+
+Now the cardserver sends an UNENCRYPTED identification packet
+MSG_SERVER_2_CLIENT_NAME. The data field of this packet consists
+of the cardserver's name (SERVER_NAME from cardserv.cfg), again NULL
+terminated, and the TCP port it is listening on for incoming connections.
+The client has to use this information to choose the appropriate DES key for
+the cardserver attempting to make the connection, that's why this packet is sent
+without any encryption.
+
+Client -> Server 1/5 - 090f - Thu Jan  8 17:02:24 CET 2004
+encryption: none
+----------------------------------------------------------
+00: e6 00 00                                             
+
+If the client recognizes the cardserver it answers with
+MSG_SERVER_2_CLIENT_NAME_ACK, otherwise with MSG_SERVER_2_CLIENT_NAME_NAK.
+This packet is also sent unencrypted.
+
+Client <- Server 1/5 - 090f - Thu Jan  8 17:02:24 CET 2004
+encryption: login
+----------------------------------------------------------
+00: e8 00 29 64 75 6d 6d 79 00 24 31 24 61 62 63 64     )dummy $1$abcd
+10: 65 66 67 68 24 6e 70 53 45 54 51 73 72 49 6d 33   efgh$npSETQsrIm3
+20: 35 4d 51 66 69 55 49 41 64 6e 2e 00               5MQfiUIAdn. 
+
+Now the cardserver sends username and password in the same way
+as in Client to Server Login, but with different command tag
+MSG_SERVER_2_CLIENT_LOGIN, encrypted with the login key.
+
+Client -> Server 1/5 - 090f - Thu Jan  8 17:02:24 CET 2004
+encryption: login
+----------------------------------------------------------
+00: e9 00 00                                             
+
+Client answers either MSG_SERVER_2_CLIENT_LOGIN_ACK or 
+MSG_SERVER_2_CLIENT_LOGIN_NAK,
+
+Client -> Server 1/5 - 090f - Thu Jan  8 17:02:25 CET 2004
+encryption: session
+----------------------------------------------------------
+00: e3 00 00                                             
+
+Then it switches from the login to the session key and sends packet
+MSG_CARD_DATA_REQ.
+
+Client <- Server 1/5 - 090f - Thu Jan  8 17:02:25 CET 2004
+encryption: session
+----------------------------------------------------------
+00: e4 00 17 01 09 0f 00 00 00 00 XX XX XX XX 01 00        a
+10: 00 00 00 00 00 00 XX XX XX 00
+
+Then waits for MSG_CARD_DATA, just as in client 2 server login. This concludes
+the server 2 client login procedure.
+
+
+Viaccess EMM-S
+
+Viaccess EMM-S have to be assembled by the client from an EMM-GH (general (for
+all cards) header) with table id 0x8c or 0x8d and an EMM-S (shared (for a group
+of 256 cards)) with table id 0x8e. A pseudo EMM with table id 0x8e has to be
+build by the client including all nano commands from both the original EMM-GH
+and EMM-S in ascending order. If the EMM-S is a "fixed-length" EMM, containing
+only the data fields of the 9e 20 and f0 08 nanos, 9e 20 and f0 08 have to be
+added to the pseudo EMM as well, right before their respective data fields. Use
+cardserver's DEBUG_NET logging facility if you need any examples on how these
+pseudo EMM-S look like.
+
+
+Cryptoworks EMM-S
+
+Cryptoworks EMM-S have to be assembled by the client from an EMM-SH with table
+id 0x84 and a corresponding EMM-SB (body) with table id 0x86. A pseudo EMM-S
+with table id 0x84 has to be build containing all nano commands from both the
+original EMM-SH and EMM-SB in ascending order.
+
+
+Keepalive
+
+Your client may send a keepalive packet on occasion to prevent crappy NAT
+routers from timing out your tcp connection to the server. The server will
+echo the packet as is. The command tag for this packet is
+MSG_KEEPALIVE.
+
+
+*/
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <rpc/des_crypt.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+
+#define CWS_NETMSGSIZE 240
+
+typedef unsigned char uint8;
+typedef unsigned short uint16;
+typedef unsigned int uint32;
+typedef unsigned long long uint64;
+
+#define CWS_FIRSTCMDNO 0xe0
+
+typedef enum
+{
+	MSG_CLIENT_2_SERVER_LOGIN = CWS_FIRSTCMDNO,
+	MSG_CLIENT_2_SERVER_LOGIN_ACK,
+	MSG_CLIENT_2_SERVER_LOGIN_NAK,
+	MSG_CARD_DATA_REQ,
+	MSG_CARD_DATA,
+	MSG_SERVER_2_CLIENT_NAME,
+	MSG_SERVER_2_CLIENT_NAME_ACK,
+	MSG_SERVER_2_CLIENT_NAME_NAK,
+	MSG_SERVER_2_CLIENT_LOGIN,
+	MSG_SERVER_2_CLIENT_LOGIN_ACK,
+	MSG_SERVER_2_CLIENT_LOGIN_NAK,
+	MSG_ADMIN,
+	MSG_ADMIN_ACK,
+	MSG_ADMIN_LOGIN,
+	MSG_ADMIN_LOGIN_ACK,
+	MSG_ADMIN_LOGIN_NAK,
+	MSG_ADMIN_COMMAND,
+	MSG_ADMIN_COMMAND_ACK,
+	MSG_ADMIN_COMMAND_NAK,
+	MSG_KEEPALIVE = CWS_FIRSTCMDNO + 0x1d
+} net_msg_type_t;
+
+typedef enum
+{
+	COMMTYPE_CLIENT,
+	COMMTYPE_SERVER
+} comm_type_t;
+
+typedef struct customData_struct
+{
+        uint16 sid;
+} customData_t;
+
+void des_key_parity_adjust(uint8 *key, uint8 len)
+{
+	uint8 i, j, parity;
+
+	for (i = 0; i < len; i++)
+	{
+		parity = 1;
+		for (j = 1; j < 8; j++) if ((key[i] >> j) & 0x1) parity = ~parity & 0x01;
+		key[i] |= parity;
+	}
+}
+
+uint8 *des_key_spread(uint8 *normal)
+{
+	static uint8 spread[16];
+
+	spread[ 0] = normal[ 0] & 0xfe;
+	spread[ 1] = ((normal[ 0] << 7) | (normal[ 1] >> 1)) & 0xfe;
+	spread[ 2] = ((normal[ 1] << 6) | (normal[ 2] >> 2)) & 0xfe;
+	spread[ 3] = ((normal[ 2] << 5) | (normal[ 3] >> 3)) & 0xfe;
+	spread[ 4] = ((normal[ 3] << 4) | (normal[ 4] >> 4)) & 0xfe;
+	spread[ 5] = ((normal[ 4] << 3) | (normal[ 5] >> 5)) & 0xfe;
+	spread[ 6] = ((normal[ 5] << 2) | (normal[ 6] >> 6)) & 0xfe;
+	spread[ 7] = normal[ 6] << 1;
+	spread[ 8] = normal[ 7] & 0xfe;
+	spread[ 9] = ((normal[ 7] << 7) | (normal[ 8] >> 1)) & 0xfe;
+	spread[10] = ((normal[ 8] << 6) | (normal[ 9] >> 2)) & 0xfe;
+	spread[11] = ((normal[ 9] << 5) | (normal[10] >> 3)) & 0xfe;
+	spread[12] = ((normal[10] << 4) | (normal[11] >> 4)) & 0xfe;
+	spread[13] = ((normal[11] << 3) | (normal[12] >> 5)) & 0xfe;
+	spread[14] = ((normal[12] << 2) | (normal[13] >> 6)) & 0xfe;
+	spread[15] = normal[13] << 1;
+
+	des_key_parity_adjust(spread, 16);
+	return spread;
+}
+
+void des_random_get(uint8 *buffer, uint8 len)
+{
+	uint8 idx = 0;
+	int randomNo = 0;
+
+	for (idx = 0; idx < len; idx++)
+	{
+		if (!(idx % 3)) randomNo = rand();
+		buffer[idx] = (randomNo >> ((idx % 3) << 3)) & 0xff;
+	}
+}
+
+int des_encrypt(uint8 *buffer, int len, uint8 *deskey)
+{
+	uint8 checksum = 0;
+	uint8 noPadBytes;
+	uint8 padBytes[7];
+	char ivec[8];
+	uint16 i;
+
+	if (!deskey) return len;
+	noPadBytes = (8 - ((len - 1) % 8)) % 8;
+	if (len + noPadBytes + 1 >= CWS_NETMSGSIZE-8) return -1;
+	des_random_get(padBytes, noPadBytes);
+	for (i = 0; i < noPadBytes; i++) buffer[len++] = padBytes[i];
+	for (i = 2; i < len; i++) checksum ^= buffer[i];
+	buffer[len++] = checksum;
+	des_random_get((uint8 *)ivec, 8);
+	memcpy(buffer+len, ivec, 8);
+	for (i = 2; i < len; i += 8)
+	{
+		cbc_crypt(deskey  , (char *) buffer+i, 8, DES_ENCRYPT, ivec);
+		ecb_crypt(deskey+8, (char *) buffer+i, 8, DES_DECRYPT);
+		ecb_crypt(deskey  , (char *) buffer+i, 8, DES_ENCRYPT);
+		memcpy(ivec, buffer+i, 8);
+	}
+	len += 8;
+	return len;
+}
+
+int des_decrypt(uint8 *buffer, int len, uint8 *deskey)
+{
+	char ivec[8];
+	char nextIvec[8];
+	int i;
+	uint8 checksum = 0;
+
+	if (!deskey) return len;
+	if ((len-2) % 8 || (len-2) < 16) return -1;
+	len -= 8;
+	memcpy(nextIvec, buffer+len, 8);
+	for (i = 2; i < len; i += 8)
+	{
+		memcpy(ivec, nextIvec, 8);
+		memcpy(nextIvec, buffer+i, 8);
+		ecb_crypt(deskey  , (char *) buffer+i, 8, DES_DECRYPT);
+		ecb_crypt(deskey+8, (char *) buffer+i, 8, DES_ENCRYPT);
+		cbc_crypt(deskey  , (char *) buffer+i, 8, DES_DECRYPT, ivec);
+	} 
+	for (i = 2; i < len; i++) checksum ^= buffer[i];
+	if (checksum) return -1;
+	return len;
+}
+
+uint8 *des_login_key_get(uint8 *key1, uint8 *key2)
+{
+	uint8 des14[14];
+	static uint8 des16[16];
+	int i;
+
+	for (i = 0; i < 14; i++) des14[i] = key1[i] ^ key2[i];
+	memcpy(des16, des_key_spread(des14), 16);
+	return des16;
+}
+
+int network_message_send(int handle, uint16 *netMsgId, customData_t *customData, uint8 *buffer, int len, uint8 *deskey, comm_type_t commType)
+{
+	uint8 netbuf[CWS_NETMSGSIZE];
+
+	if (len < 3 || len + 12 > CWS_NETMSGSIZE || handle < 0) return -1;
+	buffer[1] = (buffer[1] & 0xf0) | (((len - 3) >> 8) & 0x0f);
+	buffer[2] = (len - 3) & 0xff;
+	memcpy(netbuf+12, buffer, len);
+	len += 12;
+	if (netMsgId) { if (commType == COMMTYPE_CLIENT) (*netMsgId)++; netbuf[2] = (*netMsgId) >> 8; netbuf[3] = (*netMsgId) & 0xff; }
+	else netbuf[2] = netbuf[3] = 0;
+	if (customData)
+	{
+                netbuf[4] = customData->sid >> 8;
+                netbuf[5] = customData->sid & 0xff;
+		memset(netbuf+6, 0, 6);
+	}
+	else memset(netbuf+4, 0, 8);
+	if ((len = des_encrypt(netbuf, len, deskey)) < 0) return -1;
+	netbuf[0] = (len - 2) >> 8;
+	netbuf[1] = (len - 2) & 0xff;
+	write(handle, netbuf, len);
+	return 0;
+}
+
+int network_message_receive(int handle, uint16 *netMsgId, customData_t *customData, uint8 *buffer, uint8 *deskey, comm_type_t commType)
+{
+	int len;
+	uint8 netbuf[CWS_NETMSGSIZE];
+	int returnLen;
+
+	if (customData) memset(customData, 0, sizeof(customData_t));
+	if (!buffer || handle < 0) return -1;
+	len = read(handle, netbuf, 2);
+	if (!len) return 0;
+	if (len != 2) return -1;
+	if (((netbuf[0] << 8) | netbuf[1]) > CWS_NETMSGSIZE - 2) return -1;
+	len = read(handle, netbuf+2, (netbuf[0] << 8) | netbuf[1]);
+	if (!len) return 0;
+	if (len != ((netbuf[0] << 8) | netbuf[1])) return -1;
+	len += 2;
+	if ((len = des_decrypt(netbuf, len, deskey)) < 15) return -1;
+	if ((returnLen = (((netbuf[13] & 0x0f) << 8) | netbuf[14]) + 3) > len-12) return -1;
+	if (netMsgId)
+	{
+		switch (commType)
+		{
+			case COMMTYPE_SERVER:
+				*netMsgId = (netbuf[2] << 8) | netbuf[3];
+				break;
+
+			case COMMTYPE_CLIENT:
+				if (*netMsgId != ((netbuf[2] << 8) | netbuf[3])) return -1;
+				break;
+
+			default:
+				return -1;
+				break;
+		}
+	}
+	if (customData)
+	{
+		customData->sid = (netbuf[4] << 8) | netbuf[5];
+	}
+	memcpy(buffer, netbuf+12, returnLen);
+	return returnLen;
+}
+
+void network_cmd_no_data_send(int handle, uint16 *netMsgId, customData_t *customData, net_msg_type_t cmd, uint8 *deskey, comm_type_t commType)
+{
+	uint8 buffer[CWS_NETMSGSIZE];
+
+	buffer[0] = cmd; buffer[1] = 0;
+	network_message_send(handle, netMsgId, customData, buffer, 3, deskey, commType);
+}
+
+int network_cmd_no_data_receive(int handle, uint16 *netMsgId, customData_t *customData, uint8 *deskey, comm_type_t commType)
+{
+	uint8 buffer[CWS_NETMSGSIZE];
+
+	if (network_message_receive(handle, netMsgId, customData, buffer, deskey, commType) != 3) return -1;
+	return buffer[0];
+}
+
+int network_tcp_incoming_port_open(uint16 port)
+{
+	struct sockaddr_in socketAddr;
+	int socketOptActive = 1;
+	int handle;
+
+	if (!port) return -1;
+
+	if ((handle = socket(PF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		fprintf(stderr, "network port %u open: ", port);
+		perror("socket");
+		return -1;
+	}
+
+	if (setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &socketOptActive, sizeof(int)) < 0)
+	{
+		fprintf(stderr, "network port %u open: error setsockopt\n", port);
+		close(handle);
+		return -1;
+	}
+
+	socketAddr.sin_family = AF_INET;
+	socketAddr.sin_port = htons(port);
+	socketAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	if (bind(handle, (struct sockaddr *) &socketAddr, sizeof (socketAddr)) < 0)
+	{
+		fprintf(stderr, "network port %u open: ", port);
+		perror("bind");
+		close(handle);
+		return -1;
+	}
+
+	if (listen(handle, 5) < 0)
+	{
+		fprintf(stderr, "network port %u open: ", port);
+		perror("listen");
+		close(handle);
+		return -1;
+	}
+	return handle;
+}
+
+int network_tcp_connection_accept(int socketHandle)
+{
+	int connHandle;
+	struct sockaddr_in peerAddr;
+	struct sockaddr_in myAddr;
+	socklen_t peerAddrLen;
+	socklen_t myAddrLen;
+	uint16 peerPort, myPort;
+	uint32 peerIp, myIp;
+
+	if (socketHandle < 0) return -1;
+	peerAddrLen = sizeof(peerAddr);
+	myAddrLen = sizeof(myAddr);
+	if ((connHandle = accept(socketHandle, (struct sockaddr *) &peerAddr, &peerAddrLen)) < 0) { fprintf(stderr, "error network accept connection\n"); return -1; }
+	peerPort = ntohs(peerAddr.sin_port);
+	peerIp = ntohl(peerAddr.sin_addr.s_addr);
+	myPort = ntohs(myAddr.sin_port);
+	myIp = ntohl(myAddr.sin_addr.s_addr);
+
+	/* optional: do checks on or log IP of incoming connections */
+
+	return connHandle;
+}
+
+int network_tcp_connection_open(uint8 *hostname, uint16 port)
+{
+	int handle;
+	struct hostent *hostaddr;
+	struct sockaddr_in socketAddr;
+
+	if (!(hostaddr = gethostbyname(hostname))) { fprintf(stderr, "Host lookup of %s failed\n", hostname); return -1; }
+	if ((handle = socket(PF_INET, SOCK_STREAM, 0)) < 0) { fprintf(stderr, "network make connection: couldn't create socket\n"); return -1; }
+	socketAddr.sin_family = AF_INET;
+	socketAddr.sin_port = htons(port);
+	socketAddr.sin_addr.s_addr = ((struct in_addr *)hostaddr->h_addr)->s_addr;
+	if (connect(handle, (struct sockaddr *)&socketAddr, sizeof(socketAddr)) < 0) { fprintf(stderr, "network make connection: error connect\n"); close(handle); return -1; }
+	return handle;
+}

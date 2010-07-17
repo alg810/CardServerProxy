@@ -1,0 +1,92 @@
+<status-commands ver="1.0">
+
+  <!-- predefined sources: @connectors, @connected-users, @active-users, @known-users, @offline-users, @profiles -->
+  <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper -->
+
+  <command name="ca-profiles" label="Show profile(s)" description="List of available profile definitions.">
+    <command-param name="name" label="" optional="true">
+      <option source="@profiles"/>
+    </command-param>
+  </command>
+
+  <command name="cws-connectors" label="Show connector(s)" description="List of available connector definitions.">
+    <command-param name="name" label="" optional="true">
+      <option source="@connectors"/>
+    </command-param>
+  </command>
+
+  <command name="proxy-users" label="Show user(s)" description="List of current user connections.">
+    <command-param name="name" label="" optional="true" admin-only="true">
+      <option source="@connected-users"/>
+    </command-param>
+    <command-param name="hide-inactive" label="" optional="true">      
+      <option value="true"/>
+      <option value="false"/>
+    </command-param>
+  </command>
+
+  <command name="proxy-status" label="Show status summary" description="Current proxy status." />
+
+  <command name="cache-status" label="Show cache status" description="Current cache status and metadata." />
+
+  <command name="error-log" label="Show cws events" description="Recent connector errors and events." />
+
+  <command name="user-log" label="Show user transaction log" description="Recent ecm transaction for one user.">
+    <command-param name="name" label="" optional="true" admin-only="true">
+      <option source="@known-users"/>
+    </command-param>
+  </command>
+
+  <command name="user-warning-log" label="Show user warning log" description="Recent ecm transaction warnings.">
+    <command-param name="name" label="" optional="true" admin-only="true">
+      <option source="@known-users"/>
+    </command-param>
+  </command>
+
+  <command name="cws-log" label="Show cws transaction log" description="Recent ecm transaction for one connector." admin-only="true">
+    <command-param name="name" label="" optional="false">
+      <option source="@connectors"/>
+    </command-param>
+  </command>
+
+  <command name="all-services" label="Show all services" description="List of all known services." />
+
+  <command name="watched-services" label="Show watched services" description="List of the currently watched services." />
+
+  <command name="export-services" label="Export service maps" description="Export current state of service mappers as xml." admin-only="true">
+    <command-param name="name" label="" optional="true">
+      <option source="@connectors"/>
+    </command-param>
+    <command-param name="format" label="" optional="true">
+      <option value="default"/>
+      <option value="hex"/>
+    </command-param>
+  </command>  
+
+  <command name="last-seen" label="Show disconnected user(s)" description="Last known activity for disconnected users.">
+    <command-param name="name" label="" optional="true" admin-only="true">
+      <option source="@offline-users"/>
+    </command-param>
+  </command>
+
+  <command name="login-failures" label="Show login failures" description="Last failed login attempt per user (or ip).">
+    <command-param name="name" label="" optional="true" admin-only="true" />
+  </command>
+
+  <command name="proxy-plugins" label="Show loaded plugins" description="List all currently loaded plugins.">
+    <command-param name="name" label="" optional="true" />
+  </command>
+
+  <command name="fetch-cfg" label="Show current config" description="Retrieve currently loaded xml config." admin-only="true" />
+
+  <command name="ctrl-commands" label="Show ctrl-commands" description="Retrieve ctrl-command definitions and metadata." admin-only="true" />
+
+  <command name="status-commands" label="Show status-commands" description="Retrieve status-command definitions and metadata." />
+
+  <command name="cws-bouquet" label="Create bouquet" description="Create enigma bouquet file from the specified services." />
+
+  <command name="system-properties" label="System properties" description="Dump JVM system properties." admin-only="true" />
+
+  <command name="system-threads" label="System threads" description="Dump JVM thread names." admin-only="true" />
+
+</status-commands>

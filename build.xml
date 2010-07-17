@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+
+<project name="cardservproxy" default="tar-app" basedir=".">
+
+  <target name="prepare-build">
+    <delete dir="classes" />
+    <mkdir dir="classes" />
+    <path id="classpath">
+      <fileset dir="lib">
+        <include name="**/*.jar"/>
+      </fileset>
+    </path>
+    <delete dir="build" />
+    <mkdir dir="build" />
+    <mkdir dir="build/lib" />
+    <mkdir dir="build/log" />
+    <mkdir dir="build/etc" />
+    <copy todir="build/etc">
+      <fileset dir="etc">
+        <include name="policy.all" />
+        <include name="protocol.txt" />
+      </fileset>
+    </copy>
+    <copy todir="build/lib">
+      <fileset dir="lib">
+        <include name="*.jar" />
+        <exclude name="bowbot.jar" />
+        <exclude name="orionembedded.jar" />
+        <exclude name="mail.jar" />
+      </fileset>
+    </copy>
+    <mkdir dir="build/config" />
+    <copy todir="build/config">
+      <fileset dir="config">
+        <include name="*.*" />
+        <exclude name="proxy.xml" />
+        <exclude name="proxy.xml.bak" />
+      </fileset>
+    </copy>
+    <mkdir dir="build/config/example "/>
+    <copy todir="build/config/example">
+      <fileset dir="config/example">
+        <include name="*.*" />
+      </fileset>
+    </copy>
+    <copy todir="build" file="cardproxy.sh" />
+    <copy todir="build" file="cardproxy.sh.ubuntu-autostart" />
+    <copy todir="build" file="changelog.txt" />
+    <copy todir="build" file="README.txt" />
+    <copy todir="build" file="README.ClusteredCache.txt" />
+    <copy todir="build" file="README.XmlUserManager.txt" />
+    <copy todir="build" file="README.HttpXmlApi.txt" />
+    <copy todir="build" file="README.Optimization.txt" />
+    <copy todir="build" file="README.Compiling.txt" />
+    <copy todir="build" file="README.Plugins.txt" />
+    <copy todir="build" file="README.0.9.0.txt" />    
+    <copy todir="build" file="jsw-win32.zip" />
+    <copy todir="classes">
+      <fileset dir="src">
+        <include name="**/*.properties"/>
+        <include name="**/*.xml"/>
+        <exclude name="**/filefetcher.properties"/>
+      </fileset>
+    </copy>
+    <property name="classpath" refid="classpath" />
+  </target>
+
+  <target name="build-app" depends="prepare-build">
+    <javac srcdir="src" includes="**/*.java"
+      destdir="classes" classpath="${classpath}"
+      source="1.4" target="1.4"
+      debug="on">
+    </javac>
+    <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.rmi.RemoteHandler" base="classes"/>
+    <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.test.RemoteTestClient" base="classes"/>
+    <delete file="classes/com/bowman/cardserv/test/TestUtil.class"/>
+    <jar jarfile="build/lib/cardservproxy.jar" manifest="src/META-INF/MANIFEST.MF">
+      <fileset dir="classes">
+        <include name="**/*" />
+      </fileset>
+    </jar>
+    <jar jarfile="build/lib/fishenc.jar" manifest="trtest/META-INF/MANIFEST.MF">
+      <fileset dir="classes">
+        <include name="**/*FileFetcher*" />
+      </fileset>
+    </jar>
+    <copy todir="dist" file="build/lib/cardservproxy.jar" />
+    <copy todir="dist" file="build/lib/fishenc.jar" />
+  </target>
+
+  <target name="build-web">
+    <copy todir="web" file="config/proxy-reference.html" />
+    <jar jarfile="build/lib/cs-status.war" basedir="web" />
+    <copy todir="dist" file="build/lib/cs-status.war" />
+    <copy todir="lib" file="build/lib/cs-status.war" />
+  </target>
+
+  <target name="build-plugins" unless="skip-plugins">    
+    <ant inheritAll="false" dir="plugins/MessagingPlugin"/>
+    <ant inheritAll="false" dir="plugins/EmmAnalyzerPlugin"/>
+    <ant inheritAll="false" dir="plugins/GeoipPlugin"/>
+    <ant inheritAll="false" dir="plugins/DcwFilterPlugin"/>
+    <ant inheritAll="false" dir="plugins/ProviderIdentPlugin"/>
+    <ant inheritAll="false" dir="plugins/IrdetoPlugin"/>
+    <ant inheritAll="false" dir="plugins/DreamboxPlugin"/>
+    <ant inheritAll="false" dir="plugins/SoftNdsPlugin"/>
+
+    <ant inheritAll="false" dir="plugins/ConaxConnector"/>
+
+    <mkdir dir="build/plugins" />
+    <copy todir="build/plugins" flatten="true">
+      <fileset dir="plugins">
+        <include name="**/dist/*.jar"/>
+        <include name="**/README.*.txt"/>
+      </fileset>
+    </copy>    
+  </target>
+
+  <target name="tar-app" depends="build-app, build-web, build-plugins">
+    <move todir="build/cardservproxy">
+      <fileset dir="build"/>
+    </move>
+    <tar tarfile="dist/cardservproxy.tar" basedir="build" excludes="cardservproxy/cardproxy.sh*">
+      <tarfileset dir="build/cardservproxy" mode="755" prefix="cardservproxy">
+        <include name="cardproxy.sh*"/>
+      </tarfileset>
+    </tar>
+    <gzip zipfile="dist/cardservproxy.tar.gz" src="dist/cardservproxy.tar"/>
+    <delete file="dist/cardservproxy.tar" />
+    <delete dir="build"/>
+  </target>
+
+  <target name="tar-src" depends="prepare-build">
+    <mkdir dir="build/src"/>
+    <copy todir="build/src">
+      <fileset dir="src">
+        <include name="**/*" />
+      </fileset>
+    </copy>
+    <copy todir="build/web">
+      <fileset dir="web">
+        <include name="**/*" />
+      </fileset>
+    </copy>
+    <copy todir="build/trtest">
+      <fileset dir="trtest">
+        <include name="**/*" />
+      </fileset>
+    </copy>
+    <copy todir="build">
+      <fileset dir=".">
+        <include name="CardServProxy.iml" />
+        <include name="CardServProxy.ipr" />
+      </fileset>
+    </copy>
+    <delete dir="build/plugins"/>
+    <copy todir="build/plugins">
+      <fileset dir="plugins">
+        <include name="**/*"/>
+        <exclude name="**/dist/*"/>
+        <exclude name="**/*.iws"/>
+        <exclude name="**/*.bak"/>
+        <exclude name="**/*.jar"/>
+      </fileset>
+    </copy>    
+    <delete file="build/src/com/bowman/cardserv/BowbotUserManager.java"/>
+    <delete file="build/src/com/bowman/cardserv/web/filefetcher.properties"/>
+    <delete file="build/src/com/bowman/cardserv/test/TestUtil.java"/>
+    <copy todir="build" file="build.xml"/>
+    <move todir="build/cardservproxy-src">
+      <fileset dir="build"/>
+    </move>
+    <tar tarfile="dist/cardservproxy-src.tar" basedir="build"/>
+    <gzip zipfile="dist/cardservproxy-src.tar.gz" src="dist/cardservproxy-src.tar"/>
+    <delete file="dist/cardservproxy-src.tar" />
+    <delete dir="build"/>
+  </target>
+
+</project>

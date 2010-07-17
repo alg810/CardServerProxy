@@ -1,0 +1,122 @@
+* {
+  font-family: tahoma, verdana, sans-serif;
+  font-size: 11px;
+}
+
+a {
+  text-decoration: underline;
+  color: #C00;
+}
+
+form {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+fieldset {
+  border: 1px solid black;
+  padding-left: 5px;
+  padding-bottom: 5px;
+  width: 740px;
+}
+
+pre {
+  font-family: monospace;
+}
+
+#header {
+  width: 796px;
+  height: 84px;
+  background: url( /images/main_bg.jpg );
+}
+
+#headerInfo {
+  position: absolute;
+  left: 745px;
+}
+
+#headerInfoLeft {
+  float: left;
+  padding-top: 55px;
+  padding-left: 15px;  
+}
+
+#subheader {
+  width: 779px;
+  height: 23px;
+  background: url( /images/sub_bg.jpg );
+  padding-top: 7px;
+  padding-left: 25px;
+}
+
+#mainstart {
+  margin-top: 10px;
+  width: 796px;
+  height: 21px;
+  background: url( /images/shdw_794_invert.gif );
+}
+
+#main {
+  margin-left: 20px;
+  margin-top: 10px;
+}
+
+#footer {
+  margin-top: 10px;
+  width: 796px;
+  height: 34px;
+  background: url( /images/bottom_arrow.gif );
+}
+
+#chanList {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.channel {
+  width: 350px;
+  padding: 2px;
+  border-bottom: 1px solid #CCC;
+}
+
+.even {
+  background: #fff;
+}
+
+.uneven {
+  background: #fff;
+}
+
+.error-log {
+  border: 0;
+  width: 740px;
+}
+
+.cwsheader {
+  border: 1px solid rgb(204, 204, 204);
+  padding: 4px;
+  background: rgb(238, 238, 238) none repeat scroll 0;
+  clear: left;
+  margin-bottom: 4px;
+  width: 725px;
+  -moz-background-clip: -moz-initial;
+  -moz-background-origin: -moz-initial;
+  -moz-background-inline-policy: -moz-initial;
+}
+
+.cwscontent {
+  border-top: 1px solid rgb(204, 204, 204); 
+  margin-top: 6px;
+  padding-top: 4px;
+  display: none;
+}
+
+.cmeditor {
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  padding: 3px;
+  width: 750px;
+}

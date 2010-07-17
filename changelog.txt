@@ -1,0 +1,1036 @@
+Cardservproxy changelog:
+------------------------
+
+0.9.0 - RC6 (see README.0.9.0.txt for conceptual changes and tips)
+
+- Fixed: The included ConaxConnector plugin in 0.8.13 was an older version.
+- Fixed: Extra http auth login was required for accessing plugin webs (bug introduced in 0.8.13).
+- Fixed: Probing of connectors with unknown status wasn't done when cache hits occured.
+- Fixed: No longer possible to create multiple profiles where both ca-id and network-id are the same.
+- Fixed: Anonymized (non-au) newcamd card-data can no longer end up with user id 1 (this confused some clients).
+- Fixed: Disabling a profile now automatically disables any connectors that explicitly references it.
+- Fixed: Enigma services file parsing now uses comma separated filter strings, to allow names with spaces.
+- Fixed: No longer possible to set the same user as au-user for multiple cards within the same profile.
+- Fixed: Initial web startup is now delayed until after there is a usermanager available.
+- Fixed: CCcam.channelinfo parsing errors (some of them).
+- Changed: Adding manual can-decode/cannot-decode services to a connector will now also update any previously
+  automapped data to prevent conflicting/overlapping information (so no need to clear maps after manual changes).
+- Changed: Network-id is now used in enigma services file parsing only when no provider string filter is set.
+- Changed: All time fields in the config can now be specified in minutes/secs/millisecs by adding a suffix (m, s, ms).
+  If no suffix is added, the old default for the field will be assumed (so configs/docs remain compatible).
+- Changed: Added and updated defaults in the generated proxy.xml template to make more sense with the current version.
+- Changed: ClusteredCache sync-period is now used even in receive-only mode (without peers). This can allow you to
+  significantly increase cache hits at the expense of ecm transaction time. ClusteredCache is now used by default.
+- Added: Services parser for dvbviewer exports (ini files). The filter string is matched against the "Root" key if set.
+- Added: Timed ecm blacklist per connector, to avoid forwarding the same ecm several times to a connector that can't
+  handle it (mainly when there is no sid to go by in the request). Entries will be kept for 3*max-cw-wait.
+- Added: Slightly better awareness of satellite concepts like provider-idents and other ca-system-specific artefacts.
+  This includes extending the service mapper with an additional custom-id/cid (besides sid) for systems like irdeto.
+  For some systems this will include provider-ident as a factor in the mapping (with require-provider-match for profile).
+- Changed: Max-connections changed to a per-profile value, to handle the satellite scenario of the same user connecting
+  to multiple profiles. I.e now max-connections 1 means the user is allowed 1 connection in every profile they have.
+  NOTE: This means if you change the value or add ports to a profile, you may have to kick users before it takes effect.
+
+- Added: New connector type 'csp-connector' specifically for chaining multiple proxies together. Requires that the
+  ONID (network-id) and ca-id is set properly for all profiles in all involved proxies. This type allows multiple
+  profiles to be shared over a single connection, and prevents loops (forwarding the same ecm back and forth between
+  proxies that have each other as connectors). 
+  The protocol is documented in the source and connections are initiated using the httpd (so ssl can/should be used).
+  See proxy-reference.html for more info.
+- Added: New connector type 'chameleon-connector' for connecting to newcs as mgcamd and accessing multiple cards in one
+  newcamd session. Only properly identified traffic can be sent to this connector type (known caid + provider ident).
+  Only remote cards that map into locally defined profiles (matching caid/provider ident) will be used.
+- Added: Support for mgcamd/newcs newcamd-extensions in incoming connections (via a single extended-port for all
+  profiles), using multiple systems over a single newcamd session. For this to work all combinations of caid and
+  provider ident must map to a profile with network-id set. Ambiguous traffic will be denied.
+- Added: Redundant forwarding. The service mappers can now be configured to select two of the least loaded connectors
+  instead of just one (if two or more candidate connectors exist for a request). If enabled, this can up to double the
+  load on the cards, but assuming enough capacity exists it will mean always having a backup ready in case the primary
+  connector choice failed/timed out for any reason. Should improve reliability in single-node proxy setups.
+- Added: Plugin dependency resolver. This makes it easy to build plugins that make use of existing 3rd party libraries,
+  by fetching jars automatically on first load. See README.Plugins.txt for more info and DreamboxPlugin for examples.
+- Added: getProperties() method in the plugin interface, for returning arbitrary usage information shown in the output
+  of the proxy-plugins status command.
+
+- Added: When using only asynchronous connectors, it is now possible for a client session to get a cache hit even after
+  a forward to card was initiated. This can result in transactions with both F and C/R flags.
+- Added: Last-seen data now also contains entries for failed login/connect attempts, available through a new status
+  command 'login-failures' (available to all users, but non-admins can only see attempts made with their user name).
+- Added: New interface ReplyFilter that plugins can use to intercept and alter/block DCW's as they're returned from
+  connectors, before they're processed by the proxy (possibly find and delete bad CW's). See README.Plugins.txt.
+  A DcwFilterPlugin that illustrates this and blocks some common bad responses is included.
+- Added: Fixes for running under jamvm on embedded systems (including the broken auto-generating of the config template).
+- Added: New status commands for troubleshooting: 'export-services', 'system-properties', 'system-threads' and
+  'proxy-plugins'.
+- Added: Option to configure the date-format used by the default logger (allows easier fail2ban monitoring).
+- Added: Arbitrary meta-data/remote info can now be returned by connectors (for display/troubleshooting/statistics).
+- Added: Multiple client ids (oscam, scam, rq-sssp etc).
+- Added: More example plugins included (and updated versions of rest).
+- Added: JVM version check. The proxy will refuse to start with anything but a sun jvm. If you're absolutely sure, this
+  can be overridden by adding the following to the java cmd line: -Dcom.bowman.cardserv.allowanyjvm=true
+
+- Changes to proxy.xml:
+  Added: Element <csp-connect> to <status-web> (to receive csp-connections, enabled by default).
+  Added: Element <csp-connector> to <connectors> (to define csp-connectors). See proxy-reference.html.
+  Added: Element <chameleon-connector> to <connectors> (connector to a newcs/chameleon setup as mgcamd). Same as a
+  newcamd-connector, except it is not bound to a profile, always asynchronous and ignoring the client-id setting.
+  Added: Element <extended-newcamd> to <profiles> (unbound port for extended newcamd protocol, as used between mgcamd
+  and newcs). Allows mgcamd to use multiple systems (all profiles the user has access to) over a single connection.
+  Added: Element <log-dateformat> to <logging> (optional java SimpleDateFormat string to use for the standard logs).
+  Added: Attribute 'provider-idents' to <profile> (optional, allows listing of provider-idents, even with no connectors).
+  Added: Attribute 'require-provider-match' to <profile> (true/false, default: true). Set to false if you know that for
+  this profile, provider idents in ecm requests do not need to match those on the cards (this is the case for irdeto).
+  NOTE: If require-provider-match is false, provider-idents will get 000000 added automatically. Conversely, if only
+  ident 000000 is specified for a profile, require-provider-match defaults to false instead of true when omitted.
+  Added: Attribute 'provider-idents' to <newcamd-connector>, (optional, overrides the idents from the server/card).
+  Added: Attribute 'exclusive' to <can-decode-services> (true/false, default: false). Set to true for a list to indicate
+  that there should be no probing done for the connector, only those services listed are to be considered decodable.
+  Added: Attribute 'profile' to <can-decode-services> and <cannot-decode-services>. Only applicable for connector types
+  csp-connector and chameleon-connector, where multiple lists can be used to specify services for several profiles.
+  that there should be no probing done for the connector, only those services listed are to be considered decodable.
+  Changed: Attribute 'provider' for <service-file> changed to 'filter' to avoid confusion. If provider-idents have been
+  specified correctly for the profile, there is no longer any need to repeat that list in the case of cccam parsing.
+  Changed: All elements that allowed hex sid lists to be specified (per connector or profile) now accept an alternate
+  syntax sid:cid (where cid is custom id, used for situations like the irdeto chid where sid alone is not enough).
+  NOTE: <allow-services> is an exception, checks against that list are made with sid only.
+  Changed: Element <unknown-sid> removed from <mapper>, replaced with <dummy-services> that may contain multiple sids.
+  Use this to list any fake sids used by limited clients that can't know the real one, to avoid interference with maps.
+  Added: Element <redundant-forwarding> to <mapper> (true/false, default: false). Can be set globally or per profile,
+  as with other mapping settings. Transactions that trigger redundant forwarding will get the new flag '2'.
+
+- Changes to the http/xml api: (always use /xmlHandler?command=status-commands or ctrl-commands to see syntax).
+  Added: New status command 'export-services', dumps the internal state of the service maps (admin only). Add the param
+  format=hex for an alternate format matching the sid lists used in the config.
+  Added: New status command 'system-properties', shows the JVM system properties (superuser only).
+  Added: New status command 'system-threads', dumps all JVM threads as strings (superuser only).
+  Added: New status command 'login-failures', shows a list of failed login attempts per user or ip (for most interfaces).
+  Added: New status command 'proxy-plugins' for listing all loaded plugins and any associated info they publish.
+  Added: New ctrl command 'gen-keystore', auto creates a java keystore for using the status web with SSL.
+  Added: New ctrl command 'disable-connector', temporarily disables a specified connector.
+  Added: New ctrl command 'set-profile-debug', temporarily changes debug flags (set to false for ALL to delete ecm logs).
+  Added: New ctrl command 'set-user-debug', temporarily changes debug for a user (enabling log-ecm, log-emm, log-zap).
+  Added: New ctrl command 'remove-failed', removes entries matching specified wildcard mask from login-failures.
+  Added: Attribute 'time' to <jvm> (proxy-status output). Local system time as a rfc822 date.
+  Added: Attribute 'cdata' to <service> (most output containing services). Custom data for service mapping (chid/ident).
+  Added: Element <remote-info> to <connector> (cws-connectors output). List of <cws-param> elements with name/value
+  attributes, containing arbitrary information about the connector.
+  Added: Attributes 'network-id', 'ca-id', 'provider-ident' and 'origin-id' to <ecm> (transaction logs). These are only
+  included when the transaction occured in the '*' profile, and origin-id only for CspSession transactions.
+  Added: Attribute 'au' to <session> for NewcamdSessions. Indicates which connector the session is forwarding emms to.
+
+
+0.8.13 - 2009-10-18
+
+- Added: New attribute per profile 'network-id' (the original dvb network id, 4 hex digits). This will uniquely
+  identify profiles between proxies, instead of ca-id. It will also be used in filtering enigma services files. 
+  See proxy-reference.html for info about how to find the id if you don't know your dvb-network.
+- Added: Optional mapping table to auto-assign newcamd connectors to profiles based on ca-id, to make this work as 
+  before even when multiple profiles use the same ca-id (no longer any need to set 0000, use the correct id always).
+  Use this only when it is unknown which card a remote newcamd server contains (or when this changes randomly).
+- Added: ClusteredCache now avoids locking for requests where a remotely received cache lock has the same ip as
+  requesting client, to deal with situations where both connectors and cache sharing are used to link multiple proxies
+  together (prevents incoming ecm requests from a remote proxy being blocked by the cache lock from that same proxy).
+- Added: Plugins can now affect connector selection, if they implement the interface CwsSelector. They'll be given a
+  chance to exclude connectors from the selection process for each message.
+- Added: Cache hits where the cached request had a different ca-id will now be blocked, to avoid misleading clients
+  that are sending requests to the wrong profile. This can be disabled using new global setting <block-caid-mismatch>.
+- Added: Disconnected connectors now show when they went offline.
+- Added: Newcamd OSD messages are now sent to Acamd as well (previously only to Mgcamd).
+- Added: More user events in the remote api (login, logout, login failure). Plugins can use these as well.
+- Changed: ClusteredCache now uses a much more compact format to reduce bandwidth (not compatible with old versions).
+- Fixed: ClusteredCache bandwidth usage estimates are now properly calculated even with multiple peers and sync-period.
+- Fixed: Minor browser-specific issues with the status web layouts (clear the browser cache or force a reload).
+
+- Changes to proxy.xml:
+  Added: Attribute 'network-id' to <profile> (4 hex digits, i.e "a027"). Set this to the original dvb network id.
+  Added: Element <block-caid-mismatch> (true/false, default: true) to section ca-profiles.
+  Added: Element <caid-profile-map> to <newcamd-connector> (caid=profilename, entries separated by space). This element
+   is mandatory if no profile attribute is set for the connector.
+   For example: <caid-profile-map>0b00=cable 0500=terrestrial</caid-profile-map)
+
+- Changes to the http/xml api:
+  Added: Attribute 'disconnected' to <connector> (cws-connectors output). The time of last disconnect (if disconnected).
+  Added: Attribute 'network-id' to <profile> (ca-profiles output). 
+
+
+0.8.12 - 2009-06-29
+
+- Fixed: No forwarding attempt will now be made if a cache timeout meant that max-cw-wait was already exceeded.
+- Added: Experimental broadcasting of ecms without sid to all non-congested connectors in profile (off by default).
+- Added: Client id for DiabloCam wifi (uw?).
+- Added: Command to clean the last-seen log.
+- Added: Made the connector reconnect attempts more visible and consistent in the status web.
+- Changed: Radegast sessions are no longer added to disconnected users/last-seen log.
+- Changed: Connectors that fail on proxy startup are now added anyway, to make them visible via the http/xml api.
+  NOTE: If the failed connector has no profile specified, it will still not be visible until it has connected properly.
+- Fixed: Error when unloading the LoggingPlugin.
+- Fixed: Lost service warnings are no longer shown for sids that have been made sticky using can-decode-services.
+- Fixed: Slow memory leak in ClusteredCache when using sync-period.
+- Fixed: Typos in the generated proxy.xml template.
+- Fixed: Inconsistent username case handling.
+- Fixed: Card-data with extra trailing bytes would break sessions for non-au users (rqcs).
+- Fixed: The open-access handling should now work for xmlusermanager as well as simpleusermanager.
+- Updated ConaxConnector to latest version.
+
+- Changes to proxy.xml:
+  Added: Element <hide-disabled-connectors> (true/false, default: false) to section mapper.
+  Added: Element <broadcast-missing-sid> (true/false, default: false) to section mapper.
+
+- Changes to the http/xml api:
+  Added: New ctrl command 'remove-seen', removes users matching the 'name' parameter from the last-seen log.
+  Added: Attribute 'next-attempt' to <connector> (cws-connectors output). Shows the nr of secs until next retry.
+
+
+0.8.11 - 2009-05-01
+
+- Added: Jvm stats in the debug logging: heap used/allocated, thread count, file descriptors (used and max, unix only).
+- Added: UserManager interface now has a getDisplayName() method, to allow for an optional display-name attribute.
+- Added: Client id for Rq-echo-client and sbcl.
+- Added: Config and Admin sections (status-web) are now disabled by default. List users that should have access to
+  these in the new super-users element in the status-web section.
+- Added: MessagingPlugin can now send automated email with the same type of triggers as for mgcamd-osd.
+- Added: Msg filtering now shows up in LoggingPlugin (assuming the filtering plugin used msg.setFilteredBy() to do it).
+- Added: SimpleUserManager now allows for open access, accepting any newcamd connections as long as they have the right
+  (common) password. Open access can be restricted to specific profiles or to usernames starting with a certain prefix.
+  NOTE: Random user names will be assigned, but the display-name will be whatever the client specified.
+- Added: Made it possible to configure card-data (non-au) for newcamd ports without editing the card-files manually.
+- Added: A parser for using CCcam.channelinfo as the services-file for a profile. As with enigma files you need to
+  specify which sids are relevant for this profile by creating a filter. See proxy-reference.html for details.
+- Added: Externally loaded plugins can now be individually re-loaded just by replacing the jar file.
+- Fixed: When using the status-web without ssl, any specified bind-ip was ignored.
+- Fixed: Distribution tars finally corrected.
+- Fixed: Enigma bouquet-file generator in the status web might actually produce valid files now (enigma services-file).
+- Fixed: Status-web session transfer from script/ajax context to browser context via cookie was always broken.
+- Fixed: Made card-data parsing less sensetive to errors/truncated data.
+- Changed: More minor tweaks of the status web views.
+- Changed: Blowfish encryption tool trtest.jar renamed to: fishenc.jar
+- Updated the codemirror xml/js editor (used in the status-web) to version 0.61.
+
+- Changes to proxy.xml:
+  Added: Element <super-users> to <status-web>. List of user names that should have access to the Config and Admin
+    sections (the users must have admin="true" or they'll be ignored).
+  Added: Element <open-access> to <auth-config> (SimpleUserManager/XmlUserManager). See proxy-reference.html.
+  Added: Attribute 'ca-id' to <card-data> (newcamd listen ports). The ca-id returned to clients, when type="config".
+  Added: Element <providers> to <card-data>. List of providers returned to clients when type="config". 3 bytes each,
+    separated by comma, i.e: 00 00 00,00 00 01,00 00 02
+
+- Changes to the http/xml api:
+  Added: Attributes 'filedesc-open' and 'filedesc-max' to <jvm> (proxy-status output). Used/max file-descriptors, only
+    available on unix jvm's (java6+). See README.Optimization.txt for info on increasing this limit on linux.
+  Added: Attribute 'super-user' to <status> (cws-login output for successful login). Indicates whether the user has
+    access to control commands and is allowed to modify the config.
+  Added: Attribute 'display-name' to <user> (proxy-users output). The status web will use this primarily, if available.
+
+
+0.8.10 - 2009-03-08
+
+- Fixed: The experimental strict synchronization for ClusteredCache now does what it claimed to (sync-period).
+- Fixed: Setting debug="true" for the logging now outputs any stacktraces at WARNING level, as indicated in the docs.
+- Fixed: Sessions weren't always being properly disconnected when session timeout was hit (introduced in 0.8.9).
+- Fixed: Newcamd sequence nr wasn't set correctly in EMM replies (caused some clients to log errors).
+- Fixed: Possible socket handle leak when new sessions couldn't be created. This may have caused listen ports to close.
+- Fixed: The default value for user attribute max-connections is now calculated correctly, based on the total number of
+  newcamd listen-ports in the profiles the user has access to. See INFO logging on startup and on connect for the values.
+- Fixed: If a user exceeds the max-connections count, the session that is closed is now always the oldest one.
+- Changed: Slightly improved views and more stat values in the example status web.
+- Changed: ClusteredCache now accepts multiple proxies running on the same host name (on different ports).
+- Changed: ClusteredCache is now slightly less inefficient with its bandwidth usage (still much room for improvement).
+- Added: ClusteredCache now pings each peer regularly to keep track of latency (breaks compatibility with old versions).
+- Added: ClusteredCache additional stat counters (toggle debug for the cache to see all).
+- Added: Custom usermanager and cache implementations can now be loaded with the plugin classloader (from a jar-file).
+- Added: Additional custom connector implementations can now be loaded, also via the plugin classloader if desired.
+  A new example connector is included with the plugis: ConaxConnector - It reads local conax cards directly using java6
+  and pcsc card-readers. See README.ConaxConnector.txt for more info.
+
+- Changes to proxy.xml:
+  Added: Attribute 'jar-file' to elements <user-manager> and <cache-handler> (optional). If this is specified, the class
+    will be loaded by the plugin classloader from the named jar-file (path relative to the plugins dir).
+    NOTE: This doesn't mean the implementations can be re-loaded dynamically, restart is still required for new jars.
+  Added: It is now possible to specify custom connector implementations using the same notation as the built in newcamd
+    and radegast connectors, but with the added attributes of 'class' and optionally also 'jar-file'.
+    If a jar-file is specified the plugin classloader is used, as above. For example:
+    <conax-connector name="lcard" profile="sat2" class="com.bowman.cardserv.cws.ConaxCwsConnector" jar-file="conaxconnector.jar">
+      <!-- config goes here -->
+    </conax-connector>    
+
+- Changes to the http/xml api:
+  Added: Attributes 'active' and 'keepalive-count' to the <session> element (proxy-users output). This is used to show
+    which inactive/idle sessions are sending keepalives in the status web (they are shown in blue). All inactive rows
+    will show with italic font.
+  Added: Element <listen-port> to <profile> (ca-profiles output). Listen ports are now separate child elements with the
+    attributes: name, protocol, port-number, alive (true/false), properties (custom settings as key=value string).
+  Removed: Attribute 'listen-ports' from <profile>, replaced with the above list of <listen-port> elements.
+
+
+0.8.9 - 2008-11-04
+
+- Fixed: Possible infinite loop state for the file-change-watcher (would fill sysout log once triggered).
+- Added: The reset-connector ctrl command can now be used to delete all mappings (full reset).
+- Added: Client ids for cardlink.nl and octagon stbs.
+- Added: A test-delay feature for the LoggingPlugin. This allows for a manually added delay applied to all logged
+  requests (before they are processed). The delay can be set via status web command, and is intended as tool for
+  finding the exact freeze-time for a given ca-profile, i.e: gradually increase the delay until freeze and note the
+  full ecm transaction time (roundtrip) in the client logs. The LoggingPlugin has also received a feature for sending
+  arbitrary newcamd-messages. This can be used to explore the capabilities of different clients in realtime.
+- Added: New setting for allow-services lists, per profile (inverse of block-services).
+- Added: The duration column in the status-web now shows the time since last zap (if any has occured since connect).
+- Added: Feature for sending keep-alives to clients as well as servers. Normally only the client sends these in newcamd,
+  but most clients seem to ignore incoming keep-alives. It can be used to find dead sessions faster in very large shares.
+- Changed: XmlUserManager now considers deleted users as disabled (causing any active sessions to be kicked).
+- Changed: max-cw-wait can now be set per ca-profile, as it is typically different from one ca-system to the next.
+  This also means all capacity estimates (status-web) can be made more accurate. Use the test-delay feature of the
+  LoggingPlugin to find the freeze-time for each profile, and set the max-cw-wait to this (or 1 second above).
+- Changed: Moved more previously hard-coded settings to config. No need to touch these unless you know what its about.
+- Updated the codemirror xml/js editor (used in the status-web) to version 0.58.
+- Misc minor fixes.
+
+- Changes to proxy.xml:
+  Added: Element <max-threads> to <ca-profiles> (default: 1000). If this is reached the proxy will stop accepting
+    connections until it drops again. The fixed default in 0.8.8 was 500.
+  Added: Element <session-timeout> to <ca-profiles> (default: 120, in minutes). Maximum idle time for user sessions.
+  Added: Element <newcamd-maxmsgsize> to <ca-profiles> (default: 400). This is CWS_NETMSGSIZE. The old default was 240,
+    so try that if you run into any problems related to message size.
+  Added: Element <allow-services> to section mapper. List of sids (hex). The inverse of <block-services>, only sids
+    listed here will be passed through to connectors. This can help filter out requests with bad ecms, and reduce
+    unecessary probing of the cards. As for block-services, it only makes sense to specify this element per profile.
+  Added: Elements <max-cw-wait> and <congestion-limit> to <profile>. Same settings as for the connection-manager, but
+    allows overriding the global setting per profile.
+  Added: Element <session-keepalive> to <ca-profiles> (default: 0, in minutes = off). Sends keep-alives to clients.
+    Attributes are: exclude-clients (list of client names, default: "" = send to all). Exclude listed client types.
+
+- Changes to the http/xml api:
+  Added: Attribute 'id' to the <session> element (proxy-users output). The numerical id for the session, can be matched
+    to the proxy logs (or LoggingPlugin log file names).
+  Added: Attribute 'idle-time' to the <session> element. Shows how long the connection has been idle.
+
+
+0.8.8 - 2008-09-23
+
+- Added: Client id for acamd.
+- Added: Support for multiple xml sources in XmlUserManager (see README.XmlUserManager.txt). This also fixes handling
+  of deleted users (which previously required a restart/config reload).
+- Added: Support for enigma2 format in bouquet file generator (status web channels section).
+- Added: Various mechanisms to protect the proxy from connector disconnects in case of misbehaving/buggy clients.
+- Added: Multiple format support for the services file importer (assigning names to sids). At the moment only two:
+    enigma - the default (as before, enigma1/2 services file with optional provider string filter)
+    simple - a plain text list with hex-sid=service name (provider attribute is ignored, use one file per profile)
+- Changed: Now skipping all host name/cert verification when making outgoing connections to https urls.
+- Changed: LoggingPlugin now saves files named with session id instead of ip (separates multiple sessions from one ip).
+- Changed: Moved MAX_Q_SIZE and MIN_DELAY to proxy.xml to allow for additional tweaking of the connector behavior.
+  Don't touch these unless you fully understand the implications.
+- Changed: The manual service mapping (<can-decode-services>/<cannot-decode-services> per connector) is now profile
+  specific rather than global. This matches the automatic service mapping and will hopefully cause less confusion.
+- Changed: Clicking on the user names in the status web sessions view now links to the full xml for that user. The ecm
+  transaction log is available via clicking on the ecm count instead (last-seen also changed to match this).
+  Additionally, if a user session currently has more than 1 pending ecm this will be shown in (red) in the Iv column.
+- Fixed: Minor leaks related to logging.
+- Fixed: Rare date formatting errors (mainly for the status web).
+
+- Changes to proxy.xml:
+  Added: Element <default-max-queue> to <connection-manager> (default: 50). Max queue length allowed to build up on
+    one connector before the proxy assumes something has crashed and disconnects it.
+  Added: Element <default-min-delay> to <connection-manager> (default: 10, in ms). Delay inserted between consecutive
+    ecms to one connector in async mode. Workaround for servers that misbehave when requests are too close together.
+  Added: Elements <max-queue> and <min-delay> to <newcamd-connector>/<radegast-connector>, same as above but specified
+    per individual connector (allowing different values for different connectors).
+  Added: Attribute 'format' to <services-file> (default: enigma). Example for the "simple" format:
+     <services-file format="simple">etc/services.properties</services-file> <!-- format e.g: 03fb=Service Name -->
+
+- Changes to the http/xml api:
+  Added: Attribute 'last-zap' and 'pending-count' to the <session> element (proxy-users output). Indicating the time
+    since last 'Z' flag and the number of currently pending requests a session has (>1 means its using async mode).
+  Added: Attribute 'context' to the <session> element (proxy-users output). This shows the context of the last ecm
+    from the client (roughly = the card that the client believes it is connected to).
+  Added: Attribute 'unknown-newcamd' to <ecm> elements (user/cws-log output). This is an attempt to chart what the
+   various clients and servers use the "undocumented" extra newcamd bytes for: offsets 4 - 9, and the 4 upper bits of
+   offset 11. The attribute will contain these values for both the request (>) and the reply (<).
+
+
+0.8.7 - 2008-08-23
+
+- Added: Connector info now contains details about the received newcamd card-data (status web/xml api).
+- Added: Client id for rqcamd.
+- Fixed: Capacity estimates remained for cards that were disconnected, they are now excluded from the totals.
+- Fixed: Plugins only worked if all of them were externally loaded (from separate jar file). I.e: LoggingPlugin failed.
+- Fixed: A few unlikely memory leaks related to connectors ending up in a zombie state (seemingly ok but locked).
+- Changed: Only client id 0000 is now displayed as Generic, other unknowns will be shown by the actual numerical id.
+- Changed: Transaction flags are now in the order in which they are set internally by csp, not alphabetical.
+- Minor updates to the example plugins.
+
+- Changes to the http/xml api:
+  Added: Attribute 'card-data1' and 'card-data2' to the <connector> element (cws-connectors output). Admin only.
+
+
+0.8.6 - 2008-07-27
+
+- Changed: Xml status commands are now handled like the control commands, they can be registered and added on the fly
+  by any user component. This also makes it possible to override the default command handlers with your own.
+- Changed: Reworked the "filters" interface to a more generic plugin framework, to enable quick extensions that
+  are not directly related to the ecm traffic (LoggingFilter changed to LoggingPlugin).
+- Added: GeoipPlugin. Illustrates the plugin framework and command overriding (adds a google maps + geoip mashup).
+- Added: EmmAnalyzerPlugin. Gathers statistics regarding emms received from clients.
+- Added: MessagingPlugin. Auto mgcamd-osd replies for client session (e.g "service unavailable") and mail to users.
+- Added: New flag '1' (one), assigned to the first transaction a session performs (instead of Z as before).
+- Added: Stat counter for denied/blocked ecm's (flag N).
+- Added: Missing client ids (cccam, evocamd, alexcs etc).
+
+- Changes to proxy.xml:
+  Changed: Elements <proxy-filters>, <filter> and <filter-config> renamed to <proxy-plugins>, <plugin> and
+    <plugin-config>.
+  Added: Attribute 'jar-file' to <proxy-plugin>. Allows loading the plugin using a separate classloader, from an
+    external jar file in the "plugins" dir. This way plugins can be replaced/reloaded at runtime without restarting
+    the proxy (they are reloaded and restarted each time the proxy.xml config is touched/updated).
+  Added: Element <delay-missing-sid> to <connection-manager> (default: 100, in ms). This adds a short delay for any
+    incoming request without sid, before the cache is checked. The idea is to increase the likelyhood of a another
+    request for the same ecm (but with sid specified) arriving first in the cache. This is to avoid having a large
+    number of clients waiting in the cache for a forward that might get routed to the wrong card (because it had no sid).
+
+- Changes to the http/xml api:
+  Changed: Status command 'error-log' will now always honor a profile selection (previously admin users would get all
+    profiles regardless of preference).
+  Added: New status command 'status-commands', lists meta-data for all registered status commands.
+
+
+0.8.5 - 2008-06-29
+
+- Fixed: Proxy now sets correct service id in cache hit replies (i.e same as in the request, unless 0).
+- Fixed: Repeated web events for "cws connected" retries when the server returned invalid card data (caid 0 or mismatch).
+- Fixed: Connector name was sometimes missing in the transaction time breakdown even though the F-flag was set.
+- Fixed: XmlUserManager will now keep its last known working set of users when proxy configuration changes are made.
+- If a reply was received from a remote cache, the connector name in the transaction data is now prefixed with:
+  "remote:" - to make it possible to distinguish when the same names are present locally.
+- "Last seen" session data now includes last known ip address for the user.
+- Cache flag 'O' is now strictly for timeouts in the cache (max-cache-wait exceeded). Added new flag 'Q' for aborts due
+  to forward failures (remote or local).
+- Added filtering per profile to status web (only shown for users with access to more than one, in events + channels).
+- Added ecm load estimates to status web totals and ca-profiles (sums based on the cws-connector data below).
+- Added a tool for tracing configuration file use in the proxy. Set -Dcom.bowman.cardserv.util.tracexmlcfg=true when
+  starting the proxy and all config access will be traced. This trace can be written to file (etc/xmlcfg.txt) by using
+  the CtrlCommand "dump" from the admin page of the status web (or by using the http/xml api directly).
+
+- Changes to proxy.xml:
+  Added: Element <hide-names> for ClusteredCache (true/false, default: false). Set to true to stop the cache from
+    sending the connector names to the remote targets (only makes sense if they are untrusted/unknown and the names
+    contain sensetive information).
+  Changed: Attribute 'debug' for <profile> now defaults to true. The flag is only used to enable the transaction
+    backlog and there is typically no reason not to have that. 
+
+- Changes to the http/xml api:
+  Added: Attributes 'request-hash', 'cw' and 'warning' to the <ecm> element (user-log output). The request hash allows
+    comparison with the hash values logged elsewhere, and makes it possible to identify a particular ecm request.
+    If 'cw' is not present, it indicates the client received an empty reply (flag 'E' should also be present).
+    If 'warning' is true, the proxy considered this transaction a problem and logged it also to the user-warning-log.
+  Added: Attribute 'host' to <entry> (last-seen output).
+  Fixed: Status command 'ctrl-commands' was available for non-admin users via http GET (listing command definitions
+    only, no actual execution possible).
+  Added: New status command: cws-log (params: name). Allows the admin user to view the last 100 transactions for the
+    specified cws-connector. Note that this is still ecm transactions from the user point of view, so time stamps and
+    durations reflect when the client sessions sent ecms to the proxy, not when the proxy sent it on to the connector.
+    In the status web, a link to this log appears under each connector in the status view.
+
+
+0.8.4 - 2008-05-27
+
+- Fixed: Old ecm replies being processed as card data on rapid newcamd reconnects (caused parse errors and bogus ca-id
+  for connectors, leading to them being disabled).
+- Fixed: Newcamd clients sending multiple async requests to the proxy would get incorrect/duplicate sequence numbers
+  in their replies (effectively making the proxy incompatible with async mode).
+- Fixed: Events for connectors with no profile configured (i.e those with auto-detect) were hidden even from admin in
+  the web error-log.
+- Fixed: Connection failures occuring during startup are no longer filtered in the web view. Also replaced the firefox
+  alert error for when the web script can't reach the proxy to something less cryptic.
+- Connector re-connect behaviour on login failure improved (no longer logs disconnects which would cause 3 sec loop).
+- Flag T is now only used for actual timeouts when forwarding, transactions affected by aborts/disconnects will receive
+  flag A instead.
+- Service names will now include a [R] prefix for radio and [HD] for hdtv (based on the type from the services file).
+- Added more details to the LoggingFilter output (sequence numbers, sids, sessions) to improve client troubleshooting.
+- Duplicate newcamd messages (with the same sequence number) are now logged as warnings for the CWS communication.
+  Also, if debug logging is set the same is done for client communication (although these can occur normally when
+  zapping or due to local network lag/congestion and don't necessarily mean trouble).
+  NOTE: If a server returns the same sequence id twice (without having been sent that) it indicates something went
+  wrong on the server side, either some kind of overload situation or outright bugs.
+  If it repeats it needs to be investigated further and resolved.
+  The proxy will now also check to make sure the sid in the reply matches the one in the request, to help identify
+  error replies.
+- For case-insensetive user managers (e.g SimpleUserManager), the stored case of the user name is now used instead of
+  the one supplied by the client for the login.
+
+- Changes to proxy.xml:
+  Added: Element <log-sid-mismatch> to <connection-manager> (true/false, default: true). Allows turning off logging
+    warnings when sid in the server reply doesn't match what was in the request.
+
+
+0.8.3 - 2008-04-15
+
+- Fixed: CtrlCommands caused NPE if status-web was disabled or had failed to start.
+- Fixed: Logging in case newcamd card data could not be parsed (WARNING level + the offending data now logged).
+- Fixed: Services from different profiles could be merged in the watched-services xml reply if they had the same name.
+- Fixed: Minor pending ecm leak in ClusteredCache.
+- Changed asynchronous newcamd mode to be off by default as it caused problems with some servers (you now have to
+  explicitly set <asynchronous>true</asynchronous> for each connector if you want to use it).
+- Further tweaked utilization estimates, now using different methods depending on async/sync mode.
+- Made it possible to manually override the service maps for each connector, by specifying sid lists. Useful for
+  situations where the automatic service discovery is unreliable. Services that aren't manually specified will still 
+  be probed for automatically.
+- Status web now shows services with full information (sid and profile), space and context permitting.
+  Additionally, services listed per connector will be highlighted blue if a forward occured for that service in the
+  last max-cw-age seconds (allows you to see roughly which services the ecm-load value refers to).
+
+- Added a mechanism to better handle overload situations (= only congested/timeout state connectors are available).
+  If this is enabled (which is default), the proxy will avoid forwarding until the situation resolves itself,
+  by returning empty cannot-decode replies to clients (flag N). Note that this typically causes clients to retry
+  repeatedly (e.g with a 1 sec interval), but that these retries will also fail immediately until there is card
+  capacity available.
+  This may help stabilize traffic in overloaded shares (or shares where cards are temporarily lost).
+  Clients that don't retry the same ecm immediately when receiving an empty reply will likely freeze.
+
+- Changes to proxy.xml:
+  Added: Element <hard-congestion-limit> (true/false, default: true) to <connection-manager>. See above.
+  Changed: Element <asynchronous> for <newcamd-connector> default value changed to false.
+  Added: Elements <can-decode-services> and <cannot-decode-services> to all connector types. Optional lists of
+    sids (hex) allowing manual overriding of the automatic service mapping. Note that services already known to decode
+    on a connector will not be affected by the cannot-decode-services list (until a manual reset is performed, or the
+    corresponding .dat file is deleted from the cache dir).
+
+- Changes to the http/xml api:
+  Added: Attribute 'hit' to <service> elements for <connector> (cws-connectors reply). If this attribute is present
+    and the value is 'true', it indicates there was a forward for this service within the last max-cw-age seconds.
+
+
+0.8.2 - 2008-03-07
+
+- Fixed: ArrayIndexOutOfBounds on emm forwards to newcamd connectors set to asynchronous false.
+- Fixed: Connectors getting stuck in unresponsive state for extended periods (keep-alives are now sent as before 0.8.0).
+- Fixed: CWS average processing time included send-queue time (even with async false), restored old behavior.
+  The utilization and capacity calculations have also been tweaked to use the most optimistic estimates (since averages
+  will vary in async mode), this may help with async connectors showing more utilization than they actually have.
+
+- Congestion warnings are now logged only when no alternative connectors exist. Also, the utilization estimate is now a
+  factor in determining congestion (i.e > 100% over the last 60 secs = congested even when there are 0 pending requests).
+- Made it possible to configure the threshold for logging CWS timeout events (default 1, was 2 before 0.8.0).
+  The number of timeouts to allow in a row before disconnecting can also be set (default 2, was 3 before 0.8.0).
+- The max-connections value (per user) now defaults to the number of profiles the user has access to, or the total
+  number of active profiles if there are no restrictions. Previous default was 1, if you want to keep that limit you
+  will now have to explicitly set every user to max-connections="1" in the user manager.
+- Flag T now means only this: Timeout when forwarding (no response from CWS within time limit, i.e max-cw-wait).
+- New flag S introduced: Timeout in send queue (when trying to forward to connector, should normally not occur).
+- The log event (level FINE) that occurs when client sessions end now contains a summary of the session state, to help
+  show why the client may have disconnected. If the user has debug="true" this is logged with level INFO.
+- If the ca-id for card data (received during login for a newcamd connector) is 0000, the proxy will fail the login and
+  try again later instead of disabling the connector. This may help with re-init card issues that cause servers to
+  temporarily return empty card data.
+  If override-checks is true then this check is also skipped and the 0000 data accepted as valid.
+
+- Changes to proxy.xml (optional additions only):
+  Added: Element <event-threshold> to <logging>, defining how many failures are required to create a CWS event.
+    Attributes are: min-count (default 1).
+  Added: Element <timeout-disconnect-threshold> to <connector-manager>. The number of timeouts before a connector
+    is closed and reconnected (default 2).
+
+- Changes to the http/xml api:
+  Added: Attribute 'ecm-load' to <connector>. This shows the ecm count over the last max-cw-wait seconds. This provides
+    an absolute measure of the load on the connector (whereas the utilization is relative to the estimated capacity).
+    
+
+0.8.1 - 2008-02-28
+
+- Fixed: Potential deadlocks in relation to network timeouts, introduced in 0.8.0 (sessions waiting on connectors
+  waiting on sessions). Caused eventually fatal thread leaks.
+- Fixed: Javascript alert box infinite repeat for some status web errors that resulted in logout.
+- Fixed: The improved probing could still generate duplicates.
+- Modified to work with JamVM (1.4.3+)! If you get "Unrecognized option" socket exceptions for the connectors, add
+  the following attribute to the connector definitions (both radegast and newcamd): qos-class="none"
+  For more information on JamVM and gnu classpath see:
+    http://jamvm.sourceforge.net/
+    http://www.gnu.org/software/classpath/classpath.html
+
+- Added a quick-start option: if the proxy is started with no proxy.xml config file, one will be generated.
+  The generated config will use recommended defaults, and a single profile with two connectors (disabled).
+  Most non-essential elements can now be omitted from the config, defaults will be used if they are.
+  Some defaults have been altered (e.g retry-lost-services now defaults to true, missing services files are ignored etc).
+
+
+0.8.0 - 2008-02-25
+
+- Switched to fully asynchronous newcamd communication with servers. This should significantly increase throughput, but
+  may not work with all servers. If it fails or behaves erratically with your server of choice, the old behaviour can
+  still be used if the newcamd-connector element contains <asynchronous>false</asynchronous>.
+  Radegast connectors always use the old synchronous mode.
+
+- More changes to support other jvms (removed references to sun base64, and httpd now tries multiple ssl providers).
+- Added a javascript xml-editor to the status-web, for quick config updates (based on codemirror, source included).
+- Forced parsing of proxy.xml to always use UTF-8 regardless of system locale (when installed from both file and web).
+- Cleaned up web backend and made it possible to extend it from user code (see ClusteredCache, XmlUserManager source).
+- Cleaned up the client side scripting for the status-web, it now uses xslt to generate the markup (see xslt dir in war).
+- All user-log transactions will now contain cws-name (if it was a transaction that involved a forward).
+- Added a new user-warning-log with potential problems from all user recent transactions (40 most recent).
+- Transactions marked as warnings will now contain additional debug information, and show the time spent on each stage:
+  in cache, cws send queue, cws reply wait, client write back.
+- Tweaked probing to avoid multiple probes for the same service and connector, and avoid problems under high load.
+- Fixed: Now possible to add new ca-profiles without restarting.
+- Fixed: Transaction tracking now correctly deals with overlapping/asynchronous newcamd traffic. Flag E is now always
+  included if the client reply was empty, regardless of the cause.
+- ClusteredCache will now indicate in the log which remote proxy has the wrong version (SEVERE event on startup).
+  Additionally the cache stats on the web will contain a version-mismatch property with the same IP.
+- Status web section "Sessions" (previously Users) will now contain last-seen information for disconnected users and
+  an option to show the idle sessions. Note: No last-seen data will be shown if all known users are connected.
+  This section is now shown for regular users (non-admin) but will only list information related to their own sessions.
+
+- Made it possible to read connector definitions from an external or remotely hosted file, similar to XmlUserManager.
+  NOTE: This doesn't mean you should have multiple proxies reading from the same connector file, use one for each.
+  As with the XmlUserManager and the ClusteredCache tracker file, the blowfish option is there strictly to allow the
+  files to be hosted in a public place (it adds _zero_ security if the files are hosted with the proxy).
+  Using an external connector config also makes it possible to keep connector definitions in a database, just provide
+  a php/jsp/asp page to render the xml on demand.
+
+- Changes to proxy.xml:
+  Added: Element <warning-threshold> to <logging>. Defines which transactions should be considered potential problems.
+    Attributes are: bad-flags (string list of all that should qualify), max-delay (in ms).
+    This setting determines what will show in the user-warning-log for profiles that have debug="true".
+    Note: changing it will not affect already recorded events.
+  Added: Element <external-connector-config> to <connector-manager>. Specifies an external source for connector
+    definitions with the following elements: connector-file-url, connector-file-key, update-interval (minutes).
+  Added: Element <asynchronous> to <newcamd-connector> (true/false, default: true). A way to disable asynchronous mode.
+
+- Changes to the http/xml api:
+  Added: Example test page: /api-test.html
+  Added: New status command: fetch-cfg (no params). Returns the currently used config file as is (no cws-status-resp).
+  Added: New http end point /cfgHandler (for posting updated config xml, as an admin user with http basic auth login).
+  Added: New status command: user-warning-log. This log is aggregated and contains the 40 last potential problems from
+    the user transaction logs. Only profiles with debug="true" will trace these events. Events of the same type from
+    the same user are merged and tagged with a count (time stamp and transaction shown are always from the last such
+    event logged). Any transaction that fits the warning-threshold critera will qualify (see config). Only admins will
+    see warnings from other users traffic.
+  Removed: Attribute 'admin' from <proxy-users> reply when requesting multiple or all users (i.e. no name specified).
+    Caused problems for some user managers and wasn't used for anything.
+  Added: New status command: last-seen (params: name). Returns information about currently disconnected users.
+    This data is tracked by the session manager and saved regularly as etc/seen.dat. Delete it before startup to clear
+    the seen history.
+
+0.7.6 - 2008-02-02
+
+- Changed the example LoggingFilter into something actually usable. It now logs just the raw messages (minus encryption)
+  from user sesssions (as RECV) and their responses from the proxy (as SENT). 
+- Removed all unnecessary java.util.logging experiments, to be compatible with gcj/gij and possibly other jvms.
+- Fixed: Removing au-users no longer requires restart.
+- Fixed: Adding/removing/changing listen ports should now work without restart. Disabling a profile will close the
+  ports (but existing sessions are not affected until kicked). Any change to a ca-profile config will result in the
+  listen ports for that profile being closed and reopened.
+- Fixed: Status-web httpd no longer logs to sysout if its log file is disabled (removed from config).
+- Fixed: Status-web jscript continues to request xml after connection errors (now logs out instead).
+- Fixed: Cache timestamp bug that could sporadically delete all cached ecms except one.
+- Fixed: ECM interval for radegast sessions (0 was always shown).
+- Fixed: Mgcamd OSD message sending would fail if radegast sessions were active.
+- Exposed the automatic rotation features of the logging api, in case anyone is serious about using the logs for stats.
+  A maximum size for all file logs as well as a number of files to cycle through can be specified (see below).
+  Additionally, any active file logs are now re-initialized when the config is updated/touched.
+- Added JVM stats to the status-web title for all views (os, version, heap used/allocated, thread count etc).
+- Enhanced the embedded httpd (keep-alive connections, gzip content-encoding).
+
+- Changes to proxy.xml:
+  Changed: Renamed <exclude-services> setting to <reset-services>, to reflect what it actually does.
+    Services in this list will also no longer cause "lost service" warnings.
+  Changed: <auto-exclude-threshold> is now <auto-reset-threshold>.
+  Added: Attribute 'bind-ip' to listen-ports. Optional local ip to bind listeners to (default is all, i.e 0.0.0.0).
+  Added: Element <bind-ip> to <status-web>. Optional local ip to bind httpd listen port to.
+  Added: Element <bind-ip> to <rmi>. Optional local ip to bind all rmi-related listen ports to.
+  Added: Attributes 'rotate-count' and 'rotate-max-size' (in kb) to <log-file> (for both main log and status-web).
+    E.g: setting count to 3 and max-size to 2048 will cycle between file.log.0, file.log.1 and file.log.2 when they
+    reach 2 megs. The file currently in use will be indicated by a separate .lck file.
+    Restart is required to change the log rotation.
+
+- Changes to the http/xml api:
+  Added: Element <jvm> to <proxy-status>, with attributes: name, version, heap-total, heap-free, threads (count), os
+  Added: Attribute 'version' to <proxy-status> (csp version)
+
+
+0.7.5 - 2007-10-17
+
+- Added another example user-manager implementation: com.bowman.cardserv.XmlUserManager (see separate README).
+- Fixed a bug that caused send attempts for queued ecms/keep-alives on unitialized NewcamdConnections (NPE in sysout).
+- Fetching the service list for a connector that was in a reconnect loop (via http) would cause NPE, fixed.
+- Added support for receiving sid in radegast messages (as sent by mgcamd 1.25+ and maybe others, in field 0x21).
+  In the unlikely event that there are radegast clients out there that will put something other than the sid in this
+  field, sid parsing can be disabled by setting the new attribute sid-in-0x21="false" for the radegast listen port.
+- Added support for sending sid in radegast messages, using the same method as above.
+- Fixed a bug that prevented kicking of idle user sessions.
+- Fixed stats based on sliding window averages (utilization, intervals) to properly show ceased activity when
+  appropriate. Utilization now actually shows the current load (over the last minute), and the average utilization
+  since connect only takes successful transactions into account (as failed tend to be nearly instant).
+- Added a capacity estimates to the status web (for total, cws and profile). This is simply the following calculation
+  (since people seem to have a hard time grasping this basic fact): max-cw-wait / processing time
+  E.g: 10s / 900ms ~= 11 transactions per CW validity period
+  (= 11 simultaneous clients in a worst case scenario with no cache hits, or 11 different services processed).
+  When total capacity is greater than the number of services for the provider (or providers if using multiple profiles),
+  you can have an infinite number of clients. Total estimates will only make sense once all cards have handled at least
+  one ecm transaction.
+- Added red hilighting to potential problem values in the user list of the status web, along with capacity estimates
+  and service-mapping count (per profile). :)
+- Made it possible to control which card-data is returned to clients, as a setting per newcamd listen-port. Previously
+  the proxy would use data from one of the cards in the profile, more or less at random. Card-data can be specified by
+  connector name (to get the data from) or by a file name. The proxy will dump card-data files when connecting to
+  cards (in the etc dir). This feature is only useful for ca systems where the providers/idents on the cards matter
+  to the client, and affects only the newcamd protocol (see protocol.txt for card-data format).
+- Au-users are now given card-data only from the card they're meant to update (if several, they receive the first
+  available). If cards were not being updated properly despite receiving emm's, this was a possible cause. Can be
+  overridden by the above card-data feature if the attribute override-au is set to true.
+- Added validation checks that ensure all cards in a profile are identical. Unless the attribute override-checks is
+  set to true for the connector, a card will be _disabled_ when it has a differing ca-id or a different provider ident
+  list than another already connected card in the profile. Warnings will be logged. Under normal circumstances with
+  most ca-systems, differing cards should require separate profiles.
+- "Negative" forward notifications are now sent by the clustered cache (i.e one proxy will notify another that it
+  couldn't provide the reply that it previously indicated it was going to handle). Thus giving the remote proxies
+  a chance to get it elsewhere.
+
+- Changes to proxy.xml (only optional additions):
+  Added: <card-data type="connector|file|empty" name="connectorname|filename"/> for <newcamd> listen ports. Only use
+    this if you need to make sure that clients connecting to a specific newcamd port always get the same exact card-data.
+  Added: <hide-unknown-services> to section mapper (true/false, default: false). Hides services if no name for them was
+    found in the services file (only affects remote monitoring, e.g xml commands like all-services and cws-connectors).
+  Added: <block-services> to section mapper. List of sids (hex) that the proxy will always immediately return empty
+    results for, and not probe cards/attempts forwards. Can be used to optimize handling of services known not to
+    exist on any card and reduce probing. E.g: you know there are cards available to handle all services except 3, then
+    add those to the block list and the mapper will stop trying.
+  Added: Attribute 'override-checks' for <newcamd-connector> (true/false, default: false). Set to true to skip card
+    validation checks. If you use this for one card in a profile you should probably enable it for all of them.  
+  Added: <congestion-limit> to section connection-manager. If you use different metric priorities for CWS connectors,
+    then this allows you to set what the maximum queue-time estimate can be before a connector is considered
+    congested (and higher metric connectors are used instead). This can lower response times but should be used with
+    care. Value (in seconds) must be between max-cw-wait/2 and max-cw-wait. Reasonable values could be 4-8.
+
+- Changes to the http/xml api:
+  Added: Attribute 'capacity' for <proxy-status>, <profile> and <connector>.
+  Added: Attribute 'active-sessions' for <proxy-status>. Count for sessions currently generating traffic (not idle).
+  Added: Attribute 'mapped-services' for <profile>. The number of services known by the service-mapper for this profile.
+
+
+0.7.4 - 2007-09-04
+
+- Automatic profile assignment based on ca-id is now done for each cws reconnect, not just the first one.
+- No longer ignoring HD services when parsing (dvb service types 0x11 and 0x17, for mpeg2 and "advanced codec" hdtv).
+- "Successful" cannot decode replies are no longer counted as ecm failures in the stats.
+- Additionally tweaked load-sharing (0.7.3 may have had a serious bug that only manifested under heavy load on 3+ cards).
+- Emm's are now properly acknowledged to the client even when sent by non au-users (without forward of course).
+- Fixed several potential problems with radegast sessions (clients using radegast towards the proxy).
+- Added a delay on startup, listen ports will now not be opened until the cws connector manager has had a chance to run
+  through one connection attempt for each active cws connector (this will prevent the service mapper from removing
+  entries for "unknown" connectors that simply haven't been connected for the first time yet).
+- Added a real time negotiation procedure in the clustered cache to maximize use of cache-sharing. Using this adds a
+  fixed delay (e.g 100 ms) to _every_ transaction. The time is used to collect cache notifications for a pending ecm
+  from all proxies in the cluster, and ensure that only one of them proceeds with querying a card. Highly experimental,
+  not quite sure yet whether this is useful in a real life scenario. The multiple proxies will attempt to find which
+  one is best suited to handle a given request (based on estimated queue time and whether the services is known to
+  exist on a local card or not). If in doubt, leave it alone (it's enabled with <sync-period> for the clustered cache).
+- Added a preconfigured java-service-wrapper setup for running the proxy as a service on w2k/2k3/xp/vista. See README.
+- The 'last-transaction' time per session now includes any time it took to send the reply back to the client. This
+  means it is no longer depending exclusively on the proxy response time, but also on the client connection.
+- Changed CWS average processing time to current processing time (thats what it was before as well, just a misleading
+  label). Average processing time is now the true total average for all ecm's processed since connect (and utilization
+  will now show both versions).
+- Made it possible to use any number of listen ports for each profile, each can have their own protocol and allow/deny
+  lists as well as their own des-key/noencryption settings (and any other protocol-specific data). Adding/changing ports
+  while running should work now too.
+- Fixed weird synchronization issues with the session manager (caused NPE in various places and blocked logins,
+  especially in conjuction with heavy use of the status web).
+
+- Changes to proxy.xml: (mostly optional additions)
+  Added: Attribute 'debug' for <user> (SimpleUserManager), set to true to enable log-ecm, log-emm and log-zapping but
+    only for this user. NOTE: For protocols like radegast that have no user concept you can still use this and other
+    special attributes, by defining a dummy user with a name like: protocol@source.ip.address (e.g radegast@192.168.0.3)
+    and a dummy password. It won't be used for login auth but attributes like map-exclude and debug will be applied.
+  Added: <ip-filter> to <filter-config> for the LoggingFilter, if specified then only traffic from the matching ip will
+    be logged (? * wildcards supported, e.g: 192.168.1.*).
+  Added: <cannot-decode-wait> to <connection-manager>. This adds a configurable delay when service mapping determines
+    that there are no cards available that can decode a given ecm (or there are no cards at all). Instead of immediately
+    responding with a cannot-decode reply, the proxy will wait the specified number of seconds and then check the cache
+    again. This increases the chances of a cache hit through sharing. It will have no effect on cache-only profiles
+    since these always wait as long as possible, but if you're using cache sharing in combination with local cards you
+    should try this and set it to 1-4 seconds.
+  Added: <sync-period> to <cache-config> (ClusteredCache).Set to larger than 0 to enable the experimental synchronized
+    cluster arbitration procedure. Value in milliseconds (try somewhere around twice the round trip ping between the two
+    furthest/slowest proxies in the cluster).
+  Moved: Attribute 'no-encryption' for <newcamd> is no longer an attribute, it should now be an element within newcamd,
+     i.e: <newcamd listen-port="1234"><no-encryption>true</no-encryption></newcamd>. It is now possible to have
+     multiple newcamd ports for a single profile, and set no-encryption per port.
+  Added: Attribute 'debug' for <profile>, set this to true to enable storing the last 100 transactions for each user
+    session (in order to use the user-log http/xml command for troubleshooting).
+  Added: <retry-lost-services> to section mapper (true/false, default: false). Whenever the service-mapper registers a
+    service lost from a card that could previously decode it, it will register a background probe to see if it returns.
+    The status for the service on the particular card in question will be reset with an increasing interval (doubles
+    every time, starting at 5 minutes after it was lost and ending if it hasn't been found after 48 hours).
+    NOTE: This only makes sense if there are multiple cards in the profile, otherwise lost services would be found
+    within minutes when someone tried to watch them, through the auto-reset-threshold.
+
+- Changes to the http/xml api:
+  Added: Attribute 'flags' for <session> (proxy-users). This will contain information about the last ecm transaction
+    in the form of one or more of the following chars:
+      C = Cache hit (local), R = Cache hit (received from remote cache), F = Forward occured, Y = Forward retry,
+      N = Cannot decode (mapping says service not on any card), T = Timeout when forwarding, O = Timeout in cache,
+      G = Congestion when forwarding (time > max-cw-wait/2), I = Instant cache hit (no waiting at all in cache),
+      W = Triggered cannot-decode-wait, X = Cache hit after failed forward, E = forward returned empty (cannot-decode),
+      Z = SID changed (compared to previous transaction), P = Triggered probing of one or more cards,
+      D = The user session disconnected before it could receive the reply (likely reached the client ecm timeout),
+      + = Caused an addition to the service map (found channel), - = Caused a removal from the service map.
+    Examples (flags in the attribute string are not shown in chronological order):
+      +FPZ (client changed to a service that had uknown status on some cards, triggering probes, one of which
+        found the service where it wasn't previously known to exist).
+      CI (local instant cache hit, both ecm and cw were immediately available in the cache when the client asked)
+      RZ (cache hit on changing service, and the cw reply was provided by a remote proxy)
+      FO (client was held in cache waiting for a reply that never came, and eventually fell back to forwarding)
+    The statusweb user section has been updated to show these flags, and a info level log printout has been added (only
+    when log-ecm is true).
+  Added: New command 'user-log'. This will show the status of the last 100 ecm transactions completed on any of the
+    selected users sessions. Admins can specify user name with the 'name' parameter, others always get their own log.
+    This allows you to troubleshoot a specific glitch experienced by one user, find the corresponding ecm transaction
+    and see exactly what caused it to fail (at least if you check within 100*10 seconds, i.e about 16 mins).
+    The per-user storage will only be updated if the profile has debug="true" set. A form for this command has been
+    added to the admin page of the example-web.
+  Changed: <profile> now has a single 'listen-ports' attribute that contains a string list that will indicate protocol
+    and port number for each of the defined ports, instead of the previous radegast-port/newcamd-port attributes.
+
+
+0.7.3 - 2007-07-28
+
+- Fixed a bug that caused web logging to switch to sysout after changing the httpd port number.
+- Fixed problem with rapid cws reconnect that caused an IndexOutOfBoundsException if there was pending traffic.
+- Fixed NPE on NewcamdCws connect if the socket was unexpectedly closed during the login procedure.
+- Fixed last-transaction time for a user session getting confused by other message types (non-ECM).
+- Improved load balancing: queue size has been redefined to take the average processing time into account, meaning that
+  in theory a queue size of 3 on a fast card can now be considered faster than a queue size of 1 on a slow card.
+
+- Updated the example web page to include several user contributions, including a user/session section and re-use of
+  the xml parser object (to stop IE from leaking memory with each xml pull). I'm keeping my logo though. :)
+- Added a filename translation servlet for picon images. See /picon/readme.picon.txt in the war for details.
+
+
+0.7.2 - 2007-06-10
+
+- Fixed a bug that would cause emm's to be forwarded to connectors that weren't connected (caused NPE stacktrace in log).
+- Fixed NPE in radegast response parsing when no matching pending request was found.
+- Fixed a serious cache sharing bug that could prevent remote cache data from being used between servers with different
+  system locales set for the jvm (language/regional settings).
+- Fixed another serious cache sharing bug that meant system clocks had to be synchronized to within the max-cw-age time
+  across all servers, or cached cw's could be deleted before they were used.
+
+- Added a cache-only (card-less) mode. A profile that makes use of this will accept connections even if there are no
+  cws connectors ready (or even defined). It will rely entirely on cache sharing to handle requests.
+  This allows a frontend proxy to be set up where untrusted users could get access to anything cached, without being
+  able to affect the traffic load on any cards. Such a card-less frontend proxy would only receive cache data (one way,
+  use the receive-only ClusteredCache setup by leaving out remote-host and remote-port) from one or more other proxies,
+  thus completely isolating clients from the real proxies and their clients/servers.
+  As long as the backend proxies have enough users to statistically ensure that all the profiles services are cached
+  at any given moment, all services would also work for clients in the frontend proxy. 
+  NOTE: When there are no newcamd connectors in a profile, clients will receive dummy card data on connect (empty).
+    This may not be good enough for all clients/ca-systems, but it works for me. If you do have connectors defined
+    and cache-only mode set, the connectors will not be used for traffic (only for card-data).
+
+- Changes to the http/xml api:
+  Added: Attribute 'profile' to <service> for the commands watched-services and all-services, since these lists can
+    contain services from multiple profiles if the calling user has such access.
+  Added: Attribute 'cache-only' for <profile> (ca-profiles command).
+
+- Changes to proxy.xml:
+  Added: Attribute 'log-zapping' for <logging>. Set to false to disable the log entries for when users switch service.
+  Added: Attribute 'cache-only' for <profile>. Set to true and the profile will accept connections even without
+    card connectors. This will also prevent the "no available card" warnings, the proxy will instead silently return
+    cannot decode for each cache miss.
+  Added: Attribute 'no-encryption' for <newcamd> (in profile). Setting this to true means the proxy will handle
+    unencrypted newcamd traffic on this listen port. NOTE: no clients support this, its just for debugging.
+
+0.7.1 - 2007-05-19
+
+- Major structural changes to handle multiple protocols (besides newcamd), expect bugs.
+- Fixed a bug where connectors could be flagged as congested and never recover.
+- ECM cache hits (INFO level printout) now mentions if the hit was received from a remote cache (and which one).
+- Added basic radegast support for both incoming and outgoing connections. Since this protocol doesn't have user auth
+  or includes SID, clients should avoid using it if they can. Using cws connectors with the radegast protocol
+  should not have any obvious drawbacks however. A consequence of this is that it becomes possible to use a "radegast
+  only" client towards cardservers that only allow the newcamd protocol (and vice versa) using the proxy to convert.
+  If a radegast listen port is configured, the accept/deny list is the only access control since there is no user auth.
+  NOTE: If using only radegast cws connectors, and connecting to the proxy with a newcamd client, the proxy will
+  return dummy card data to that client (a single provider with ident 0, but including the ca-id for the profile so this
+  should probably be set correctly).
+
+- Added an option for completely disabling the service-mapping. Doing so means the proxy will no longer attempt to find
+  out which services exist on each card. Instead it will assume all cards in the profile are identical and only apply
+  load balancing. This way effective clusters can be achieved even with protocols or clients that don't include SID,
+  providing the cards all have the same services. It can also be useful for troubleshooting in small clusters.
+  Profiles for which the mapping has been switched off will not show any service lists in the http/xml api or webgui.
+
+- Changes to the http/xml api:
+    Fixed: Duration time strings (longer than 1 month was previously broken?).
+    Changed: Any user@host:port information for cws connectors from the error log is now only shown to admin users.
+    Added: Utilization percentage per cws connector, based on the current average ecm time. This shows the % of the
+      total time since connect that the card has been spending on actual processing (rough estimate).
+    Changed: getUserCount() in the remote api renamed to getSessionCount() since thats what it actually is.
+      The <users> element in the proxy-status reply has been changed to <sessions> to reflect this.
+    Added: Attribute protocol added to <session> and <connector> (a string with either Newcamd or Radegast for now).
+      The example web page has updated to reflect this in the status CWS list.
+
+- Changes to proxy.xml: (old configs WILL need to be edited)
+    Added: Separate listen ports for <newcamd> and <radegast> protocols, per profile. Each with an optional accept/deny
+      list that uses ip masks with wildcard support (separated by space). See the example configs for details.
+    Changed: Moved <des-key> from <profile> to <newcamd>.
+    Removed: <ban-list> from <profile>, replaced with the allow-list/deny-list elements of the new newcamd and
+      radegast elements, e.g: <newcamd listen-port="1234"><deny-list>10.0.0.*</deny-list></newcamd>
+    Changed: <connector> elements in <cws-connector> replaced with either <newcamd-connector> (as before) or
+      <radegast-connector> (profile attribute mandatory, and only host/port).
+    Added: Attribute 'enabled' for <mapper> in <service-map>, to turn of mapping entirely for one or all profiles.
+    Added: Attribute 'hide-ip-addresses' for <logging>, this will replace all IPs in logs like so: xxx.xxx.xxx.123
+      This doesn't apply to the web-access.log, switch that off by removing the rmi/log-file element when using this
+      option. Debug output or log levels lower than INFO are also not affected.
+    Changed: Attribute ca-id for <profile> is now mandatory (it simplified the radegast implementation).
+
+0.6.3 - 2007-03-03
+
+- Changed load balancing to consider queue size before other factors.
+- Fixed potential false "connection from different IP" errors for rapid client reconnects.
+- Fixed handling of missing SID (service maps ignored but load balancing applied). Clients that don't send SID should
+  work fine now providing all the cards in the profile have the same services (or there is just one card).
+  Mechanisms to more effectively deal with setups where this is not the case will be added in a future version.
+- Enigma service files are now monitored for changes and re-read if changed. This allows for automated updates of the
+  files, i.e by cron'ed ftp/scp. They are of course also re-read when proxy.xml changes, as before.
+- Added INFO level logging for web logins (see the web-access log for more details) and WARNING for failed attempts.
+- Changes to the http/xml api:
+    Added: Simple admin section in the example web page, for executing the control commands.
+    Changed: Services with no name/type information are now included (as "Unknown (id)") in xml replies.
+    Changed: Cleaned up most of the javascript for the example web page and fixed some minor firefox issues.
+
+- Changes to proxy.xml:
+    Changed: Attribute 'provider' for <services-file> can now contain a list of names (separated by space). Use this
+             in case services in the file have variations in the provider name (or lists some as unknown even though
+             they should be part of the same provider subscription).
+    Added: <unknown-sid> to section mapper. Defines a special SID that will be sent to servers when SID is 0 (unknown).
+           Client requests for this SID will also be treated as if it was 0. This can be used as a workaround for
+           servers that require a non-zero SID, and for clients that send a fixed special SID instead of 0 when service
+           is unknown (e.g cardlink). Make sure that this isn't set to a real SID that exists in the services file.
+           Can be specified globally or per profile like all other mapper elements.
+
+- Misc minor fixes and improvements.
+
+0.6.2 - 2007-02-10
+
+- Fixed rare ConcurrentModificationException related to the average calculations.
+- Changed the timeout for keep-alive replies to 3 seconds instead of using max cw wait.
+- Fixed false timeouts that could theoretically occur in the connectors even when max cw wait wasn't exceeded.
+- Improved the default INFO level logging to make it easier to spot problems.
+- Changes to proxy.xml:
+    Added: Attributes 'log-ecm' and 'log-emm' to section logging (true/false, default: true).
+    Added: <log-missing-sid> to section mapper (true/false, default: true). Allows hiding the [0] SID warning.
+- Changes to the http/xml api:
+    Added: 'last-transaction' field to proxy-users. Shows how long the last perceived ecm -> cw roundtrip time was (ms).
+
+0.6.1 - 2007-02-05
+
+- Added a getUsageStats() method to the CacheHandler interface. Caches can return whatever relevant information they have.
+- Improved the queue handling for outbound ecms. Queue size and average response time is now used for load balancing.
+- Changed timeout handling for cws connectors. If a timeout occurs the connector will be removed from load balancing
+  until it is responding again (unless it is the only available connector for a given request). Keep-alives will be sent
+  until it either responds or exceeds the maximum number of timeouts and is disconnected. This should help minimize the
+  impact of shaky connections in setups where there are multiple connectors of the same type available.
+- Remote api extended with kickUser and shutdown methods.
+- Changed average ecm interval and average processing speed to count for the last minute rather than total since connect.
+  This also applies to the rate limit feature in the UserManager interface.
+- Changes to proxy.xml:
+    Removed: <peer-proxy-url> from status-web section. This no longer made much sense.
+    Added: Attribute 'map-exclude' for the auth-config section (SimpleUserManager). Stops a user from causing changes
+           to the service maps. Can be useful in large clusters for clients that misbehave and send a lot of bad ecms.
+    Changed: <tracker-update> for ClusteredCache can now be set to 0 to disable auto updates (i.e only update when
+             proxy.xml is updated).
+
+- Changes to the http/xml api:
+    Added: New command api, accessible by admin users only. 4 commands so far: reset, kick, shutdown and osd-message.
+           - Reset will clear the service map for a specific service on all cards, or for all services one card.
+             Params: name (cws connector name) or profile + id (service id in hex or decimal).
+             GET example: /xmlHandler?command=reset&profile=myprofile&id=0x04F3
+             POST example: <cws-command-req><command command="reset" profile="myprofile" id="1267"/></cws-command-req>
+           - Kick will close all sessions for a specific user (mainly a debugging tool, the user cam will just reconnect).
+           - Shutdown will stop the proxy node.
+           - Osd-message sends a Mgcamd osd message to any matching active user sessions (with client id = Mgcamd).
+             GET example: /xmlHandler?command=osd-message&name=username&text=hello%20there
+             Name can be omitted to send to all users. This is experimental, use with care.
+           Note: the command api responses will contain the element <cws-command-resp> instead of <cws-status-resp>.
+    Added: New status command 'cache-status'. Will show usage counters for the currently used cache implementation.
+    Changed: Timestamps now use RFC822 format, and any previously included duration has been moved to a separate field.
+             The timestamp fields have also been renamed to show what they represent (i.e started or connected).
+    Changed: Command 'tv-services' changed to 'all-services'.
+    Added: New status command 'watched-services'. Returns currently watched services with a user count. :)
+
+- Added a view of the 'watched-services' to the channels section of the example web page.
+- Added cache-status to the status section of the example web page.
+- Added some reasonable usage stat counters to DefaultCache and ClusteredCache.
+- Added isMapExcluded() to UserManager interface, return true to stop a user from discovering new services or changing
+  the status of existing ones (map failure counters etc will not be updated as a result of ecms from this user).
+- Improved some of the INFO level logging to more clearly show the new load balancing and timeout handling in action.
+
+0.5.1 - First public release
+
+- Changes to settings for proxy.xml (see config/proxy-reference.html for full details):
+    Removed: <default-profile> from rmi section. Remote api now allows specifying a list of profiles per method.
+             The http/xml api and web page will use this to only show info for profiles accessible by the current user.
+    Added: <allowed-ip-masks> to rmi section. List of ip masks separated by space that should be allowed to use the
+           remote api.
+    Added: <default-client-id> to section connection-manager. Allows setting the 2 bytes that is used by newcs and
+           others to identify the type of client. Beware, this only works as long as the server doesn't modify its
+           behavior or makes use of client-specific features based on this value (for example identifying as mgcamd
+           will cause newcs to do this and no longer be compatible with the proxy).
+    Added: <client-id> to section connector. Same as above but overriding the default for one connector.
+    Added: <au-users> to section connector. List of users allowed to send AU to this connector. All EMM's clients from
+           these users send to the corresponding profile will be forwarded to this connector. The old behaviour with
+           matching connector and user name for AU has been removed.
+    Added: Attribute 'metric' for <connector>. Allows grouping connectors together for preference in the load-balancer.
+           See proxy-reference.html for examples.
+    Added: Attribute 'admin' for the auth-config section (SimpleUserManager). Set to true to mark a user as
+           administrator. Only used by the http/xml interface so far.
+    Added: <ssl> to section status-web. Allows HTTPS instead of HTTP for the http/xml api and web page. This requires
+           a java keystore file with a certificate to be specified as well, e.g:
+           <ssl enabled="true"><keystore password="123456">etc/keystorefile</keystore></ssl>
+
+- Changes to http/xml api:
+    Added: Only info from profiles that the current user has access to are shown. There should be no way to tell other
+           profiles even exist in the config.
+    Added: New HTTP GET based version of the xml api. Access /xmlHandler?command=command&paramName=paramValue to get
+           the same reply that posting <command include="true" paramName="paramValue"/> would produce. HTTP basic auth
+           is used for login/password (user must be one known to the current user manager).
+    Added: New command 'ca-profiles'. Lists all profiles accessible by the currently authenticated user.
+    Added: New parameter 'profile'. Allows selecting one of the available profiles rather than getting info for all.
+           (Mainly for commands cws-connectors, proxy-users and tv-services).
+    Added: Extra fields in the replies for cws-connectors and proxy-users. Profile is shown where applicable, client-id
+           is shown for users and metric for connectors. Ecm and emm count added to both connectors and user sessions.
+    Added: The beginnings of privacy/security. Only users marked as admin will be able to list all users, others will
+           just get their own information. Note that even admins will be subject to profile restrictions.
+           Only admins will see the host/ip for the cws connectors, but the rest of the information is available to all.
+
+- Changes to the clustered cache implementation: (see example proxy.xml for details)
+    Added: Example p2p type cluster management. Cache can be configured to get a list of other proxies (host:port) from
+           a preconfigured "tracker" url. The list is a static plain text file that can be stored anywhere in public.
+           As a privacy feature, the list can be blowfish encrypted with a configured key that all proxies would need
+           to have. The file format is one proxy host:port per line, lines starting with # are considered comments.
+           To encrypt the list file, use: java -jar lib/trtest.jar inputfile.txt outputfile.enc secretkey
+           The encryption is the same type of blowfish used by fish/mircryption for encrypted irc.
+    Added: <tracker-url> to section cache-config. URL pointing to a file with a list of peers in host:port format.
+    Added: <tracker-key> to section cache-config. Blowfish encryption key, if this is set the list file must be
+           encrypted with the same key.
+    Added: <tracker-update> to section cache-config. The update interval in minutes, minimum 5.
+    Added: <local-host> to section cache-config. The cache needs to be able to identify itself in the list of peers,
+           otherwise it would send updates to itself which would be bad. Set the local-host to the same as this node
+           has in the list of peers file. If omitted the cache will use the local IP.
+
+- UserManager interface now has limits that can be imposed on idividual users, but SimpleUserManager will _not_ use this.
+    For anyone working on their own user manager, the methods are:
+      Set getAllowedServices(String name, String profile); // return Set of Integer (service ids, null for all)
+      Set getAllowedConnectors(String name); // return Set of String (connector names, null for all)
+      int getAllowedEcmRate(String user); // return minimum interval between ecm in seconds (-1 for no limit)
+    A note about allowed connectors: this will stop ecm's from this user from being routed to other connectors, but it
+      will _not_ stop them from watching services that only exist on those excluded connectors, through the cache.
+
+- Proxy now detects the type of client for each connected user session.
+- Fixed xml-related problems with http/xml api and java 1.5.
+- "Webgui" cleanup, removed everything not used or not working.
+- Fixes to startup sequence, all errors shown by the start script should now halt the proxy with a non-zero exit code.
+- Fixed enigma services file parsing (0xffffff transponder ids and other values caused it to fail).
+
+0.4.9 - First pre-release for testing
+
+- Pluggable implementations for user manager, cache handler and filters/loggers. Contact bowman on efnet for details.
+- Extensible remote api (java rmi and arbitrary http/xml) for monitoring and remote control.

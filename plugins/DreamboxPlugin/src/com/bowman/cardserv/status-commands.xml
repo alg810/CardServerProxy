@@ -1,0 +1,24 @@
+<status-commands ver="1.0">
+
+  <!-- predefined sources: @connectors, @connected-users, @active-users, @known-users, @offline-users, @profiles -->
+  <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper -->
+
+  <command name="list-boxes" label="Show all boxes" description="List all boxes currently running the agent.">
+    <command-param name="user" label="" optional="true" admin-only="true">
+      <option source="@known-users"/>
+    </command-param>
+    <command-param name="hide-inactive" label="" optional="true">      
+      <option value="true"/>
+      <option value="false"/>
+    </command-param>
+  </command>
+
+  <command name="box-details" label="Show box details" description="Show all known info for specified box.">
+    <command-param name="id" label="" optional="false" />
+  </command>
+
+  <command name="installer-details" label="Show installer details" description="Get a user-specific download url for the csp-agent installer."/>
+
+  <command name="set-operations" label="Set operations" description="Set cmdline/script to run for multiple boxes."/>
+
+</status-commands>
