@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# FIXME
+echo "This Script should download dropbear 0.5x ppc and mips bins packed with upx ..."
+exit 1;
+
 mkdir -p tmp
 rm -rf tmp/*
 cd tmp

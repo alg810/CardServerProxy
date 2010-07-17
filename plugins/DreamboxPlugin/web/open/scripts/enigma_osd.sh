@@ -13,8 +13,7 @@ else
 fi
 
 if [ $ENIGMAV -eq 1 ]; then
-  wget -q http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/cgi-bin/message?message=$MSG -O -
+  wget -q -O - "http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/cgi-bin/xmessage?caption=message&body=$MSG&timeout=10" 
 else
-	# TODO: verify/fix url and format for enigma2
-  wget -q http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/web/message?text=$MSG&type=1&timeout= -O -
+  wget -q -O - "http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/web/message?text=$MSG&type=1&timeout=10"
 fi
