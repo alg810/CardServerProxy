@@ -39,10 +39,6 @@ in order to run on as many boxes as possible. A dreamboxplugin/fetch_binaries.sh
 a combination of ppc and mips dropbear binaries that have been found to work well (and are available precompiled in
 public repositories). The dreamboxplugin dir tree is created by the plugin when it is first loaded.
 
-Currently, there are certain workarounds required to be able to use the 0.48 dropbear version to create non-interactive
-tunnels. As part of this a separate user (dropbear) is created, and this assumes busybox contains the adduser applet
-(which it sometimes doesn't, causing the scheme to fail). 
-
 NOTE: 
 - The idea with the agent is to create something that relies only on busybox features already present on all
   boxes, avoiding extra binaries that would need to be cross-compiled and maintained. The full list of used
