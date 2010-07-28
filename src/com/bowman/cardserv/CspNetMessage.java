@@ -18,7 +18,7 @@ public class CspNetMessage implements Serializable {
   public static final int TYPE_FULLSTATE = 3, TYPE_STATEACK = 4;
   public static final int TYPE_INCRSTATE = 5;
 
-  public static final int STATE_DELETE = 0xFF, STATE_SIDS = 1, STATE_PROVIDERS = 2, STATE_CUSTOM = 3;
+  public static final int STATE_DELETE = 0xFF, STATE_SIDS = 1, STATE_PROVIDERS = 2, STATE_CUSTOM = 3, STATE_EXTRA = 4;
 
   private int type, seqNr, originId;
 
@@ -58,6 +58,7 @@ public class CspNetMessage implements Serializable {
             sc.setUpdatedItems(items);
             break;
           case STATE_SIDS:
+          case STATE_EXTRA:
             Integer[] shortItems = new Integer[itemCount];
             for(int n = 0; n < itemCount; n++) shortItems[n] = new Integer(is.readUnsignedShort());
             sc.setUpdatedItems(shortItems);
@@ -83,7 +84,7 @@ public class CspNetMessage implements Serializable {
     return updates.toString().hashCode();
   }
 
-  public static List buildProfileUpdate(CaProfile profile) {
+  public static List buildProfileUpdate(CaProfile profile, boolean sendExtra) {
 
     if(profile.getNetworkId() <= 0 || profile.getCaId() <= 0) return null;
 
@@ -103,7 +104,7 @@ public class CspNetMessage implements Serializable {
       if(sm[i].getCustomId() != 0 || sm[i].getProviderIdent() != ServiceMapping.NO_PROVIDER) hasCustom = true;
     }
     StatusChange sc;
-    for(int i = 1; i < 4; i++) {
+    for(int i = 1; i < 5; i++) {
       sc = new StatusChange(key, i, 1);
       switch(i) {
         case STATE_SIDS:
@@ -114,6 +115,14 @@ public class CspNetMessage implements Serializable {
           break;
         case STATE_CUSTOM:
           if(hasCustom) sc.setUpdatedItems(customs);
+          break;
+        case STATE_EXTRA: // extra profile meta-data
+          if(sendExtra) {
+            ProxyConfig config = ProxyConfig.getInstance();
+            int mcww = (int)config.getConnManager().getMaxCwWait(profile);
+            int mcaw = (int)config.getCacheHandler().getMaxCacheWait(mcww);
+            sc.setUpdatedItems(new Integer[] {new Integer(mcww), new Integer(mcaw)});
+          }
           break;
       }
       updates.add(sc);

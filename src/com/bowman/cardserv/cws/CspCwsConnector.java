@@ -369,6 +369,7 @@ public class CspCwsConnector extends AbstractCwsConnector implements MultiCwsCon
     pw.print("Authorization: Basic " + auth + CRLF);
     pw.print("User-Agent: Csp " + CardServProxy.APP_VERSION + CRLF);
     pw.print("Proxy-Origin-Id: " + config.getProxyOriginId() + CRLF);
+    pw.print("Send-Extra: true" + CRLF); // request extra meta-data added after RC6
 
     if(wantCache) {
       if(config.getCacheHandler() instanceof ClusteredCache)
@@ -489,6 +490,7 @@ public class CspCwsConnector extends AbstractCwsConnector implements MultiCwsCon
         p.setProperty(key + "-sids", String.valueOf(CspNetMessage.getStatusItems(CspNetMessage.STATE_SIDS, true, state).size()));
         p.setProperty(key + "-sids-cd", String.valueOf(CspNetMessage.getStatusItems(CspNetMessage.STATE_SIDS, false, state).size()));
         p.setProperty(key + "-providers", ProxyConfig.providerIdentsToString(new HashSet(CspNetMessage.getStatusItems(CspNetMessage.STATE_PROVIDERS, true, state))));
+        p.setProperty(key + "-extra", CspNetMessage.getStatusItems(CspNetMessage.STATE_EXTRA, true, state).toString());
       }
     }
 

@@ -98,17 +98,18 @@ public class CspConnection {
         os.writeShort(sc.key.onid); // 2 bytes, onid
         os.writeShort(sc.key.caid); // 2 bytes, caid
         switch(sc.type) {
-          case CspNetMessage.STATE_SIDS:
+          case CspNetMessage.STATE_SIDS: // sids and extra, send as short (2 bytes unsigned)
+          case CspNetMessage.STATE_EXTRA:
             Integer[] shortItems = sc.getUpdatedItemsInt();
             os.writeShort(shortItems.length);
             for(int i = 0; i < shortItems.length; i++) os.writeShort(shortItems[i].intValue());
             break;
-          case CspNetMessage.STATE_PROVIDERS:
+          case CspNetMessage.STATE_PROVIDERS: // provider idents, send as int (4 bytes signed)
             Integer[] items = sc.getUpdatedItemsInt();
             os.writeShort(items.length);
             for(int i = 0; i < items.length; i++) os.writeInt(items[i].intValue());
             break;
-          case CspNetMessage.STATE_CUSTOM:
+          case CspNetMessage.STATE_CUSTOM: // custom data, send as long (8 bytes signed)
             Long[] longItems = sc.getUpdatedItemsLong();
             os.writeShort(longItems.length);
             for(int i = 0; i < longItems.length; i++) os.writeLong(longItems[i].longValue());

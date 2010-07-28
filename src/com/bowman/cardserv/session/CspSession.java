@@ -22,6 +22,7 @@ public class CspSession extends AbstractSession implements CwsListener {
   private CspConnection conn;
   private int remoteProxyId;
   private int keepAliveCount;
+  private boolean sendExtra;
 
   // autoconfigure clustered cache if requested
   private int cachePort = -1;
@@ -49,6 +50,7 @@ public class CspSession extends AbstractSession implements CwsListener {
       cachePort = -1;
       cacheHost = null;
     }
+    sendExtra = (req.getHeader("send-extra") != null);
     this.maxPending = 10; // todo
     this.cm = ProxyConfig.getInstance().getConnManager();
 
@@ -134,7 +136,7 @@ public class CspSession extends AbstractSession implements CwsListener {
         if(profile.getNetworkId() > 0) { // only present those profiles that have onid set
           key = new CspNetMessage.ProfileKey(profile);
           if(profileAllowed(profile)) { // and only if the user has access to them
-            updates = CspNetMessage.buildProfileUpdate(profile);
+            updates = CspNetMessage.buildProfileUpdate(profile, sendExtra);
             sentState.put(key, updates);
             if(stateChanged(key, updates)) statusMsg.addStatusUpdates(key, updates);
           }
@@ -279,7 +281,7 @@ public class CspSession extends AbstractSession implements CwsListener {
     CspNetMessage.ProfileKey key = new CspNetMessage.ProfileKey(profile);
     // for now, just resend the entire sid state if it changed at all - todo
     if(profileAllowed(profile)) {
-      List updates = CspNetMessage.buildProfileUpdate(profile);
+      List updates = CspNetMessage.buildProfileUpdate(profile, sendExtra);
       if(updates == null) return false; // todo - MULTIPLE
       if(stateChanged(key, updates)) {
         CspNetMessage statusMsg = new CspNetMessage(CspNetMessage.TYPE_FULLSTATE);
