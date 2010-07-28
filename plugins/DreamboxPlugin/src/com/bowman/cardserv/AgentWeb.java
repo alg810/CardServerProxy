@@ -142,6 +142,10 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     String seed = req.getHeader("csp-seed");
     String macAddr = req.getHeader("csp-mac");
 
+    if(ProxyConfig.getInstance().getUserManager().isDebug(user)) {
+      System.out.println(req.getHeaders());
+    }          
+
     BoxMetaData box;
     BoxMetaData[] existingBoxes = parent.findBox(macAddr, user);
     if(existingBoxes.length > 1) {
@@ -177,6 +181,10 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     else {
       BoxMetaData box = parent.getBox(boxId);
       if(box == null) return HttpResponse.getErrorResponse(403, "Invalid/unknown boxid: " + boxId);
+
+      if(ProxyConfig.getInstance().getUserManager().isDebug(box.getUser())) {
+        System.out.println(req.getHeaders());
+      }
 
       box.setProperty("external-ip", req.getRemoteAddress());
       String sid = req.getHeader("csp-sid");

@@ -235,6 +235,13 @@
       </td><td colspan="3">
         &#160;
       </td></tr>
+      <tr><td>
+        Clear all operation history:
+      </td><td>
+        <input value="OK" id="clearBtn" type="button"/>
+      </td><td colspan="3">
+        &#160;
+      </td></tr>
     </table>
     <br />
 

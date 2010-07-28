@@ -16,4 +16,6 @@
     <command-param name="op" label="op" allow-arbitrary="true" />
   </command>
 
+  <command name="clear-history" label="Clear operation history" description="Remove all output logs for completed operations." confirm="true" />    
+
 </ctrl-commands>

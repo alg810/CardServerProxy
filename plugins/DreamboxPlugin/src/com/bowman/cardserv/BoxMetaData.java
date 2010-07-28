@@ -111,6 +111,15 @@ public class BoxMetaData implements Serializable {
     else return executedOperations.values();
   }
 
+  public int clearOperations() {
+    int count = 0;
+    if(executedOperations != null) {
+      count = executedOperations.size();
+      executedOperations.clear();
+    }
+    return count;
+  }
+
   public boolean isActive() {
     return (System.currentTimeMillis() - lastCheckinTimeStamp) < (interval * 2000);
   }  

@@ -407,6 +407,15 @@ public class DreamboxPlugin implements ProxyPlugin {
     return new CtrlCommandResult(result, resultMsg, null);
   }
 
+  public CtrlCommandResult runCtrlCmdClearHistory(Map params) throws RemoteException {
+    BoxMetaData[] boxes = registry.findBox(null);
+    int count = 0;
+    for(int i = 0; i < boxes.length; i++) {
+      count += boxes[i].clearOperations();
+    }
+    return new CtrlCommandResult(true, "Deleted " + count + " operation logs", new Integer(count));
+  }
+
   private static void xmlFormatBox(XmlStringBuffer xb, BoxMetaData box, boolean details, boolean admin) {
     if(details) xb.appendElement("box-details", "id", box.getBoxId());
     else xb.appendElement("box", "id", box.getBoxId());

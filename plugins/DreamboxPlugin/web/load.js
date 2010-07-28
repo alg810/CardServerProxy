@@ -17,8 +17,8 @@ sections['maintenance'] = {
 
     var boxes = xml.getElementsByTagName('box');
     for(var i = 0; i < boxes.length; i++) { // convert dec to hex, too messy for xslt
-      boxes[i].setAttribute('sid', (new Number(boxes[i].getAttribute('sid')).toString(16)));
-      boxes[i].setAttribute('onid', (new Number(boxes[i].getAttribute('onid')).toString(16)));
+      if(boxes[i].getAttribute('sid') != 'N/A') boxes[i].setAttribute('sid', (new Number(boxes[i].getAttribute('sid')).toString(16)));
+      if(boxes[i].getAttribute('onid') != 'N/A') boxes[i].setAttribute('onid', (new Number(boxes[i].getAttribute('onid')).toString(16)));
       var cb = getById(boxes[i].getAttribute('id')); // remember check state
       if(cb && cb.checked) boxes[i].setAttribute('checked', 'true');
     }
@@ -58,6 +58,7 @@ sections['maintenance'] = {
       getById('scriptBtn').onclick = executeScript;
       getById('cmdlineBtn').onclick = executeCmdline;
       getById('abortBtn').onclick = executeAbort;
+      getById('clearBtn').onclick = executeClear;
     }
 
   }
@@ -176,6 +177,11 @@ function executeAbort() {
   var boxes = [];
   for(var i = 0; i < inputs.length; i++) boxes.push(inputs[i].id);
   if(boxes.length > 0) executeSetOperations('', '', boxes);
+}
+
+function executeClear() {
+  if(confirm('Clear history for all boxes?'))
+    executeCtrlCmd('clear-history', []);
 }
 
 function invertSelection() {
