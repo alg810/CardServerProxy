@@ -15,6 +15,8 @@ to identify the most common timing pitfalls and suggest a set of best practices.
 It should be said that by far the greatest increase to stability comes from adding a second proxy, compared to that
 any other optimizations are insignificant. Even if both proxies are connected to the exact same set of cards, the
 second chance it offers to clients (regardless of what the issue was) has a _major_ impact on the perceived stability.
+This is of course assuming clients with failover functionality similar to mgcamd, that maintain all configured connections
+(with keep-alives) and will perform a seamless switch to the next applicable connection in case of trouble.
 
 NOTE: Most of the tips here are based on ca-systems where the possible delay between the ecm appearing in the TS and
 the cw actually changing is fairly large (>5 seconds). For ca-systems with tighter margins you may need other methods.
@@ -46,7 +48,7 @@ to the server, before giving up and moving on (typically resulting in a freeze).
 
 
 2. Cardserver behaviour (most of the proxy examples assume newcs, but mpcs/oscam or rqcs have also been used).
------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
 
 - Ensure that the server does not have any unnecessary limitations imposed on the account used by the proxy.
 Rate limits are of course especially harmful and should be removed completely.  
@@ -132,7 +134,8 @@ see at which exact ecm round-trip time the freezes start occuring. This is your 
 If the time is very short (<3 seconds) it might not be possible to set the max-cw-wait for the proxy to the same, but
 at least you know where the cutoff point is. Values <4 have not been tested with the proxy, but may still work.
 NOTE: To get accurate values with test-delay, use a service that is cached (that other clients are currently watching).
-Also, make sure the client ecm timeout is increased to a level where it will not interfere before the test (>9 secs). 
+Also, make sure the client ecm timeout is increased to a level where it will not interfere before the test (>9 secs).
+That means you cannot use clients such as CCcam where the newcamd timeout is locked to 4 seconds and cannot be changed.
 
 <connection-manager> / <congestion-limit>
 This allows you to configure the point at which the proxy considers a connector to be congested. The value refers
@@ -143,9 +146,10 @@ Using this mainly makes sense if you have multiple cards with different metric l
 higher metric cards start getting used.
 
 <cache-handler> / <cache-config> / <max-cache-wait>
-You want to keep this at a level that is as high as possible, but still allows room for one retry before the 
-max-cw-wait is reached. I.e. if max-cw-wait is 9, and the average response time for your profiles is around 2 secs,
-set the max-cache-wait to 6 or 7 secs.
+If card capacity is a problem, you want to keep this at a level that is as high as possible but still allows room for
+one retry before the max-cw-wait is reached.
+I.e. if max-cw-wait is 9, and the average response time for your profiles is around 2 secs, set the max-cache-wait to 6
+or 7 secs.
 This should result in a behaviour where a timeout in the cache means the client can still receive a reply before
 reaching its own timeout. Use the transaction flags to determine whether this is actually the case (see below).
 
@@ -153,6 +157,13 @@ Cache timeouts occur when an expected reply never arrives, either because the se
 became disconnected or overloaded, or because a remote cache that indicated it was going to provide the reply failed to
 do so (or did but it got lost in transit). It is normal to see more cache timeouts in a proxy setup that uses the
 clustered cache.
+
+For most situations, you want a max-cache-wait that is just slightly above the worst case processing time (if its
+2500 ms, you might set 3000 ms as the cache wait). This ensures that you only get cache timeouts when actual problems
+occur, not because normal processing is taking longer than usual (due to peak load or network latency).
+As of 0.9.0, it is possible to configure max-cache-wait with a percentage string, e.g "50%". This allows for different
+wait times depending on the max-cw-wait in effect for the profile. If you have multiple profiles with significantly
+different max-cw-wait times then you should definately use a percentage setting.
 
 
 - These are less important but deserve mention:

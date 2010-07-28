@@ -13,6 +13,7 @@
         <allow-list>192.168.0.*</allow-list>
       </radegast>
       <services-file>etc/services</services-file>
+      <max-cw-wait>8500 ms</max-cw-wait>
     </profile>
   </ca-profiles>
 
@@ -106,7 +107,7 @@
   <cache-handler class="com.bowman.cardserv.ClusteredCache">
     <cache-config>
       <cw-max-age>19</cw-max-age>
-      <max-cache-wait>3500 ms</max-cache-wait>
+      <max-cache-wait>40%</max-cache-wait>
       <local-port>54277</local-port>
       <sync-period>0</sync-period>
     </cache-config>

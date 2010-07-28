@@ -473,7 +473,8 @@ Example:  <em class='italic'>&lt;services-file format="dvbviewer">etc/dvbviewer.
 
 <a name="ca-profiles/profile/max-cw-wait">
 <div class='indent'>ca-profiles/profile/max-cw-wait</div><br />
-This defines the maximum wait time (in seconds) for anything trying to get a CW reply from this profile, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze (or 1 second above that). Applies to all CWS connectors in this profile, if set here it overrides the global setting in connection-manager.<br />
+This defines the maximum wait time (in seconds) for anything trying to get a CW reply from this profile, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze. Applies to all CWS connectors in this profile, if set here it overrides the global setting in connection-manager.<br />
+<strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is the global value, not the per profile one.<br />
 To determine a reasonable value for max-cw-wait, it is possible to use the test-delay feature in the LoggingPlugin. This can insert an artificial delay into the processing of requests for a specific test-user (source ip address). Increase the delay gradually until freezes occur for the test-user and note the total ecm time in the client logs when this happens, this is your max-cw-wait. Make sure the client ecm timeout is set high enough not to interfere with the result.<br /> 
 See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
@@ -774,6 +775,7 @@ The interval between connection attempts (in seconds) for servers that are not a
 <a name="connection-manager/max-cw-wait">
 <div class='indent'>connection-manager/max-cw-wait</div><br />
 If a CWS connection is congested or not responding, this defines the maximum wait time (in seconds, default: 9) for anything trying to get a CW reply, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze (or 1 second above that). This is the default for all CWS connectors in all profiles.<br />
+<strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is always this global value, not the per profile one.<br />
 To determine a reasonable value for max-cw-wait, it is possible to use the test-delay feature in the LoggingPlugin. This can insert an artificial delay into the processing of requests for a specific test-user (source ip address). Increase the delay gradually until freezes occur for the test-user and note the total ecm time in the client logs when this happens, this is your max-cw-wait. Make sure the client ecm timeout is set high enough not to interfere with the result.<br />
 See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
@@ -1245,6 +1247,7 @@ The maximum age (in seconds) of an ECM -> CW mapping in the cache, before it can
 <a name="cache-handler/cache-config/max-cache-wait">
 <div class='indent'>cache-handler/cache-config/max-cache-wait</div><br />
 The maximum time (in seconds) that a client can be kept waiting in the cache for a pending request.<br />
+<strong>NOTE: </strong> As of 0.9.0, this can also be configured with a percentage string, e.g "50%" to indicate a max-cache-wait of 50% of the max-cw-wait for the request. This makes more sense when using profiles with radically different max-cw-waits in the same proxy (e.g some with 9 seconds and others with 650 ms).<br />
 See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
 The clustered cache (which is an extension of the default cache) has many additional settings, see <strong>README.ClusteredCache.txt</strong> for full docs.<br />

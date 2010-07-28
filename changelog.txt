@@ -13,6 +13,9 @@ Cardservproxy changelog:
 - Fixed: No longer possible to set the same user as au-user for multiple cards within the same profile.
 - Fixed: Initial web startup is now delayed until after there is a usermanager available.
 - Fixed: CCcam.channelinfo parsing errors (some of them).
+- Changed: Now possible to configure max-cache-wait both as a fixed time value (as before) and as a percentage of
+  the max-cw-wait for the request. I.e if set to the string "50%", requests for a profile with 9000 ms max-cw-wait would
+  end up with a max-cache-wait of 4500 ms, while requests for another profile with 650 ms would get 325 ms.
 - Changed: Adding manual can-decode/cannot-decode services to a connector will now also update any previously
   automapped data to prevent conflicting/overlapping information (so no need to clear maps after manual changes).
 - Changed: Network-id is now used in enigma services file parsing only when no provider string filter is set.

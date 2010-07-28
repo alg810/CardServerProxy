@@ -175,8 +175,12 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
 
     logger.info("-= CardServProxy " + APP_VERSION + " initialized =-");
     logger.fine("CA-Profiles: ");
-    for(Iterator iter = config.getProfiles().values().iterator(); iter.hasNext(); )
-      logger.fine("  - " + iter.next());
+    CaProfile cp;
+    for(Iterator iter = config.getProfiles().values().iterator(); iter.hasNext(); ) {
+      cp = (CaProfile)iter.next();
+      long wait = config.getCacheHandler().getMaxCacheWait(config.getConnManager().getMaxCwWait(cp));
+      logger.fine("  - " + cp + ((cp != CaProfile.MULTIPLE)?" (cache wait: " + wait + ")":""));
+    }
     logger.fine("Connectors: ");
     for(Iterator iter = config.getConnManager().getConnectors().values().iterator(); iter.hasNext(); )
       logger.fine("  - " + iter.next());
@@ -524,6 +528,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
 
   private CamdNetMessage checkCache(int successFactor, CamdNetMessage msg, ProxySession session, boolean peek) {
     CamdNetMessage cached;
+    CaProfile profile = config.getProfile(msg.getProfileName());
     if(!peek) {
       if(msg.getServiceId() == 0 && connManager.getDelayNoSid() > 0) try {
         Thread.sleep(connManager.getDelayNoSid());
@@ -532,7 +537,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
         logger.warning(session + " thread interrupted while in no-sid-delay, session closed?");
         return null;
       }
-      cached = cacheHandler.processRequest(successFactor, msg, session.getProfile().isCacheOnly());
+      cached = cacheHandler.processRequest(successFactor, msg, session.getProfile().isCacheOnly(), connManager.getMaxCwWait(profile));
     } else {
       cached = cacheHandler.peekReply(msg);
       if(cached != null) session.setFlag(msg, 'W');
@@ -548,7 +553,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
       sessionManager.updateUserStatus(session, msg, userManager.isDebug(session.getUser()));
     } else {
       if(msg.isTimeOut()) {
-        if(msg.getCacheTime() >= cacheHandler.getMaxCacheWait()) session.setFlag(msg, 'O');
+        if(msg.getCacheTime() >= cacheHandler.getMaxCacheWait(connManager.getMaxCwWait(profile))) session.setFlag(msg, 'O');
         else session.setFlag(msg, 'Q');
       }
     }

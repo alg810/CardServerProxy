@@ -321,7 +321,7 @@ public class ClusteredCache extends DefaultCache implements Runnable {
   }
 
 
-  public CamdNetMessage processRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
+  public CamdNetMessage processRequest(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxCwWait) {
 
     /*
       decide whether to join the arbitration procedure to select which proxy in the cluster has the best chance of getting
@@ -350,7 +350,7 @@ public class ClusteredCache extends DefaultCache implements Runnable {
       }
     }
 
-    return super.processRequest(successFactor, request, alwaysWait); // call the default processing
+    return super.processRequest(successFactor, request, alwaysWait, maxCwWait); // call the default processing
   }
 
   protected void addRequest(CamdNetMessage request, boolean alwaysWait) {

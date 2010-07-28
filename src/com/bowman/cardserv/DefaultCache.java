@@ -19,7 +19,8 @@ public class DefaultCache implements CacheHandler {
   protected CacheListener listener;
 
   private long maxAge;
-  private long maxWait;
+  private long maxCacheWait;
+  private int maxWaitPercent;
 
   private int timeouts, instantHits, waitHits, remoteHits;
 
@@ -29,11 +30,22 @@ public class DefaultCache implements CacheHandler {
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     maxAge = xml.getTimeValue("cw-max-age", "s");
-    maxWait = xml.getTimeValue("max-cache-wait", "s");
+    String maxWaitStr = xml.getStringValue("max-cache-wait");
+    if(maxWaitStr.endsWith("%")) {
+      maxCacheWait = -1;
+      maxWaitStr = maxWaitStr.substring(0, maxWaitStr.length() - 1);
+      maxWaitPercent = Integer.parseInt(maxWaitStr);
+      if(maxWaitPercent < 1 || maxWaitPercent > 100)
+        throw new ConfigException(xml.getFullName(), "max-cache-wait", "Must be a time value or 1-100%");
+    } else {
+      maxWaitPercent = -1;
+      maxCacheWait = xml.getTimeValue("max-cache-wait", "s");
+    }
   }
 
-  public long getMaxCacheWait() {
-    return maxWait;
+  public long getMaxCacheWait(long maxCwWait) {
+    if(maxCacheWait == -1) return (long)((maxWaitPercent / 100.0) * maxCwWait);
+    else return Math.min(maxCwWait, maxCacheWait);
   }
 
   public void start() {
@@ -42,8 +54,9 @@ public class DefaultCache implements CacheHandler {
     waitHits = 0;
   }
 
-  public CamdNetMessage processRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
+  public CamdNetMessage processRequest(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxCwWait) {
     long start = System.currentTimeMillis();
+    long maxWait = getMaxCacheWait(maxCwWait);
 
     synchronized(this) {
       

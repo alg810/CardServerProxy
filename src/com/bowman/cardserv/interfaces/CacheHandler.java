@@ -13,10 +13,10 @@ import java.util.Properties;
 public interface CacheHandler extends XmlConfigurable {
 
   void start();
-  CamdNetMessage processRequest(int successFactor, CamdNetMessage request, boolean alwaysWait);
+  CamdNetMessage processRequest(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxCwWait);
   boolean processReply(CamdNetMessage request, CamdNetMessage reply);
   CamdNetMessage peekReply(CamdNetMessage request);
-  long getMaxCacheWait();
+  long getMaxCacheWait(long maxCwWait);
 
   Properties getUsageStats();
   void setListener(CacheListener listener);
