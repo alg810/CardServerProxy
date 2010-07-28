@@ -577,10 +577,16 @@ public class CwsServiceMapper implements XmlConfigurable {
           }
           registerRediscovery(conn.getName(), id);
         } else {
-          logger.warning("Service [" + config.getServiceName(msg) + "] failed to decode on CWS: "  + conn.getName() +
-              " (two consecutive failures removes mapping) source: " + session);
-          setLastFailed(id, conn.getName(), true, session==null?-1:session.getId());
-          return;
+          if(overrideCanDecodeMap.containsKey(id)) {
+            logger.info("Service [" + config.getServiceName(msg) + "] failed to decode on CWS: " + conn.getName() +
+                " (according to the manual can-decode list it should always decode). Ecm source was: " + session);
+            return;
+          } else {
+            logger.warning("Service [" + config.getServiceName(msg) + "] failed to decode on CWS: "  + conn.getName() +
+                " (two consecutive failures removes mapping). Ecm source was: " + session);
+            setLastFailed(id, conn.getName(), true, session==null?-1:session.getId());
+            return;
+          }
         }
       }
 

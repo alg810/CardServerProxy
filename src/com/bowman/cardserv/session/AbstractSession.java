@@ -280,8 +280,8 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
   public int sendEcmReply(CamdNetMessage ecmRequest, CamdNetMessage ecmReply) {
     if(ecmReply.getCaId() != 0 && (ecmRequest.getCaId() != ecmReply.getCaId())) {
       setFlag(ecmRequest, 'M');
-      logger.warning("Ca-id mismatch, client sent request for id " + Integer.toHexString(ecmReply.getCaId()) +
-          " to profile: " + getProfile());
+      logger.warning("Ca-id mismatch, response had ca-id " + Integer.toHexString(ecmReply.getCaId()) +
+          " but request was for profile: " + getProfile());
       if(ProxyConfig.getInstance().isBlockCaidMismatch()) ecmReply = ecmRequest.getEmptyReply();
     }
     if(!isInterested(ecmRequest)) {
