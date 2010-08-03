@@ -74,6 +74,11 @@
     <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.rmi.RemoteHandler" base="classes"/>
     <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.test.RemoteTestClient" base="classes"/>
     <delete file="classes/com/bowman/cardserv/test/TestUtil.class"/>
+    <delete file="classes/com/bowman/cardserv/BowbotUserManager.class"/>    
+    <exec executable="svnversion" outputproperty="svn.revision" failifexecutionfails="false">
+      <arg value="src"/>
+    </exec>
+    <echo message="svn.revision=${svn.revision}" file="classes/com/bowman/cardserv/build.properties"/>
     <jar jarfile="build/lib/cardservproxy.jar" manifest="src/META-INF/MANIFEST.MF">
       <fileset dir="classes">
         <include name="**/*" />

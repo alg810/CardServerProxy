@@ -962,6 +962,7 @@ public class XmlHelper implements CommandManager {
       xb.appendElement("proxy-status", "state", "up");
       xb.appendAttr("name", proxy.getName());
       xb.appendAttr("version", CardServProxy.APP_VERSION);
+      xb.appendAttr("build", CardServProxy.APP_BUILD);
       xb.appendAttr("ecm-count", counters[RemoteListener.C_ECMCOUNT]);
       xb.appendAttr("ecm-forwards", counters[RemoteListener.C_ECMFORWARDS]);
       xb.appendAttr("ecm-cache-hits", counters[RemoteListener.C_ECMCACHEHITS]);

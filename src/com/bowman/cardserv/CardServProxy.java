@@ -24,6 +24,7 @@ import java.util.*;
 public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runnable {
 
   public static final String APP_VERSION = "0.9.0";
+  public static String APP_BUILD = "";
   static ProxyLogger logger;
   private static Registry registry;
 
@@ -34,6 +35,12 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     } catch(IOException e) {
       e.printStackTrace();
     }
+    try {
+      Properties props = new Properties();
+      props.load(CardServProxy.class.getResourceAsStream("build.properties"));
+      String svnRev = props.getProperty("svn.revision");
+      if(svnRev != null && svnRev.indexOf('$') == -1) APP_BUILD = "r" + svnRev;
+    } catch(Exception e) {}
   }
 
   private ProxyConfig config;

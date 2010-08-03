@@ -120,6 +120,7 @@ Cardservproxy changelog:
   Added: Attributes 'network-id', 'ca-id', 'provider-ident' and 'origin-id' to <ecm> (transaction logs). These are only
   included when the transaction occured in the '*' profile, and origin-id only for CspSession transactions.
   Added: Attribute 'au' to <session> for NewcamdSessions. Indicates which connector the session is forwarding emms to.
+  Added: Attribute 'build' to <proxy-status>. The build number for the running cardservproxy.jar.
 
 
 0.8.13 - 2009-10-18

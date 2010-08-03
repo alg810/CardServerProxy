@@ -626,7 +626,7 @@
   <xsl:template name="jvm">
     <span style="font-size: smaller">
       <xsl:for-each select="//proxy-status/jvm">
-        <strong>CSP <xsl:value-of select="../@version"/></strong> - <strong>JVM: </strong>
+        <strong>CSP <xsl:value-of select="../@version"/> <xsl:value-of select="../@build"/></strong> - <strong>JVM: </strong>
         <span id="jvm">[<xsl:value-of select="@name"/> <xsl:value-of select="@version"/>]</span><strong> Heap: </strong>
         [<xsl:value-of select="@heap-total - @heap-free"/>k/<xsl:value-of select="@heap-total"/>k] <strong>TC: </strong>
         <span id="tc"> [<xsl:value-of select="@threads"/>]</span>
