@@ -156,10 +156,10 @@ Contents:<br />
         <li><a href="#connection-manager/service-map/mapper/reset-services">mapper/reset-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/allow-services">mapper/allow-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/block-services">mapper/block-services</a></li>
+        <li><a href="#connection-manager/service-map/mapper/dummy-services">mapper/dummy-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/auto-reset-threshold">mapper/auto-reset-threshold</a></li>
         <li><a href="#connection-manager/service-map/mapper/log-missing-sid">mapper/log-missing-sid</a></li>
         <li><a href="#connection-manager/service-map/mapper/broadcast-missing-sid">mapper/broadcast-missing-sid</a></li>
-        <li><a href="#connection-manager/service-map/mapper/unknown-sid">mapper/unknown-sid</a></li>
         <li><a href="#connection-manager/service-map/mapper/redundant-forwarding">mapper/redundant-forwarding</a></li>
         <li><a href="#connection-manager/service-map/mapper/retry-lost-services">mapper/retry-lost-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/hide-unknown-services">mapper/hide-unknown-services</a></li>
@@ -473,7 +473,8 @@ Example:  <em class='italic'>&lt;services-file format="dvbviewer">etc/dvbviewer.
 
 <a name="ca-profiles/profile/max-cw-wait">
 <div class='indent'>ca-profiles/profile/max-cw-wait</div><br />
-This defines the maximum wait time (in seconds) for anything trying to get a CW reply from this profile, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze (or 1 second above that). Applies to all CWS connectors in this profile, if set here it overrides the global setting in connection-manager.<br />
+This defines the maximum wait time (in seconds) for anything trying to get a CW reply from this profile, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze. Applies to all CWS connectors in this profile, if set here it overrides the global setting in connection-manager.<br />
+<strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is the global value, not the per profile one.<br />
 To determine a reasonable value for max-cw-wait, it is possible to use the test-delay feature in the LoggingPlugin. This can insert an artificial delay into the processing of requests for a specific test-user (source ip address). Increase the delay gradually until freezes occur for the test-user and note the total ecm time in the client logs when this happens, this is your max-cw-wait. Make sure the client ecm timeout is set high enough not to interfere with the result.<br /> 
 See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
@@ -645,12 +646,13 @@ Example: <br/>
 </a>
 
 <a name="rmi/status-web/csp-connect">
-<div class='indent'>rmi/status-web/csp-connect (attributes: enabled, debug)</div><br />
+<div class='indent'>rmi/status-web/csp-connect (attributes: enabled, debug, ignore-cache-requests)</div><br />
 Allows disabling of csp-connections (csp-connectors from other proxies).<br />
 Csp-connections are always asynchronous and allow users access to all profiles (that they have access to according to the user-manager) over a single tcp connection. As the httpd is used to receive connections initially, enabling ssl is recommended (without https the credentials are sent in the clear).<br />
 <br />
 - <strong class='bold'>enabled</strong>: true/false (default: true)<br />
 - <strong class='bold'>debug</strong>: true/false (default: false). Corresponds to the debug attribute for regular ca-profiles and determines whether to keep the transaction backlog for troubleshooting.<br />
+- <strong class='bold'>ignore-cache-requests</strong>: true/false (default: false). Set to true to ignore clients requests for udp cache updates (even when ClusteredCache is in use locally).<br />
 <br />
 </a>
 
@@ -773,6 +775,7 @@ The interval between connection attempts (in seconds) for servers that are not a
 <a name="connection-manager/max-cw-wait">
 <div class='indent'>connection-manager/max-cw-wait</div><br />
 If a CWS connection is congested or not responding, this defines the maximum wait time (in seconds, default: 9) for anything trying to get a CW reply, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze (or 1 second above that). This is the default for all CWS connectors in all profiles.<br />
+<strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is always this global value, not the per profile one.<br />
 To determine a reasonable value for max-cw-wait, it is possible to use the test-delay feature in the LoggingPlugin. This can insert an artificial delay into the processing of requests for a specific test-user (source ip address). Increase the delay gradually until freezes occur for the test-user and note the total ecm time in the client logs when this happens, this is your max-cw-wait. Make sure the client ecm timeout is set high enough not to interfere with the result.<br />
 See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
@@ -916,6 +919,14 @@ Example:  <em class='italic'>&lt;block-services>0438:020500 038e:020500 03ca:020
 <br />
 </a>
 
+<a name="connection-manager/service-map/mapper/dummy-services">
+<div class='indent'>connection-manager/service-map/mapper/dummy-services</div><br />
+Some clients who are unable to known the real sid (i.e typically hardware solutions) send fixed dummy sids instead of 0. To make sure these aren't treated as real sids by the service mapping, list any such dummy sids here.<br />
+<strong>NOTE: </strong> The first sid listed here will also be used when forwarding unknown sid request to connectors, so if you want unknown forwards to keep the sid 0 - set 0 as the first entry in this list.<br />
+<br />
+Example:  <em class='italic'>&lt;dummy-services>101 1101&lt;/dummy-services></em> <br />
+</a>
+
 <a name="connection-manager/service-map/mapper/auto-reset-threshold">
 <div class='indent'>connection-manager/service-map/mapper/auto-reset-threshold</div><br />
 If the service mapper has determined that a particular service cannot be decoded by any card, but clients still keep sending ECM requests for it, this will determine how many such failures it would take before the mapper forgets the service status and tries all the cards again. Useful in case of glitches where services fail to decode for a short period (also see retry-lost-services). Setting a value too low could cause cards to be congested with probing, and setting it too high means users will have to wait longer before lost services are discovered again.<br />
@@ -934,12 +945,6 @@ true/false (default: false). Enable this to have ecms without sid always forward
 <br />
 </a>
 
-<a name="connection-manager/service-map/mapper/unknown-sid">
-<div class='indent'>connection-manager/service-map/mapper/unknown-sid</div><br />
-Defines a special SID that will be sent to servers when SID is 0 (unknown). Client requests for this SID will also be treated as if it was 0. This can be used as a workaround for servers that require a non-zero SID, and for clients that send a fixed special SID instead of 0 when service is unknown (e.g cardlink). Make sure that this isn't set to a real SID that exists in the services file.<br />
-<br />
-</a>
-
 <a name="connection-manager/service-map/mapper/redundant-forwarding">
 <div class='indent'>connection-manager/service-map/mapper/redundant-forwarding</div><br />
 true/false (default: false). If this is true, the proxy will pick two connectors for each forward instead of just one (assuming there are at least two available). The ideal candidate will still be considered the primary choice, but the secondary will also receive the same forward (triggering transaction flag '2').<br />
@@ -948,13 +953,12 @@ Secondary forwards are treated like probes, they are only carried out if there i
 <br />
 </a>
 
-
 <a name="connection-manager/service-map/mapper/retry-lost-services">
 <div class='indent'>connection-manager/service-map/mapper/retry-lost-services</div><br />
 true/false (default: true). Whenever the service-mapper registers a service lost from a card that could previously decode it, it will register a background probe to see if it returns.<br />
 The status for the service on the particular card in question will be reset with an increasing interval (doubles every time, starting at 5 minutes after it was lost and ending if it hasn't been found after 48 hours).
 Under normal circumstances, you probably want to keep this switched on, for all profiles with service-mapping enabled.<br />
-<strong>NOTE: </strong> This mainly helps when there are multiple cards in the profile, if there is only then lost services would be found within minutes when someone tried to watch them, through the auto-reset-threshold.<br />
+<strong>NOTE: </strong> This mainly helps when there are multiple cards in the profile, if there is only one then lost services would be found within minutes when someone tried to watch them, through the auto-reset-threshold.<br />
 <br />
 </a>
 
@@ -1243,6 +1247,7 @@ The maximum age (in seconds) of an ECM -> CW mapping in the cache, before it can
 <a name="cache-handler/cache-config/max-cache-wait">
 <div class='indent'>cache-handler/cache-config/max-cache-wait</div><br />
 The maximum time (in seconds) that a client can be kept waiting in the cache for a pending request.<br />
+<strong>NOTE: </strong> As of 0.9.0, this can also be configured with a percentage string, e.g "50%" to indicate a max-cache-wait of 50% of the max-cw-wait for the request. This makes more sense when using profiles with radically different max-cw-waits in the same proxy (e.g some with 9 seconds and others with 650 ms).<br />
 See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
 The clustered cache (which is an extension of the default cache) has many additional settings, see <strong>README.ClusteredCache.txt</strong> for full docs.<br />
