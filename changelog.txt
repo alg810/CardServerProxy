@@ -108,11 +108,13 @@ Cardservproxy changelog:
   Added: New status command 'system-threads', dumps all JVM threads as strings (superuser only).
   Added: New status command 'login-failures', shows a list of failed login attempts per user or ip (for most interfaces).
   Added: New status command 'proxy-plugins' for listing all loaded plugins and any associated info they publish.
+  Added: New status command 'file-log', returns recently intercepted file loggings with level WARNING or SEVERE.
   Added: New ctrl command 'gen-keystore', auto creates a java keystore for using the status web with SSL.
   Added: New ctrl command 'disable-connector', temporarily disables a specified connector.
   Added: New ctrl command 'set-profile-debug', temporarily changes debug flags (set to false for ALL to delete ecm logs).
   Added: New ctrl command 'set-user-debug', temporarily changes debug for a user (enabling log-ecm, log-emm, log-zap).
   Added: New ctrl command 'remove-failed', removes entries matching specified wildcard mask from login-failures.
+  Added: New ctrl command 'clear-file-log', removes intercepted file log entries from the web-backend.
   Added: Attribute 'time' to <jvm> (proxy-status output). Local system time as a rfc822 date.
   Added: Attribute 'cdata' to <service> (most output containing services). Custom data for service mapping (chid/ident).
   Added: Element <remote-info> to <connector> (cws-connectors output). List of <cws-param> elements with name/value

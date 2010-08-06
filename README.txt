@@ -81,7 +81,7 @@ INSTALL NOTES:
 
 - When running under windows, use the prepared java service wrapper setup (jsw-win32.zip) to install the
   proxy as a proper nt service (kept running regardless of user login/logout and started automatically at boot).
-  Make sure the all the jsw files are in a dir called jsw in the proxy home dir, and set silent="true" for the logging
+  Make sure all the jsw files are in a dir called jsw in the proxy home dir, and set silent="true" for the logging
   in proxy.xml or you'll have duplicate logs. Also make sure you can successfully start the proxy from cmdline before
   you try it as a service.
   NOTE: Do not try to run the jsw wrapper.exe manually, it will only work when started by the installed service entry.

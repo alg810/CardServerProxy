@@ -39,6 +39,7 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
   Set superUsers = new HashSet();
   List eventLog = Collections.synchronizedList(new ArrayList());
   List warningLog = Collections.synchronizedList(new ArrayList());
+  List fileLog = Collections.synchronizedList(new ArrayList());
 
   private Set connecting = new HashSet(), invalid = new HashSet();
 
@@ -553,6 +554,9 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
           eventLog.add(0, event);
         }
         break;
+      case RemoteEvent.LOG_EVENT:
+        fileLog.add(0, event);
+        break;
 
       default:
         System.err.println("Unknown remote event received: " + event.getType() + " " + event.getLabel() + " " +
@@ -560,6 +564,7 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
     }
 
     if(eventLog.size() > MAX_EVENTS) eventLog.remove(eventLog.size() - 1);
+    if(fileLog.size() > MAX_EVENTS) fileLog.remove(fileLog.size() - 1);
   }
 
   private void logUserTransaction(RemoteEvent event) {

@@ -33,7 +33,7 @@ window.onload = writeLoginWindow;
 var sections = {
   events: {
     label: 'Events',
-    queries: ['proxy-status', 'ca-profiles', 'error-log', 'user-warning-log', 'profile'],
+    queries: ['proxy-status', 'ca-profiles', 'error-log', 'user-warning-log', 'file-log', 'profile'],
     repeat: true,
     handler: function(xml) {
       // format cws event timestamps to avoid having to do it with xslt :P
@@ -82,6 +82,9 @@ var sections = {
       };
       if(getById('clearWarningsBtn')) getById('clearWarningsBtn').onclick = function() {
         executeCtrlCmd('clear-warnings', new Array());
+      };
+      if(getById('clearFileLogBtn')) getById('clearFileLogBtn').onclick = function() {
+        executeCtrlCmd('clear-file-log', new Array());
       };
 
       document.title = 'CSP Status: ' + getFirstByTag('proxy-status', xml).getAttribute('name');

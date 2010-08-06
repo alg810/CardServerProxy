@@ -35,6 +35,8 @@ Available status commands (as of 0.9.0):
 - error-log: the last 40 (by default) events of general interest
     optional parameters: profile (list only events related to specified profile)
 
+- file-log: the last 40 (by default) events of log level WARNING or SEVERE from the main file log
+
 - user-log: the last 100 transactions results for a specific user (requires debug="true" for the profile)
     optional parameters: name (list transactions for named user instead of calling user, admin only)
 

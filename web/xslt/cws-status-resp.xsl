@@ -60,6 +60,26 @@
     </fieldset><br /><br />
   </xsl:template>
 
+  <xsl:template match="file-log">
+    <xsl:if test="@size > -1">
+    <fieldset>
+      <legend><strong>File log events</strong> (recent WARNING and SEVERE level loggings) <input id="clearFileLogBtn" type="button" value="Clear"/> </legend>
+      <table class="error-log">
+        <tbody>
+          <tr><td>
+            <xsl:for-each select="event">
+              <xsl:value-of select="@timestamp"/> -
+              <strong> <xsl:value-of select="@log-level"/>: </strong>
+              <strong><xsl:value-of select="@label"/></strong> - <xsl:value-of select="@msg"/><br />
+            </xsl:for-each>
+            <xsl:if test="@size = 0">No events</xsl:if>
+          </td></tr>
+        </tbody>
+      </table>
+    </fieldset><br /><br />
+    </xsl:if>
+  </xsl:template>
+
   <xsl:key name="ev-by-time" match="ecm" use="substring(@timestamp, 1, string-length(@timestamp) - 3)"/>
 
   <xsl:template match="user-warning-log">

@@ -78,6 +78,11 @@ public class CustomFormatter extends Formatter {
     this.skipLead = skipLead;
   }
 
+  public static String formatLabel(String sourceClass) {
+    if(sourceClass.startsWith(logBase)) return sourceClass.substring(logBase.length() + 1);
+    else return sourceClass;
+  }
+
   public String format(LogRecord lr) {
 
     Object label = null;

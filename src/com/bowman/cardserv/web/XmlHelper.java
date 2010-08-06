@@ -264,6 +264,11 @@ public class XmlHelper implements CommandManager {
     return new CtrlCommandResult(true, "Events cleared.");
   }
 
+  public CtrlCommandResult runCtrlCmdClearFileLog() throws RemoteException {
+    webBackend.fileLog.clear();
+    return new CtrlCommandResult(true, "File log events cleared.");
+  }  
+
   public CtrlCommandResult runCtrlCmdGenKeystore(Map params) throws RemoteException {
     String password = (String)params.get("password");
     String host = (String)params.get("host");
@@ -381,6 +386,14 @@ public class XmlHelper implements CommandManager {
 
   public void runStatusCmdErrorLog(XmlStringBuffer xb, Map params, String user) throws RemoteException {
     xmlFormatErrorLog(xb, (String[])params.get("profiles"), proxy.isAdmin(user));
+  }
+
+  public void runStatusCmdFileLog(XmlStringBuffer xb, Map params, String user) throws RemoteException {
+    if(!proxy.isAdmin(user)) {
+      xb.appendElement("file-log", "size", "-1", true);
+    } else {
+      xmlFormatFileLog(xb);
+    }
   }
 
   public void runStatusCmdUserLog(XmlStringBuffer xb, Map params, String user) throws RemoteException {
@@ -1041,6 +1054,22 @@ public class XmlHelper implements CommandManager {
       }
     }
     xb.closeElement("error-log");
+  }
+
+  private void xmlFormatFileLog(XmlStringBuffer xb) {
+    RemoteEvent event;
+    xb.appendElement("file-log", "size", webBackend.fileLog.size());
+
+    for(Iterator iter = webBackend.fileLog.iterator(); iter.hasNext(); ) {
+      event = (RemoteEvent)iter.next();
+      xb.appendElement("event");
+      xb.appendAttr("timestamp", formatTimeStamp(event.getTimeStamp()));
+      xb.appendAttr("log-level", event.getProperty("log-level"));    
+      xb.appendAttr("label", event.getLabel());
+      xb.appendAttr("msg", event.getMessage());
+      xb.endElement(true);
+    }
+    xb.closeElement("file-log");
   }
 
   private void xmlFormatUserLog(XmlStringBuffer xb, String userName, String[] profiles) {

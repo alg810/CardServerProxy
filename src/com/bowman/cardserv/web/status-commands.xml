@@ -31,6 +31,8 @@
 
   <command name="error-log" label="Show cws events" description="Recent connector errors and events." />
 
+  <command name="file-log" label="Show file log events" description="Recent SEVERE and WARNING level loggings."/>
+
   <command name="user-log" label="Show user transaction log" description="Recent ecm transaction for one user.">
     <command-param name="name" label="" optional="true" admin-only="true">
       <option source="@known-users"/>

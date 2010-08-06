@@ -91,6 +91,8 @@
 
   <command name="clear-events" label="Clear CWS events" description="Clear all CWS events."/>
 
+   <command name="clear-file-log" label="Clear file log events" description="Clear all intercepted file log events (doesn't affect the actual files)."/>
+
   <command name="shutdown" label="Shutdown proxy" description="Stop this proxy node." confirm="true"/>
 
 </ctrl-commands>

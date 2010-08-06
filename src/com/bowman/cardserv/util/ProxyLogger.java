@@ -1,6 +1,7 @@
 package com.bowman.cardserv.util;
 
 import com.bowman.cardserv.ConfigException;
+import com.bowman.cardserv.interfaces.LogListener;
 
 import java.util.logging.*;
 import java.util.*;
@@ -17,6 +18,11 @@ public class ProxyLogger {
 
   public static final String LOG_BASE = "com.bowman.cardserv";
   private static ConsoleHandler console;
+  private static LogListener listener;
+
+  public static void setLogListener(LogListener logListener) {
+    listener = logListener;
+  }
 
   public static ProxyLogger getProxyLogger(String name) {
     return new ProxyLogger(Logger.getLogger(name));
@@ -61,6 +67,11 @@ public class ProxyLogger {
     StackTraceElement caller = getCallerStackFrame();
     String sourceClass = caller==null?"<unknown>":caller.getClassName();
     String sourceMethod = caller==null?"<unknown>":caller.getMethodName();
+    if(listener != null) try {
+      listener.onLog(l, label, msg);
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
     logger.logp(l, sourceClass, sourceMethod, msg, label);
   }
 

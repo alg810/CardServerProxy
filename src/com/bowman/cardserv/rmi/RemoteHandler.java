@@ -11,6 +11,7 @@ import com.bowman.cardserv.interfaces.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RemoteException;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Created by IntelliJ IDEA.
@@ -19,7 +20,7 @@ import java.util.*;
  * Time: 10:54:23 PM
  */
 public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, UserStatusListener, CwsListener,
-    EcmTransactionListener, Runnable
+    EcmTransactionListener, LogListener, Runnable
 {
   private static final long EVENT_START_DELAY = 15 * 1000;
 
@@ -40,6 +41,7 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
     this.config = ProxyConfig.getInstance();
     this.logger = ProxyLogger.getLabeledLogger(getClass().getName());
     this.sm = SessionManager.getInstance();
+    ProxyLogger.setLogListener(this);
   }
 
   public void start() {
@@ -564,6 +566,14 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
 
     fireRemoteEvent(re);
   }
+
+  public void onLog(Level l, String label, String message) {
+    if(l == Level.SEVERE || l == Level.WARNING) {
+      RemoteEvent re = new RemoteEvent(RemoteEvent.LOG_EVENT, label, message, null);
+      re.setProperty("log-level", l.getName());
+      fireRemoteEvent(re);
+    }
+  }  
 
   public synchronized void destroy() {
     eventQueue.clear();

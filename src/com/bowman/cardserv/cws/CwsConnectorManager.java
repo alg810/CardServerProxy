@@ -189,11 +189,12 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
       profile = (CaProfile)iter.next();
       mapper = getServiceMapper(profile.getName());
       if(mapper == null) mapper = new CwsServiceMapper(profile, this);
-      conf = (ProxyXmlConfig)mapperConfs.get(profile.getName());
+      conf = (ProxyXmlConfig)mapperConfs.remove(profile.getName());
       defaults.setOverrides(conf);
       mapper.configUpdated(defaults);
       serviceMappers.put(profile.getName(), mapper);
     }
+    if(!mapperConfs.isEmpty()) logger.warning("Mapper configs for unknown profile(s) ignored: " + mapperConfs.keySet());
   }
 
   private void updateConnectors(ProxyXmlConfig xml, Map connectors) throws ConfigException {

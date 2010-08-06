@@ -18,7 +18,7 @@ public class RemoteEvent extends AbstractStatus implements Serializable {
   public static final int CWS_CONNECTION_FAILED = 4, CWS_WARNING = 5;
   public static final int CWS_LOST_SERVICE = 6, ECM_TRANSACTION = 7;
   public static final int CWS_INVALID_CARD = 8;
-  public static final int PROXY_STARTUP = 10;
+  public static final int PROXY_STARTUP = 10, LOG_EVENT = 11;
 
   private final long timeStamp;
   private final int type;
