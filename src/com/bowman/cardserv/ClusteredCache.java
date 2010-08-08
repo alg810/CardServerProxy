@@ -394,7 +394,10 @@ public class ClusteredCache extends DefaultCache implements Runnable {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(bos);
       if(reply == null) dos.writeByte(TYPE_REQUEST);
-      else dos.writeByte(TYPE_REPLY);
+      else {
+        dos.writeByte(TYPE_REPLY);
+        request.setArbiterNumber(null);
+      }
       writeCacheReq(dos, request);
       if(reply != null) writeCacheRpl(dos, reply);
       dos.close();
