@@ -63,7 +63,7 @@
   <xsl:template match="file-log">
     <xsl:if test="@size > -1">
     <fieldset>
-      <legend><strong>File log events</strong> (recent WARNING and SEVERE level loggings) <input id="clearFileLogBtn" type="button" value="Clear"/> </legend>
+      <legend><strong>File Log Events</strong> (recent WARNING and SEVERE level loggings) <input id="clearFileLogBtn" type="button" value="Clear"/> </legend>
       <table class="error-log">
         <tbody>
           <tr><td>

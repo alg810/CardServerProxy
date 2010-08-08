@@ -389,7 +389,7 @@ public class XmlHelper implements CommandManager {
   }
 
   public void runStatusCmdFileLog(XmlStringBuffer xb, Map params, String user) throws RemoteException {
-    if(!proxy.isAdmin(user)) {
+    if(!proxy.isAdmin(user) || !ProxyConfig.getInstance().isIncludeFileEvents()) {
       xb.appendElement("file-log", "size", "-1", true);
     } else {
       xmlFormatFileLog(xb);

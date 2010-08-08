@@ -40,6 +40,7 @@ public class ProxyConfig implements FileChangeListener {
   private String logFile, logLevel, wtBadFlags;
   private int wtMaxDelay, etMinCount, maxThreads, sessionTimeout, newcamdMaxMsgSize, maxPending, maxConnectionsIP;
   private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs, blockCaidMismatch;
+  private boolean wtIncludeFile;
 
   private boolean firstRead = true, started = false;
   private byte[] defaultProfileDesKey, defaultConnectorDesKey, defaultClientId;
@@ -126,6 +127,10 @@ public class ProxyConfig implements FileChangeListener {
 
   public boolean isDebug() {
     return debug;
+  }
+
+  public boolean isIncludeFileEvents() {
+    return wtIncludeFile;
   }
 
   public boolean isHideIPs() {
@@ -335,9 +340,11 @@ public class ProxyConfig implements FileChangeListener {
       ProxyXmlConfig wtConfig = logConfig.getSubConfig("warning-threshold");
       wtBadFlags = wtConfig.getStringValue("bad-flags");
       wtMaxDelay = wtConfig.getTimeValue("max-delay", "ms");
+      wtIncludeFile = "true".equalsIgnoreCase(wtConfig.getStringValue("include-file-events", "true"));
     } catch (ConfigException e) {
       wtBadFlags = "YMNTSAOQGXWDHU-";
       wtMaxDelay = 5000;
+      wtIncludeFile = true;
     }
 
     try {

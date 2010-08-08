@@ -100,6 +100,8 @@ Cardservproxy changelog:
   Use this to list any fake sids used by limited clients that can't know the real one, to avoid interference with maps.
   Added: Element <redundant-forwarding> to <mapper> (true/false, default: false). Can be set globally or per profile,
   as with other mapping settings. Transactions that trigger redundant forwarding will get the new flag '2'.
+  Added: Attribute 'include-file-events' to <warning-threshold> (true/false, default: true). Setting this to false
+  disables the 'file-log' http query (no file log events will be intercepted for display on the web).
 
 - Changes to the http/xml api: (always use /xmlHandler?command=status-commands or ctrl-commands to see syntax).
   Added: New status command 'export-services', dumps the internal state of the service maps (admin only). Add the param

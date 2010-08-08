@@ -180,7 +180,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
 
     startTimeStamp = System.currentTimeMillis();
 
-    logger.info("-= CardServProxy " + APP_VERSION + " initialized =-");
+    logger.info("-= CardServProxy " + APP_VERSION + APP_BUILD + " initialized =-");
     logger.fine("CA-Profiles: ");
     CaProfile cp;
     for(Iterator iter = config.getProfiles().values().iterator(); iter.hasNext(); ) {

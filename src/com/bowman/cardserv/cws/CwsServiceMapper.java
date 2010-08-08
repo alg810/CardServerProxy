@@ -567,8 +567,10 @@ public class CwsServiceMapper implements XmlConfigurable {
           // only remove for 2 consecutive failures from different sessions
           connectors.remove(conn.getName());
           setLastFailed(id, conn.getName(), false, -1);
-          logger.warning("Service [" + config.getServiceName(msg) + "] no longer available on CWS: " + conn.getName() +
-              " source: " + session);
+          String s = "Service [" + config.getServiceName(msg) + "] no longer available on CWS: " + conn.getName() +
+              " Ecm source was: " + session;
+          if(resetServices.contains(id)) logger.info(s);
+          else logger.warning(s);
           resetSingle(new ServiceMapping(id.serviceId, -1), conn.getName());
           if(session != null) session.setFlag(msg, '-');
           cacheUpdated = true;
@@ -582,8 +584,10 @@ public class CwsServiceMapper implements XmlConfigurable {
                 " (according to the manual can-decode list it should always decode). Ecm source was: " + session);
             return;
           } else {
-            logger.warning("Service [" + config.getServiceName(msg) + "] failed to decode on CWS: "  + conn.getName() +
-                " (two consecutive failures removes mapping). Ecm source was: " + session);
+            String s = "Service [" + config.getServiceName(msg) + "] failed to decode on CWS: "  + conn.getName() +
+                " (two consecutive failures removes mapping). Ecm source was: " + session;
+            if(resetServices.contains(id)) logger.info(s);
+            else logger.warning(s);
             setLastFailed(id, conn.getName(), true, session==null?-1:session.getId());
             return;
           }

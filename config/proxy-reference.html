@@ -91,7 +91,7 @@ Contents:<br />
   <li><a href="#logging/log-level">logging/log-level</a></li>
   <li><a href="#logging/silent">logging/silent</a></li>
   <li><a href="#logging/debug">logging/debug</a></li>
-  <li><a href="#logging/warning-threshold">logging/warning-threshold (attributes: *bad-flags, *max-delay)</a></li>
+  <li><a href="#logging/warning-threshold">logging/warning-threshold (attributes: *bad-flags, *max-delay, include-file-events)</a></li>
   <li><a href="#logging/event-threshold">logging/event-threshold (attributes: *min-count)</a></li>
 </ul>
 <br />
@@ -328,7 +328,10 @@ Example:  <em class='italic'>&lt;extended-newcamd listen-port="5556"/></em> <br 
 <div class='indent'>ca-profiles/extended-newcamd/des-key</div><br />
 Overrides the default-des-key for the extended-newcamd listener.<br />
 <br />
-Example:  <em class='italic'>&lt;des-key>14 13 12 11 10 09 08 07 06 05 04 03 02 01&lt;/des-key></em>  <br />
+Example: <br /><br />
+  <em class='italic'>&lt;extended-newcamd listen-port="5556"></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;des-key>14 13 12 11 10 09 08 07 06 05 04 03 02 01&lt;/des-key></em><br />
+  <em class='italic'>&lt;/extended-newcamd></em> <br />
 <br />
 </a>
 
@@ -381,8 +384,11 @@ Example:  <em class='italic'>&lt;newcamd listen-port="13112" bind-ip="192.168.0.
 <div class='indent'>ca-profiles/profile/newcamd/des-key</div><br />
 Overrides the default-des-key for a particular newcamd listener.<br />
 <br />
-Example:  <em class='italic'>&lt;des-key>14 13 12 11 10 09 08 07 06 05 04 03 02 01&lt;/des-key></em>  <br />
-<br />
+Example: <br /><br />
+  <em class='italic'>&lt;newcamd listen-port="13112"></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;des-key>14 13 12 11 10 09 08 07 06 05 04 03 02 01&lt;/des-key></em><br />
+  <em class='italic'>&lt;/newcamd></em> <br />
+<br />  
 </a>
 
 <a name="ca-profiles/profile/newcamd/card-data">
@@ -550,8 +556,9 @@ Determines which user transactions to consider as potential problems (to be incl
 See <strong>README.Optimization.txt</strong> for more hints on how to interpret transaction flags.<br /><br />
 - <strong class='bold'>bad-flags</strong>: List of all flags that should be considered harmful (as a single string, no separators).<br />
 - <strong class='bold'>max-delay</strong>: In milliseconds, any transaction exceeding this limit will be considered a problem and traced (default: 5000).<br />
+- <strong class='bold'>include-file-events</strong>: true/false (default: true). Controls whether to gather all file loggings with level WARNING and SEVERE for display in the web-backend (file-log status query). Visible to admin users only.<br />
 <br />
-Example:  <em class='italic'>&lt;warning-threshold bad-flags="YTSGXWD-" max-delay="7000"/></em> <br />
+Example:  <em class='italic'>&lt;warning-threshold bad-flags="YTSGXWD-" max-delay="7000" include-file-events="true"/></em> <br />
 <br />
 </a>
 

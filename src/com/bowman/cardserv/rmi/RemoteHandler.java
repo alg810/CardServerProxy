@@ -569,9 +569,11 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
 
   public void onLog(Level l, String label, String message) {
     if(l == Level.SEVERE || l == Level.WARNING) {
-      RemoteEvent re = new RemoteEvent(RemoteEvent.LOG_EVENT, label, message, null);
-      re.setProperty("log-level", l.getName());
-      fireRemoteEvent(re);
+      if(config.isIncludeFileEvents()) {
+        RemoteEvent re = new RemoteEvent(RemoteEvent.LOG_EVENT, label, message, null);
+        re.setProperty("log-level", l.getName());
+        fireRemoteEvent(re);
+      }
     }
   }  
 

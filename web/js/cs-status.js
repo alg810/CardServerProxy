@@ -33,7 +33,7 @@ window.onload = writeLoginWindow;
 var sections = {
   events: {
     label: 'Events',
-    queries: ['proxy-status', 'ca-profiles', 'error-log', 'user-warning-log', 'file-log', 'profile'],
+    queries: ['proxy-status', 'ca-profiles', 'error-log', 'file-log', 'user-warning-log', 'profile'],
     repeat: true,
     handler: function(xml) {
       // format cws event timestamps to avoid having to do it with xslt :P
