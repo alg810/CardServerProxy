@@ -266,7 +266,8 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
       String vendorUrl = System.getProperty("java.vendor.url");
       if(vendorUrl != null)
         if(!vendorUrl.startsWith("http://java.sun.com")) {
-          System.err.println("Unsupported java vm '" + System.getProperty("java.vm.name") + "', only the original sun vm has been tested with csp.");
+          System.err.println("Startup failed: Unsupported java vm '" + System.getProperty("java.vm.name") +
+              "', only the original sun vm has been tested with csp.");
           System.exit(5);
         }
     }
