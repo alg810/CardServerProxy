@@ -81,7 +81,7 @@ For the mgcamd/newcs extensions every message must contain both caid and provide
 defined that has the matching caid/ident the message will be handled within that profile.
 If there are multiple matching profiles, it becomes necessary to configure which ones should be considered for matching.
 In case of the extended-newcamd port, this is achieved by using the exclude-profiles element (listing the names of those
-that profiles that should not be matched). So a limitation of the mgcamd/newcs extensions is that it doesn't work
+profiles that should not be matched). So a limitation of the mgcamd/newcs extensions is that it doesn't work
 if there are multiple cards involved that have the exact same caid+ident (but incompatible traffic/different vendors).
 NOTE: To specify a list of profiles for the chameleon-connectors the config is inverted, so you use the profiles
 element to select which profiles should be matched (there is no exclude-profiles here).

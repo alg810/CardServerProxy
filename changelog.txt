@@ -26,6 +26,7 @@ Cardservproxy changelog:
 - Changed: ClusteredCache sync-period is now used even in receive-only mode (without peers). This can allow you to
   significantly increase cache hits at the expense of ecm transaction time. ClusteredCache is now used by default.
 - Added: Services parser for dvbviewer exports (ini files). The filter string is matched against the "Root" key if set.
+- Added: Services parser for neutrino services.xml.
 - Added: Timed ecm blacklist per connector, to avoid forwarding the same ecm several times to a connector that can't
   handle it (mainly when there is no sid to go by in the request). Entries will be kept for 3*max-cw-wait.
 - Added: Slightly better awareness of satellite concepts like provider-idents and other ca-system-specific artefacts.
@@ -64,12 +65,12 @@ Cardservproxy changelog:
   connectors, before they're processed by the proxy (possibly find and delete bad CW's). See README.Plugins.txt.
   A DcwFilterPlugin that illustrates this and blocks some common bad responses is included.
 - Added: Fixes for running under jamvm on embedded systems (including the broken auto-generating of the config template).
-- Added: New status commands for troubleshooting: 'export-services', 'system-properties', 'system-threads' and
-  'proxy-plugins'.
+- Added: New status commands for troubleshooting: 'export-services', 'system-properties', 'system-threads', 'file-log'
+  and 'proxy-plugins'.
 - Added: Option to configure the date-format used by the default logger (allows easier fail2ban monitoring).
 - Added: Arbitrary meta-data/remote info can now be returned by connectors (for display/troubleshooting/statistics).
 - Added: Multiple client ids (oscam, scam, rq-sssp etc).
-- Added: More example plugins included (and updated versions of rest).
+- Added: More example plugins included (and updated versions of the rest).
 - Added: JVM version check. The proxy will refuse to start with anything but a sun jvm. If you're absolutely sure, this
   can be overridden by adding the following to the java cmd line: -Dcom.bowman.cardserv.allowanyjvm=true
 

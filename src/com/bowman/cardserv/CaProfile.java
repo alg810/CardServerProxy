@@ -272,6 +272,10 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
         services.put(new Integer(service.getId()), service);
       }
       serviceConflicts = 0;
+    } else if("neutrino".equalsIgnoreCase(servicesFileFormat)) {
+      NeutrinoParser parser = new NeutrinoParser(servicesFile);
+      services = parser.parse(providerFilter, name, networkId);
+      serviceConflicts = parser.getConflicts();
     } else throw new IOException("Unknown format name: " + servicesFileFormat);
   }
 
