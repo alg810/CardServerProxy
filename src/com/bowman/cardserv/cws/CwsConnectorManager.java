@@ -595,7 +595,7 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
   }
 
   public long getCongestionLimit(CaProfile profile) {
-    if(profile == null) return congestionLimit;
+    if(profile == null || CaProfile.MULTIPLE == profile) return congestionLimit;
     else {
       long cl = profile.getCongestionLimit();
       return cl == -1 ? congestionLimit : cl;

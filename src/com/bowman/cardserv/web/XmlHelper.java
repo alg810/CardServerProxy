@@ -716,12 +716,16 @@ public class XmlHelper implements CommandManager {
           xb.appendAttr("mismatched-cards", profiles[i].isMismatchedCards());
           xb.appendAttr("provider-match", profiles[i].isRequiresProviderMatch());
           xb.appendAttr("parsed-services", profiles[i].getServices());
-          xb.appendAttr("parsed-conflicts", profiles[i].getConflicts());              
+          xb.appendAttr("parsed-conflicts", profiles[i].getConflicts());
         }
         xb.appendAttr("mapped-services", mappedServices);
         xb.appendAttr("debug", profiles[i].isDebug());
         xb.appendAttr("capacity", capacity);
         xb.appendAttr("sessions", profiles[i].getSessions());
+        xb.appendAttr("max-cw-wait", profiles[i].getMaxCwWait());
+        xb.appendAttr("max-cache-wait", profiles[i].getMaxCacheWait());
+        if(profiles[i].getCongestionLimit() != profiles[i].getMaxCwWait())
+          xb.appendAttr("congestion-limit", profiles[i].getCongestionLimit());
 
         xb.endElement(false);
 

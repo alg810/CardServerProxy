@@ -702,9 +702,18 @@
                 </a><br /></td>
               <td width="25%">
                 <xsl:if test="@ca-id"><strong>CA-Id: </strong><xsl:value-of select="@ca-id"/></xsl:if>
+                <xsl:if test="not(@network-id)">
+                  <div style="position: relative; left: -70px">(multi-context connectors/sessions)</div>
+                </xsl:if>
               </td>
               <td width="15%"><strong>Sessions: </strong><xsl:value-of select="@sessions"/></td>
-              <td width="15%"><strong>Services: </strong><xsl:value-of select="@mapped-services"/></td>
+              <td width="15%"><strong>
+                <xsl:choose>
+                  <xsl:when test="@network-id">Local services: </xsl:when>
+                  <xsl:otherwise>Services: </xsl:otherwise>
+                </xsl:choose>
+                </strong><xsl:value-of select="@mapped-services"/>
+              </td>
               <td width="5%">&#160;</td>
               <td width="20%" align="right">&#160;(<xsl:value-of select="sum(//connector[@profile=$profile]/@ecm-load)"/>)
 
@@ -718,13 +727,29 @@
               <xsl:if test="@network-id"><strong>Network-id: </strong> <xsl:value-of select="@network-id"/><br /></xsl:if>
               <xsl:if test="@ca-id"><strong>Ca-id: </strong> <xsl:value-of select="@ca-id"/><br /></xsl:if>
               <xsl:if test="@provider-idents"><strong>Provider-idents: </strong> <xsl:value-of select="@provider-idents"/><br /></xsl:if>
-              <xsl:if test="@provider-match"><strong>Require-provider-match: </strong> <xsl:value-of select="@provider-match"/><br /></xsl:if>
-              <strong>Debug: </strong> <xsl:value-of select="@debug"/><br />
+              <xsl:if test="@provider-match"><strong>Require-provider-match: </strong> <xsl:value-of select="@provider-match"/>
+                <xsl:if test="@provider-match='true'"> (provider-ident in requests must exist on connector for forwards to proceed)</xsl:if>
+                <xsl:if test="@provider-match='false'"> (provider-ident in requests not considered when forwarding)</xsl:if>
+                <br />
+              </xsl:if>
+              <strong>Debug: </strong> <xsl:value-of select="@debug"/>
+              <xsl:if test="@debug='true'"> (backlog of 100 transactions kept for every session - memory intensive)</xsl:if>
+              <xsl:if test="@debug='false'"> (no transaction backlogs kept)</xsl:if>
+              <br />
               <strong>Estimated capacity: </strong> <xsl:value-of select="@capacity"/><br />
               <strong>Estimated load: </strong><xsl:value-of select="sum(//connector[@profile=$profile]/@ecm-load)"/><br />
-              <strong>Mapped-services: </strong> <xsl:value-of select="@mapped-services"/><br />
-              <xsl:if test="@parsed-services"><strong>Parsed-services: </strong> <xsl:value-of select="@parsed-services"/><br /></xsl:if>
-              <xsl:if test="@parsed-conflicts"><strong>Conflicts (in services file): </strong> <xsl:value-of select="@parsed-conflicts"/><br /></xsl:if>
+              <strong>
+                <xsl:choose>
+                  <xsl:when test="@network-id">Locally mapped services: </xsl:when>
+                  <xsl:otherwise>Services: </xsl:otherwise>
+                </xsl:choose>
+              </strong><xsl:value-of select="@mapped-services"/>
+              <xsl:if test="@parsed-services"> (<xsl:value-of select="@parsed-services"/> parsed from services file, with <xsl:value-of select="@parsed-conflicts"/> conflicts)</xsl:if>
+              <br />
+              <strong>Max-cw-wait: </strong> <xsl:value-of select="@max-cw-wait"/> ms
+              <xsl:if test="@congestion-limit"> (congestion-limit at <xsl:value-of select="@congestion-limit"/> ms)</xsl:if>
+              <br />
+              <strong>Max-cache-wait: </strong> <xsl:value-of select="@max-cache-wait"/> ms<br />
 
               <xsl:if test="count(listen-port) > 0">
               <br /><strong>Listen-ports: </strong>

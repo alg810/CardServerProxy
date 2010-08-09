@@ -443,10 +443,12 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
         } else {
 
           if(msg.isTimeOut() && cws != null) { // see if there is time left for a forward
-            if(msg.getCacheTime() + cws.getEstimatedQueueTime() > connManager.getMaxCwWait(profile)) {
+            int qt = cws.getEstimatedQueueTime();
+            if(msg.getCacheTime() + qt > connManager.getMaxCwWait(profile)) {
               // no point in continuing
-              logger.warning("Cache timeout (" + msg.getCacheTime() + " ms) left no time for forwarding, discarding " +
-                  "request and returning empty for: " + session);
+              logger.warning("Cache timeout at " + msg.getCacheTime() + " ms left no time for forwarding to '" +
+                  cws.getName() + "' (" + qt + " ms queue), discarding request and returning empty for: " + session +
+                  " - max-cw-wait is " + connManager.getMaxCwWait(profile) + " ms");
               session.setFlag(msg, 'T');
               session.sendEcmReply(msg, msg.getEmptyReply());
               return;

@@ -1,6 +1,7 @@
 package com.bowman.cardserv.rmi;
 
 import com.bowman.cardserv.*;
+import com.bowman.cardserv.cws.CwsConnectorManager;
 
 import java.io.Serializable;
 import java.util.*;
@@ -15,6 +16,7 @@ public class ProfileStatus extends AbstractStatus implements Serializable {
 
   private final String name, caId, networkId, providerIdents;
   private final int services, conflicts, sessions;
+  private final long maxCwWait, congestionLimit, maxCacheWait;
   private final List listenPorts = new ArrayList();
   private final boolean enabled, cacheOnly, debug, mismatchedCards, requiresProviderMatch;
 
@@ -34,6 +36,10 @@ public class ProfileStatus extends AbstractStatus implements Serializable {
     for(Iterator iter = profile.getListenPorts().iterator(); iter.hasNext(); ) {
       listenPorts.add(new PortStatus((ListenPort)iter.next()));
     }
+    CwsConnectorManager cm = ProxyConfig.getInstance().getConnManager();
+    maxCwWait = cm.getMaxCwWait(profile);
+    congestionLimit = cm.getCongestionLimit(profile);
+    maxCacheWait = ProxyConfig.getInstance().getCacheHandler().getMaxCacheWait(maxCwWait);
   }
 
   public String getName() {
@@ -87,5 +93,17 @@ public class ProfileStatus extends AbstractStatus implements Serializable {
 
   public boolean isRequiresProviderMatch() {
     return requiresProviderMatch;
+  }
+
+  public long getMaxCwWait() {
+    return maxCwWait;
+  }
+
+  public long getCongestionLimit() {
+    return congestionLimit;
+  }
+
+  public long getMaxCacheWait() {
+    return maxCacheWait;
   }
 }
