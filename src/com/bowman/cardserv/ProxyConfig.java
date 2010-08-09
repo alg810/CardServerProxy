@@ -426,6 +426,7 @@ public class ProxyConfig implements FileChangeListener {
           String xml = sb.toString();
           xml = MessageFormat.format(xml, new Object[] {CardServProxy.APP_VERSION});
           saveCfgFile(xml.getBytes("UTF-8"));
+          System.err.println("Default su credentials: admin/secret (statusweb @ port 8082)");
         } catch (IOException e) {
           throw new ConfigException("Failed to generate default config: " + e, e);
         }

@@ -263,7 +263,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     if("true".equalsIgnoreCase(System.getProperty("com.bowman.cardserv.allowanyjvm"))) {
       // any jvm allowed
     } else {
-      String vendorUrl = System.getProperty("java.vm.vendor.url");
+      String vendorUrl = System.getProperty("java.vendor.url");
       if(vendorUrl != null)
         if(!vendorUrl.startsWith("http://java.sun.com")) {
           System.err.println("Unsupported java vm '" + System.getProperty("java.vm.name") + "', only the original sun vm has been tested with csp.");
