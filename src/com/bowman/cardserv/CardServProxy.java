@@ -433,12 +433,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
 
           // cache hit, we're done
           // well except for probing...
-          if(connectors.getUnknown() != null) {
-            if(!userManager.isMapExcluded(session.getUser())) {
-              session.setFlag(msg, 'P');
-              broadcastMessage(msg, connectors.getUnknown(), true); // and probe the unknowns
-            }
-          }
+          probeConnectors(connectors.getUnknown(), session, msg);
           session.sendEcmReply(msg, cached);
 
         } else {
@@ -575,15 +570,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     CwsConnector cws = connectors.getPrimary();
 
     // any additional connectors returned for channel auto-discovery?
-    if(connectors.getUnknown() != null) {
-      if(!userManager.isMapExcluded(session.getUser())) {
-        session.setFlag(msg, 'P');
-        // hack to track the origin user of the probe later (conn name is normally only used for reply messages)
-        msg.setConnectorName(session.toString());
-
-        broadcastMessage(msg, connectors.getUnknown(), true);
-      }
-    }
+    probeConnectors(connectors.getUnknown(), session, msg);
 
     // any connectors selected for broadcast?
     if(connectors.getSecondary() != null) {
@@ -670,6 +657,16 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     } else if(config.isLogEmm() || userManager.isDebug(session.getUser()))
       logger.info("EMM " + msg.hashCodeStr() + " (0x" + Integer.toHexString(msg.getDataLength()) + ", 0x"
           + Integer.toHexString(msg.getUpperBits()) + ") from " + session);
+  }
+
+  private void probeConnectors(List candidates, ProxySession session, CamdNetMessage msg) {
+    if(candidates != null) {
+      if(!userManager.isMapExcluded(session.getUser())) {
+        session.setFlag(msg, 'P');
+        msg.setOriginAddress(session.toString()); // hack to track the origin user of the probe later
+        broadcastMessage(msg, candidates, true);
+      }
+    }
   }
 
   private void broadcastMessage(CamdNetMessage msg, List connectors, boolean probe) {

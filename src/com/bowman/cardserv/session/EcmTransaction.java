@@ -105,6 +105,7 @@ public class EcmTransaction {
 
   public String getConnectorName() {
     if(reply != null && reply.getConnectorName() != null) return reply.getConnectorName();
+    else if(request != null && request.getConnectorName() != null) return request.getConnectorName();
     else return null;
   }
 

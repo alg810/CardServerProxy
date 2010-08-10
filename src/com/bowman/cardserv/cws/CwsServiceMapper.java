@@ -541,7 +541,7 @@ public class CwsServiceMapper implements XmlConfigurable {
     }
     if(!connectors.contains(conn.getName())) {
       connectors.add(conn.getName());
-      String source = (session==null?msg.getConnectorName():session.toString()); // conn name contains origin-session in case of probes
+      String source = (session==null?msg.getOriginAddress():session.toString()); // contains origin-session in case of probes
       logger.info("Discovered service [" + config.getServiceName(msg) + "] on CWS: " + conn +
           (source==null?"":" - Ecm source was: " + source));
       if(session != null) session.setFlag(msg, '+');
