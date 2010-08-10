@@ -85,7 +85,7 @@ public class FileFetcher {
       if(url.getUserInfo() != null) conn.setRequestProperty("Authorization", BasicHttpAuth.encode(url.getUserInfo()));
     }
     addConnection(conn);
-    if(lastModified != -1 && conn.getLastModified() != 0) {
+    if(lastModified > 0 && conn.getLastModified() > 0) {
       if(conn.getLastModified() <= lastModified) return null;
     }
     BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), getCharset(conn.getContentType())));

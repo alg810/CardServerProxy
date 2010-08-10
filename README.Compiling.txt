@@ -4,7 +4,7 @@ Compiling CSP
 The proxy is pure java and can be compiled on any platform that has a java sdk available.
 
 You'll need the following:
-- The Java SE sdk and compiler (j2sdk) 1.6 or later: http://developers.sun.com/downloads/new.jsp
+- The Java SE sdk and compiler (jdk) 1.6 or later: http://java.sun.com/javase/downloads/widget/jdk6.jsp
 NOTE: As of 0.8.10 java 1.6 is required to compile everything, but 1.4 is still enough to run the proxy.
 Sun only provides downloads for linux/win/solaris, osx users look to apple: http://developer.apple.com/java/download/
 - Apache ant (xml makefile system) 1.6 or later: http://ant.apache.org/bindownload.cgi
@@ -12,7 +12,7 @@ Sun only provides downloads for linux/win/solaris, osx users look to apple: http
 - If you plan to change or fix something, a basic understanding of java concepts will help:
 http://java.sun.com/docs/books/tutorial/
 
-The proxy comes with project files for Intellij IDEA 7, but you don't need this to compile (its a commercial product):
+The proxy comes with project files for Intellij IDEA 9, but you don't need this to compile (its a commercial product):
 http://www.jetbrains.com/idea/index.html
 NOTE: There is now a open source community version as well, which works perfectly with the csp project files.
 
@@ -22,7 +22,7 @@ $ export JAVA_HOME=/usr/lib/jvm/java-6-sun-1.6.0.15/
 Once j2sdk + ant is installed (and their respective /bin directories added to PATH) you can build the proxy using the
 following procedure:
 
-$ tar xvzf cardservproxy-0.8.13-src.tar.gz
+$ tar xvzf cardservproxy-0.9.0-src.tar.gz
 $ cd cardservproxy-src
 $ ant
 

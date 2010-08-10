@@ -6,7 +6,8 @@ The 0.9.0 release introduces a number of changes that require attention if attem
 Some guidelines:
 
 - Don't attempt to use an existing config. Start from scratch (with no proxy.xml) and use the generated config template.
-  Allow the default plugins to remain unless you find good reason to do otherwise.
+  Allow the default plugins to remain unless you find good reason to do otherwise. The generated config is the only
+  example template included in 0.9.0.
 
 - Since the max connections limit is now per profile and not global:
   If you had max-connections specified per user before, remove all these attributes and re-add them only as needed.

@@ -578,6 +578,9 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     if(connectors.getUnknown() != null) {
       if(!userManager.isMapExcluded(session.getUser())) {
         session.setFlag(msg, 'P');
+        // hack to track the origin user of the probe later (conn name is normally only used for reply messages)
+        msg.setConnectorName(session.toString());
+
         broadcastMessage(msg, connectors.getUnknown(), true);
       }
     }

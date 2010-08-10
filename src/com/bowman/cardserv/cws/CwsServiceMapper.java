@@ -541,7 +541,9 @@ public class CwsServiceMapper implements XmlConfigurable {
     }
     if(!connectors.contains(conn.getName())) {
       connectors.add(conn.getName());
-      logger.info("Discovered service [" + config.getServiceName(msg) + "] on CWS: " + conn);      
+      String source = (session==null?msg.getConnectorName():session.toString()); // conn name contains origin-session in case of probes
+      logger.info("Discovered service [" + config.getServiceName(msg) + "] on CWS: " + conn +
+          (source==null?"":" - Ecm source was: " + source));
       if(session != null) session.setFlag(msg, '+');
       cacheUpdated = true;
       config.getConnManager().cwsFoundService(conn, config.getService(msg));
@@ -567,10 +569,12 @@ public class CwsServiceMapper implements XmlConfigurable {
           // only remove for 2 consecutive failures from different sessions
           connectors.remove(conn.getName());
           setLastFailed(id, conn.getName(), false, -1);
-          String s = "Service [" + config.getServiceName(msg) + "] no longer available on CWS: " + conn.getName() +
-              " Ecm source was: " + session;
-          if(resetServices.contains(id)) logger.info(s);
-          else logger.warning(s);
+          if(session != null) {
+            String s = "Service [" + config.getServiceName(msg) + "] no longer available on CWS: " + conn.getName() +
+                " Ecm source was: " + session;
+            if(resetServices.contains(id)) logger.info(s);
+            else logger.warning(s);
+          }
           resetSingle(new ServiceMapping(id.serviceId, -1), conn.getName());
           if(session != null) session.setFlag(msg, '-');
           cacheUpdated = true;
@@ -580,14 +584,17 @@ public class CwsServiceMapper implements XmlConfigurable {
           registerRediscovery(conn.getName(), id);
         } else {
           if(overrideCanDecodeMap.containsKey(id)) {
-            logger.info("Service [" + config.getServiceName(msg) + "] failed to decode on CWS: " + conn.getName() +
-                " (according to the manual can-decode list it should always decode). Ecm source was: " + session);
+            if(session != null)
+              logger.info("Service [" + config.getServiceName(msg) + "] failed to decode on CWS: " + conn.getName() +
+                  " (according to the manual can-decode list it should always decode). Ecm source was: " + session);
             return;
           } else {
-            String s = "Service [" + config.getServiceName(msg) + "] failed to decode on CWS: "  + conn.getName() +
-                " (two consecutive failures removes mapping). Ecm source was: " + session;
-            if(resetServices.contains(id)) logger.info(s);
-            else logger.warning(s);
+            if(session != null) {
+              String s = "Service [" + config.getServiceName(msg) + "] failed to decode on CWS: "  + conn.getName() +
+                  " (two consecutive failures removes mapping). Ecm source was: " + session;
+              if(resetServices.contains(id)) logger.info(s);
+              else logger.warning(s);
+            }
             setLastFailed(id, conn.getName(), true, session==null?-1:session.getId());
             return;
           }
