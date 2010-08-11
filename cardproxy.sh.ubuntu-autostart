@@ -1,4 +1,14 @@
-#!/bin/bash 
+#!/bin/sh
+# Start/stop the cardproxy.
+#
+### BEGIN INIT INFO
+# Provides:          cardserver
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      1
+### END INIT INFO
+
 #################################################################
 # CSP startup script 
 # By Bowman 2007
@@ -13,6 +23,11 @@ DAEMON=$DAEMONPATH/lib/cardservproxy.jar
 
 NAME=Cardservproxy
 DESC="Cardservproxy Daemon"
+
+## uncomment this for large csp installations
+#JVM_PRAMS="-Xmx512m -Dsun.net.inetaddr.ttl=0"
+## otherwise use this
+JVM_PARAMS="-Dsun.net.inetaddr.ttl=0"
 
 case "`uname -s`" in
 
@@ -87,7 +102,7 @@ case "$1" in
       echoresult FAILED "An instance of the $DESC is already running"
       exit 1
     fi
-    java -Xmx512m -Dsun.net.inetaddr.ttl=0 -jar $DAEMON > log/cardserv-sysout.log 2>&1 &
+    java $JVM_PARAMS -jar $DAEMON > log/cardserv-sysout.log 2>&1 &
     echo $! > $PID_FILE
     sleep 3
     ERR=`cat log/cardserv-sysout.log | grep '[Ee]rror\|[Ee]xception\|[Ff]ailed\|not found'`

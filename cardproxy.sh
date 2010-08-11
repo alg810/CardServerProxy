@@ -1,5 +1,10 @@
 #!/bin/bash
 
+## uncomment this for large csp installations
+#JVM_PRAMS="-Xmx512m -Dsun.net.inetaddr.ttl=0"
+## otherwise use this
+JVM_PARAMS="-Dsun.net.inetaddr.ttl=0"
+
 case "`uname -s`" in
 
   'CYGWIN'*)
@@ -71,7 +76,7 @@ case "$1" in
       echoresult FAILED "An instance of the server is already running"
       exit 1
     fi
-    java -Xmx512m -Dsun.net.inetaddr.ttl=0 -jar lib/cardservproxy.jar > log/cardserv-sysout.log 2>&1 &
+    java $JVM_PARAMS -jar lib/cardservproxy.jar > log/cardserv-sysout.log 2>&1 &
     echo $! > $PID_FILE
     sleep 3
     ERR=`cat log/cardserv-sysout.log | grep '[Ee]rror\|[Ee]xception\|[Ff]ailed\|not found'`
