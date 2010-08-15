@@ -707,14 +707,14 @@
                 </xsl:if>
               </td>
               <td width="15%"><strong>Sessions: </strong><xsl:value-of select="@sessions"/></td>
-              <td width="15%"><strong>
+              <td width="19%"><strong>
                 <xsl:choose>
                   <xsl:when test="@network-id">Local services: </xsl:when>
                   <xsl:otherwise>Services: </xsl:otherwise>
                 </xsl:choose>
                 </strong><xsl:value-of select="@mapped-services"/>
               </td>
-              <td width="5%">&#160;</td>
+              <td width="1%">&#160;</td>
               <td width="20%" align="right">&#160;(<xsl:value-of select="sum(//connector[@profile=$profile]/@ecm-load)"/>)
 
               </td>

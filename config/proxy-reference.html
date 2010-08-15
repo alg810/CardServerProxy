@@ -900,7 +900,8 @@ true/false (default: true). If the mapper receives an ECM for a service where it
 <a name="connection-manager/service-map/mapper/reset-services">
 <div class='indent'>connection-manager/service-map/mapper/reset-services</div><br />
 A list of service ids (hex integers, separated by space) that define services for which the proxy should not remember the state for each card. This can be PPV services or services with shared ids (i.e one service during day time and another at night). The service mapper will forget these services every hour, on the hour (as of 0.4.10).<br />
-It probably makes little sense to set this globally as service ids are likely to be profile-specific (see below for <a href="#connection-manager/service-map/mapper-override">overrides per profile</a>).<br />
+It probably makes little sense to set this globally when you have more than one profile, as service ids are very likely to be profile-specific (see below for <a href="#connection-manager/service-map/mapper-override">overrides per profile</a>).<br />
+<br /><strong>NOTE: </strong> By listing services here, you're indicating to the proxy that you expect the decode-status for them to change over time - so you will no longer receive "lost service" warnings when they suddenly stop working. In fact seeing repeated lost service warnings for a specific service or group of services is a good indication that you should probably list them in reset-services.<br />
 <br />
 Example:  <em class='italic'>&lt;reset-services>51f 520 515&lt;/reset-services></em> <br />
 <br />
