@@ -235,6 +235,10 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return commandTag;
   }
 
+  public void setCommandTag(int commandTag) {
+    this.commandTag = commandTag;
+  }
+
   public int getDataLength() {
     return dataLength;
   }
@@ -518,10 +522,11 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   }
 
   public int hashCode() {
-    int result;
-    result = commandTag;
-    result = 29 * result + dataHash;
-    return result;
+    // int result;
+    // result = commandTag;
+    // result = 29 * result + dataHash;
+    // return result;
+    return dataHash;
   }
 
   public String hashCodeStr() {

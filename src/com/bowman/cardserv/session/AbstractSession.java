@@ -288,7 +288,16 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
     if(!isInterested(ecmRequest)) {
       logger.fine("Not interested in reply: " + ecmReply);
       return -1;      
-    } else return sendEcmReplyNative(((EcmTransaction)transactions.get(ecmRequest)).getRequest(), ecmReply);
+    } else {
+      ecmRequest = ((EcmTransaction)transactions.get(ecmRequest)).getRequest(); // make sure original instance is used
+      if(ecmRequest.getCommandTag() != ecmReply.getCommandTag()) { // ensure table id is same as it was in request
+        logger.fine("Table-id mismatch, response (from " + ecmReply.getConnectorName() + ") had table-id " +
+            Integer.toHexString(ecmReply.getCommandTag()) + " but request had " + Integer.toHexString(ecmRequest.getCommandTag()) +
+            " (from user '" + user + "' - " + clientId + ")");
+        ecmReply.setCommandTag(ecmRequest.getCommandTag());
+      }
+      return sendEcmReplyNative(ecmRequest, ecmReply);
+    }
   }
 
   protected abstract int sendEcmReplyNative(CamdNetMessage ecmRequest, CamdNetMessage ecmReply);

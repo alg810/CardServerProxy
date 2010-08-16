@@ -546,7 +546,12 @@ public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsC
     int seqNr;
     synchronized(this) {
       if(!isConnected()) return false;
-      seqNr = sendMessage(new CamdNetMessage(request)); // send copy
+      CamdNetMessage req = new CamdNetMessage(request);
+      if(connManager.getUnknownSid(req.getProfileName()) != -1) {
+        if(connManager.isServiceUnknown(req.getProfileName(), req.getServiceId()))
+          req.setServiceId(connManager.getUnknownSid(req.getProfileName())); // change outgoing sid for unknowns
+      }
+      seqNr = sendMessage(req); // send copy
       if(seqNr != -1) {
         if(sentMap.put(new Integer(seqNr), qe) != null) logger.severe("Overwrote existing pending seqNr: " + seqNr);
         sentSet.add(request);

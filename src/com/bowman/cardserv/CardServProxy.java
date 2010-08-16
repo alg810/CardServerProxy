@@ -793,8 +793,8 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
                 if(conn.getEstimatedQueueTime() < (connManager.getMaxCwWait(null) / 2)) { // only broadcast if there is capacity - todo change criteria?
                   if(!conn.isPending(entry.msg) && conn.canDecode(entry.msg)) try {
                     if(conn.sendEcmRequest(new CamdNetMessage(entry.msg), null)) {
-                      if(entry.msg.getServiceId() != 0) logger.fine("Redundant forward to " + conn.getLabel() + " for service [" +
-                          config.getServiceName(entry.msg) + "] ...");
+                      if(!connManager.isServiceUnknown(entry.msg.getProfileName(), entry.msg.getServiceId()))
+                        logger.fine("Redundant forward to " + conn.getLabel() + " for service [" + config.getServiceName(entry.msg) + "] ...");
                       else logger.fine("Broadcasting " + entry.msg.hashCodeStr() + " with unknown service to " + conn.getLabel() + "...");
                     }
 

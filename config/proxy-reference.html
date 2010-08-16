@@ -932,9 +932,9 @@ Example:  <em class='italic'>&lt;block-services>0438:020500 038e:020500 03ca:020
 <a name="connection-manager/service-map/mapper/dummy-services">
 <div class='indent'>connection-manager/service-map/mapper/dummy-services</div><br />
 Some clients who are unable to known the real sid (i.e typically hardware solutions) send fixed dummy sids instead of 0. To make sure these aren't treated as real sids by the service mapping, list any such dummy sids here.<br />
-<strong>NOTE: </strong> The first sid listed here will also be used when forwarding unknown sid request to connectors, so if you want unknown forwards to keep the sid 0 - set 0 as the first entry in this list.<br />
+<strong>NOTE: </strong> The first sid listed here will also be used when forwarding unknown sid request to connectors, so if you want unknown forwards to keep the sid 0 - set 0 as the first entry in this list. If for some reason you absolutely want to retain the original dummy-services in the forwards too, set -1 as the first entry.<br />
 <br />
-Example:  <em class='italic'>&lt;dummy-services>101 1101&lt;/dummy-services></em> <br />
+Example:  <em class='italic'>&lt;dummy-services>0 101 1101&lt;/dummy-services></em> <br />
 </a>
 
 <a name="connection-manager/service-map/mapper/auto-reset-threshold">

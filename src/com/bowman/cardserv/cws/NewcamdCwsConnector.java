@@ -393,8 +393,7 @@ public class NewcamdCwsConnector extends AbstractCwsConnector implements CamdCon
   }
 
   public synchronized int sendMessage(CamdNetMessage msg) {
-    if(conn == null || !conn.isInitialized()) return -1;
-    if(msg.isEcm() && msg.getServiceId() == 0) msg.setServiceId(connManager.getUnknownSid(profile.getName()));
+    if(conn == null || !conn.isInitialized()) return -1;    
     if(msg.isEmm()) emmCount++;
     else if(msg.isKeepAlive()) keepAliveCount++;
 

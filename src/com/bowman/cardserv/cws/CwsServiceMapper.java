@@ -4,6 +4,7 @@ import com.bowman.cardserv.interfaces.*;
 import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.tv.TvService;
 import com.bowman.cardserv.*;
+import com.bowman.cardserv.session.CspSession;
 
 import java.io.*;
 import java.util.*;
@@ -288,6 +289,10 @@ public class CwsServiceMapper implements XmlConfigurable {
       conn = (CwsConnector)iter.next();
       if(conn.isReady()) tmp.add(conn);
     }
+    for(Iterator iter = cm.getMultiConnectors(profile.getNetworkId(), profile.getCaId()).values().iterator(); iter.hasNext(); ) {
+      conn = (CwsConnector)iter.next();
+      if(conn.isReady()) tmp.add(conn);
+    }
     return tmp;
   }
 
@@ -373,7 +378,7 @@ public class CwsServiceMapper implements XmlConfigurable {
         if(id.serviceId == 0) logger.warning("Connector for service id [0] requested, no sid in ecm request?");
         else logger.warning("Connector for unknown sid [" + id + "] requested.");
       }
-      if(id.getCustomId() > 0) serviceUnknown = true;
+      serviceUnknown = true;
     }
 
     List canDecode = serviceUnknown?getReadyConnectors():getConnectors(id, true);
@@ -494,6 +499,13 @@ public class CwsServiceMapper implements XmlConfigurable {
           logger.info(leastLoaded + " in timeout-state, but no alternatives exist for service [" + serviceName + "].");
     }
 
+    if(secondary != null) {
+      if(leastLoaded != null) {
+        secondary.remove(leastLoaded);
+        if(secondary.isEmpty()) secondary = null;
+      }
+    }
+
     return new ConnectorSelection(leastLoaded, secondary, unknown);
   }
 
@@ -571,7 +583,7 @@ public class CwsServiceMapper implements XmlConfigurable {
           setLastFailed(id, conn.getName(), false, -1);
           if(session != null) {
             String s = "Service [" + config.getServiceName(msg) + "] no longer available on CWS: " + conn.getName() +
-                " Ecm source was: " + session;
+                " - Ecm source was: " + session;
             if(resetServices.contains(id)) logger.info(s);
             else logger.warning(s);
           }
@@ -590,8 +602,10 @@ public class CwsServiceMapper implements XmlConfigurable {
             return;
           } else {
             if(session != null) {
+              String prevFlags = (session instanceof CspSession)?null:session.getLastTransactionFlags();
               String s = "Service [" + config.getServiceName(msg) + "] failed to decode on CWS: "  + conn.getName() +
-                  " (two consecutive failures removes mapping). Ecm source was: " + session;
+                  " (two consecutive failures removes mapping). Ecm source was: " + session +
+                  (prevFlags==null?"":" [prev: " + prevFlags + "]");
               if(resetServices.contains(id)) logger.info(s);
               else logger.warning(s);
             }
