@@ -289,10 +289,6 @@ public class CwsServiceMapper implements XmlConfigurable {
       conn = (CwsConnector)iter.next();
       if(conn.isReady()) tmp.add(conn);
     }
-    for(Iterator iter = cm.getMultiConnectors(profile.getNetworkId(), profile.getCaId()).values().iterator(); iter.hasNext(); ) {
-      conn = (CwsConnector)iter.next();
-      if(conn.isReady()) tmp.add(conn);
-    }
     return tmp;
   }
 
@@ -382,6 +378,7 @@ public class CwsServiceMapper implements XmlConfigurable {
     }
 
     List canDecode = serviceUnknown?getReadyConnectors():getConnectors(id, true);
+    if(serviceUnknown) canDecode.addAll(cm.getMultiConnectors(profile.getNetworkId(), profile.getCaId()).values());
     List unknown = null, ready, secondary = null;
 
     if(!serviceUnknown) {
