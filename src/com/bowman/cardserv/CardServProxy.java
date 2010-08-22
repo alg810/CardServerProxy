@@ -263,13 +263,18 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     if("true".equalsIgnoreCase(System.getProperty("com.bowman.cardserv.allowanyjvm"))) {
       // any jvm allowed
     } else {
+      boolean start = true;
       String vendorUrl = System.getProperty("java.vendor.url");
+      String vmName = System.getProperty("java.vm.name");
       if(vendorUrl != null)
-        if(!vendorUrl.startsWith("http://java.sun.com")) {
-          System.err.println("Startup failed: Unsupported java vm '" + System.getProperty("java.vm.name") +
-              "', only the original sun vm has been tested with csp.");
-          System.exit(5);
-        }
+        if(!vendorUrl.startsWith("http://java.sun.com")) start = false;        
+      if(vmName != null)
+        if(vmName.startsWith("OpenJDK")) start = false;
+      if(!start) {
+        System.err.println("Startup failed: Unsupported java vm '" + System.getProperty("java.vm.name") +
+            "', only the original sun vm has been tested with csp.");
+        System.exit(5);
+      }
     }
 
     File cfgFile = null;

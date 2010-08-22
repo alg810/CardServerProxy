@@ -610,6 +610,7 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
           } catch(RuntimeException e) {
             logger.warning("Exception in remote event handling: " + e);
             logger.throwing(e);
+            e.printStackTrace();
           } catch(RemoteException e) {
             logger.warning("Exception in remote event handling: " + e.getCause());
             logger.throwing(e);
