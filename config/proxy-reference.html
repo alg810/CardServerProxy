@@ -491,6 +491,7 @@ See <strong>README.Optimization.txt</strong> for more details.<br />
 <a name="ca-profiles/profile/congestion-limit">
 <div class='indent'>ca-profiles/profile/congestion-limit</div><br />
 The maximum estimated queue time on a connector before the proxy considers it to be congested, and tries to avoid using it (by instead using connectors that would normally be excluded due to a higher metric number). Value in seconds, must be between max-cw-wait/2 and max-cw-wait. Use with care, and primarily if you have many connectors with differing metric priority set. Applies to all CWS connectors in this profile, if set here it overrides the global setting in connection-manager.<br />
+<strong>NOTE: </strong>If max-cw-wait is below 1s, congestion-limit is automatically set to the same value.<br />
 <br />
 </a>
 
@@ -843,6 +844,7 @@ This increases the chances of a cache hit through sharing. It will have no effec
 <a name="connection-manager/congestion-limit">
 <div class='indent'>connection-manager/congestion-limit</div><br />
 The maximum estimated queue time on a connector before the proxy considers it to be congested, and tries to avoid using it (by instead using connectors that would normally be excluded due to a higher metric number). Value in seconds, must be between max-cw-wait/2 and max-cw-wait. Use with care, and primarily if you have many connectors with differing metric priority set.<br />
+<strong>NOTE: </strong>If max-cw-wait is below 1s, congestion-limit is automatically set to the same value.<br />
 <br />
 </a>
 

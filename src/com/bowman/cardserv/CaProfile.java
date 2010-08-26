@@ -72,10 +72,11 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
     }
 
     if(maxCwWait != -1) {
-      if(maxCwWait <= 1000) throw new ConfigException(xml.getFullName(), "max-cw-wait must be > 1");
+      if(maxCwWait <= 100) throw new ConfigException(xml.getFullName(), "max-cw-wait must be > 100 ms");
       try {
-        congestionLimit = xml.getTimeValue("congestion-limit", "s");
-        if(congestionLimit >= maxCwWait || congestionLimit < maxCwWait / 2)
+        congestionLimit = xml.getTimeValue("congestion-limit", (int)maxCwWait / 1000, "s");
+        if(maxCwWait < 1000 && congestionLimit == 0) congestionLimit = maxCwWait;
+        if(congestionLimit > maxCwWait || congestionLimit < maxCwWait / 2)
           throw new ConfigException(xml.getFullName(), "congestion-limit must be between max-cw-wait/2 and max-cw-wait");
       } catch (ConfigException e) {
         congestionLimit = maxCwWait;
