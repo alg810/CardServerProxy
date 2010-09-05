@@ -4,6 +4,7 @@ import com.bowman.cardserv.interfaces.*;
 import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.rmi.*;
 import com.bowman.cardserv.web.*;
+import com.bowman.cardserv.session.SeenEntry;
 import com.maxmind.geoip.*;
 
 import java.io.*;
@@ -101,9 +102,10 @@ public class GeoipPlugin implements ProxyPlugin {
         addToLocation(users[i]); // group users per location
       }
     }
+		SeenEntry[] seen = proxy.getSeenUsers(null, userName, true);   
 
     // since we're only adding properties we can rely on the existing method for writing the xml reply
-    XmlHelper.xmlFormatUsers(users, xb);
+    XmlHelper.xmlFormatUsers(users, seen.length, xb);
   }
 
   private void addToLocation(UserStatus user) {

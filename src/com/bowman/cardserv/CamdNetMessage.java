@@ -481,7 +481,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
 
   public String toDebugString() {
     return hashCodeStr() + " " + getCommandName() + " [" + DESUtil.bytesToString(customData) + "] (" +
-        (connectorName==null?"unknown":connectorName) + ")";
+        (connectorName==null?"unknown":connectorName) + ") - profile: " + profileName;
   }
 
   private String getUpperBitsStr() {

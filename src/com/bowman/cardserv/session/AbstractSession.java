@@ -279,16 +279,23 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
   }
 
   public int sendEcmReply(CamdNetMessage ecmRequest, CamdNetMessage ecmReply) {
-    if(ecmReply.getCaId() != 0 && (ecmRequest.getCaId() != ecmReply.getCaId())) {
-      setFlag(ecmRequest, 'M');
-      logger.warning("Ca-id mismatch, response (from " + ecmReply.getConnectorName() + ") had ca-id " + Integer.toHexString(ecmReply.getCaId()) +
-          " but request was for profile: " + getProfile() + " (from user '" + user + "' - " + clientId + ")");
-      if(ProxyConfig.getInstance().isBlockCaidMismatch()) ecmReply = ecmRequest.getEmptyReply();
-    }
     if(!isInterested(ecmRequest)) {
       logger.fine("Not interested in reply: " + ecmReply);
       return -1;      
     } else {
+
+      if(ecmReply.getCaId() != 0 && (ecmRequest.getCaId() != ecmReply.getCaId())) {
+        setFlag(ecmRequest, 'M');
+        logger.warning("Ca-id mismatch, response (from " + ecmReply.getConnectorName() + ") had ca-id " + Integer.toHexString(ecmReply.getCaId()) +
+            " but request was for profile: " + ecmRequest.getProfileName() + " (from user '" + user + "' - " + clientId + ")");
+        if(ProxyConfig.getInstance().isBlockCaidMismatch()) ecmReply = ecmRequest.getEmptyReply();
+      } else if(ecmReply.getProfileName() != null && !ecmReply.getProfileName().equals(ecmRequest.getProfileName())) {
+        setFlag(ecmRequest, 'M');
+        logger.warning("Profile mismatch, response (from " + ecmReply.getConnectorName() + ") had profile " + ecmReply.getProfileName() +
+            " but request was for profile: " + ecmRequest.getProfileName() + " (from user '" + user + "' - " + clientId + ")");
+        if(ProxyConfig.getInstance().isBlockCaidMismatch()) ecmReply = ecmRequest.getEmptyReply();
+      }
+
       ecmRequest = ((EcmTransaction)transactions.get(ecmRequest)).getRequest(); // make sure original instance is used
       if(ecmRequest.getCommandTag() != ecmReply.getCommandTag()) { // ensure table id is same as it was in request
         logger.fine("Table-id mismatch, response (from " + ecmReply.getConnectorName() + ") had table-id " +

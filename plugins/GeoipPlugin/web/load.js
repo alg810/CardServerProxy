@@ -9,7 +9,7 @@ sections.sessions.handler = function(xml) {
   var cb = document.getElementById('hideInactiveCb');
   if(cb) {
     var d = document.createElement("div");
-    d.innerHTML = '<strong>Geoip estimated locations: </strong> <a href="/plugin/geoipplugin/googlemap.html" target="gmaps">show map</a> &nbsp; (Using database: ' + dbInfo + ')<br /><br />';
+    d.innerHTML = '<strong>Geoip estimated locations: </strong> <a href="/plugin/geoipplugin/googlemap.html" target="gmaps">show map</a>&nbsp;(Using database: ' + dbInfo + ')<br /><br />';
     cb.parentNode.insertBefore(d, cb);    
   }
 

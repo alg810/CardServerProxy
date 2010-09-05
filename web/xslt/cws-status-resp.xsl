@@ -408,7 +408,8 @@
     <strong>Sessions: </strong><xsl:value-of select="../proxy-status/@sessions"/> (active: <xsl:value-of select="../proxy-status/@active-sessions"/>)<br />
     <br />
     <strong>Disconnected users/last seen: </strong><a href="javascript:clickSection('seen');">show log</a><br />
-    <strong>Login failures/connect attempts: </strong><a href="javascript:clickSection('failures');">show log</a><br />
+    <strong>Login failures/connect attempts: </strong><a href="javascript:clickSection('failures');">show log</a> (<xsl:value-of
+      select="@login-failures"/> entries)<br />
     <br />
     <input type="checkbox" name="hideInactiveCb" id="hideInactiveCb">
       <xsl:if test="@hide-inactive">

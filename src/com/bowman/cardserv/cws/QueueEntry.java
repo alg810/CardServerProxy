@@ -62,6 +62,7 @@ public class QueueEntry {
 
   public void setReply(CamdNetMessage reply) {
     if(reply.getServiceId() == 0) reply.setServiceId(request.getServiceId());
+    if(reply.getProfileName() == null) reply.setProfileName(request.getProfileName());
     this.reply = reply;
     duration = System.currentTimeMillis() - sentTimeStamp;
     request.setCWSTime(duration);

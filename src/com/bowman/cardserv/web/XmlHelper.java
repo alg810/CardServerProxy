@@ -367,7 +367,8 @@ public class XmlHelper implements CommandManager {
     } else {
       users = proxy.getUsersStatus(profiles, activeOnly);
     }
-    xmlFormatUsers(users, xb);
+    SeenEntry[] seen = proxy.getSeenUsers(null, userName, true);
+    xmlFormatUsers(users, seen.length, xb);
   }
 
   public void runStatusCmdProxyPlugins(XmlStringBuffer xb, Map params, String user) throws RemoteException {
@@ -823,10 +824,11 @@ public class XmlHelper implements CommandManager {
     xb.closeElement("remote-info");
   }
 
-  public static void xmlFormatUsers(UserStatus[] users, XmlStringBuffer xb) {
+  public static void xmlFormatUsers(UserStatus[] users, int loginFailures, XmlStringBuffer xb) {
     if(users == null) users = new UserStatus[0];
 
     xb.appendElement("proxy-users", "count", users.length);
+    xb.appendAttr("login-failures", loginFailures).endElement(false);
     for(int i = 0; i < users.length; i++) {
       xb.appendElement("user", "name", users[i].getUserName());
       xb.appendAttr("display-name", users[i].getDisplayName());

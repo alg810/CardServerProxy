@@ -352,7 +352,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     }
     CaProfile profile = session.getProfile();
 
-    if(msg.isEcm()) {
+    if(msg.isEcm() || msg.isEmm()) {
       if(profile == CaProfile.MULTIPLE) { // deny ambigious ecms from multi-context sessions
         profile = config.getProfileById(msg.getNetworkId(), msg.getCaId());
         if(profile == null) {
@@ -648,12 +648,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
   }
 
   private void forwardEmmRequest(ProxySession session, CamdNetMessage msg) {
-    CaProfile profile = session.getProfile();
-    if(profile == CaProfile.MULTIPLE)
-      profile = config.getProfileById(msg.getNetworkId(), msg.getCaId());
-
-    CwsConnector cws = profile == null ? null : connManager.getConnectorForAU(profile.getName(), session.getUser());
-
+    CwsConnector cws = connManager.getConnectorForAU(msg.getProfileName(), session.getUser());
     if(cws != null) {
       cws.sendMessage(msg); // just send the emm, ignore any reply
       if(config.isLogEmm() || userManager.isDebug(session.getUser()))
