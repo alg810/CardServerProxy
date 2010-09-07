@@ -26,6 +26,7 @@ public class RadegastCwsConnector extends AbstractCwsConnector {
   private CardData fakeCard;
 
   private long lastTrafficTimeStamp = System.currentTimeMillis();
+  private boolean tracing;
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     super.configUpdated(xml);
@@ -40,6 +41,8 @@ public class RadegastCwsConnector extends AbstractCwsConnector {
     this.host = host;
     this.port = port;
     this.enabled = enabled;
+
+    this.tracing = "true".equalsIgnoreCase(xml.getStringValue("tracing", "false"));
 
     if(!enabled) close();
     else {
@@ -111,9 +114,11 @@ public class RadegastCwsConnector extends AbstractCwsConnector {
     byte[] buf = new byte[i];
     is.readFully(buf);
 
-    logger.finer("Received reply: " + DESUtil.bytesToString(buf));
+    String s = DESUtil.bytesToString(buf);
+    logger.finer("Received reply: " + s);
+    if(tracing) System.out.println("Recv [" + name + "] " + s);
 
-    if(lastSent == null) System.err.println("lastSent was null when reading: " + DESUtil.bytesToString(buf));
+    if(lastSent == null) System.err.println("lastSent was null when reading: " + s);
     int commandTag = lastSent==null?0x81:lastSent.getRequest().getCommandTag(); // todo
 
     if(buf[0] == 4) {
@@ -125,7 +130,7 @@ public class RadegastCwsConnector extends AbstractCwsConnector {
       byte[] cwData = new byte[16];
       System.arraycopy(buf, 2, cwData, 0, 16);
       return CamdNetMessage.parseRadegast(commandTag, cwData, buf, getRemoteAddress());
-    } else throw new IOException("Unknown reply from rdg server: " + DESUtil.bytesToString(buf));
+    } else throw new IOException("Unknown reply from rdg server: " + s);
   }
 
   public boolean isConnecting() {
@@ -162,7 +167,8 @@ public class RadegastCwsConnector extends AbstractCwsConnector {
     buf[4] = (byte)((caId >> 8) & 0xFF);
     buf[5] = 6; // PROVIDER
     buf[6] = 8; // len
-    System.arraycopy(msg.getRdgProviderId(), 0, buf, 7, 8); // always "00000000" if not known
+    String providerStr = DESUtil.intToHexString(msg.getProviderIdent(), 8);
+    System.arraycopy(providerStr.getBytes(), 0, buf, 7, 8); // always "00000000" if not known
     buf[15] = 7; // KEYNO;
     buf[16] = 4;  // len
     System.arraycopy(msg.getRdgKeyNumber(), 0, buf, 17, 4); // always "0000" if not known
@@ -195,7 +201,9 @@ public class RadegastCwsConnector extends AbstractCwsConnector {
     System.arraycopy(msg.getCustomData(), 0, buf, hdrSize, msg.getDataLength());
 
     try {
-      logger.finer("Sending message [" + msg.getSequenceNr() + "]: " + DESUtil.bytesToString(buf));
+      String s = DESUtil.bytesToString(buf);
+      logger.finer("Sending message [" + msg.getSequenceNr() + "]: " + s);
+      if(tracing) System.out.println("Sent [" + name + "] " + s);
 
       os.write(buf);
       os.flush();

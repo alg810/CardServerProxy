@@ -162,7 +162,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   private int commandTag;
   private int dataLength;
   private byte[] fixedData, customData;
-  private byte[] rdgProviderId = "00000000".getBytes(), rdgKeyNumber = "0000".getBytes();
+  private byte[] rdgKeyNumber = "0000".getBytes();
   private int upperBits;
   private String[] stringData;
   private Set providerContext = new HashSet();
@@ -207,7 +207,6 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     this.remoteAddress = msg.remoteAddress;
     this.originAddress = msg.originAddress;
     this.rdgKeyNumber = msg.rdgKeyNumber;
-    this.rdgProviderId = msg.rdgProviderId;
     this.arbiterNumber = msg.arbiterNumber;
     this.connectorName = msg.connectorName;
     this.type = msg.type;
@@ -247,18 +246,13 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return customData;
   }
 
-  public byte[] getRdgProviderId() {
-    return rdgProviderId;
-  }
-
   public byte[] getRdgKeyNumber() {
     return rdgKeyNumber;
   }
 
   public void setRdgProviderId(byte[] rdgProviderId) {
-    this.rdgProviderId = rdgProviderId;
-    providerContext.add(DESUtil.bytesToString(rdgProviderId));
-    providerIdent = DESUtil.bytesToInt(rdgProviderId);
+    providerIdent = Integer.parseInt(new String(rdgProviderId), 16);
+    providerContext.add(DESUtil.intToByteString(providerIdent, 3));
   }
 
   public void setRdgKeyNumber(byte[] rdgKeyNumber) {

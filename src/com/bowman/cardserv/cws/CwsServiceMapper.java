@@ -488,8 +488,8 @@ public class CwsServiceMapper implements XmlConfigurable {
       if(leastLoaded == null) {
         leastLoaded = selectLeastLoaded(unknown)[0];
         unknown.remove(leastLoaded);
-        if(unknown.isEmpty()) unknown = null;
-      }
+      } else unknown.remove(leastLoaded);
+      if(unknown.isEmpty()) unknown = null;
     } else {
       if(leastLoaded != null)
         if(!serviceUnknown && leastLoaded.getTimeoutCount() > 0)

@@ -77,7 +77,8 @@
       
       <radegast-connector name="test2" profile="myprofile" enabled="false">
         <host>192.168.0.4</host>
-        <port>10003</port>      
+        <port>10003</port>
+        <provider-idents>00 00 01</provider-idents>
       </radegast-connector>
 
       <chameleon-connector name="test3" enabled="false">

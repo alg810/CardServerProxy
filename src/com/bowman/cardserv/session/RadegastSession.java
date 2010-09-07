@@ -21,7 +21,6 @@ public class RadegastSession extends AbstractSession {
   private BufferedOutputStream os;
 
   private int caId;
-  private Set provider;
 
   public RadegastSession(Socket conn, ListenPort listenPort, CamdMessageListener listener) {
     super(listenPort, listener);
@@ -37,7 +36,7 @@ public class RadegastSession extends AbstractSession {
     alive = true;
     remoteAddress = conn.getInetAddress().getHostAddress();
     int originId = ProxyConfig.getInstance().getProxyOriginId();
-    boolean first = true;
+    boolean first = true, checksOk;
     CamdNetMessage msg;
     try {
 
@@ -62,7 +61,13 @@ public class RadegastSession extends AbstractSession {
             }
             first = false;
           }
-          if(checkLimits(msg)) fireCamdMessage(msg, false);          
+          checksOk = checkLimits(msg);
+          checksOk = checksOk && handleMessage(msg);
+          fireCamdMessage(msg, false);
+          if(!checksOk) {
+            setFlag(msg, 'B');
+            if(isConnected()) sendEcmReply(msg, msg.getEmptyReply()); // nothing elsewhere will acknowledge a filtered message so do it here
+          }          
         }
       }
 
@@ -72,6 +77,20 @@ public class RadegastSession extends AbstractSession {
     }
 
     endSession();
+  }
+
+  private boolean handleMessage(CamdNetMessage msg) {
+    CaProfile profile = getProfile();
+    if(profile.getCaId() != msg.getCaId()) {
+      msg.setFilteredBy("Wrong ca-id in request: " + DESUtil.intToHexString(msg.getCaId(), 4) + " (expected: " +
+          DESUtil.intToHexString(profile.getCaId(), 4) + ")");
+      return false;
+    }
+    if(!profile.getProviderSet().contains(new Integer(msg.getProviderIdent()))) {
+      msg.setFilteredBy("Unknown provider-ident in request: " + DESUtil.intToByteString(msg.getProviderIdent(), 3));
+      return false;
+    }
+    return true;
   }
 
   CamdNetMessage readMessage() throws IOException {
@@ -164,7 +183,6 @@ public class RadegastSession extends AbstractSession {
       ecmCount++;
       if(sid != 0) msg.setServiceId(sid);
       this.caId = msg.getCaId();
-      this.provider = msg.getProviderContext();
     }
 
     return msg;
@@ -183,11 +201,12 @@ public class RadegastSession extends AbstractSession {
   }
 
   public String getLastContext() {
-    if(provider == null) return "?";
+    if(caId == 0) return "?";
     else {
       String s = Integer.toHexString(caId);
       while(s.length() < 4) s = "0" + s;
-      return "CaID [" + s + "] Providers [1] " + provider;
+      return "CaID [" + s + "] Providers [" + getProfile().getProviderSet().size() + "] " +
+          ProxyConfig.providerIdentsToString(getProfile().getProviderSet());
     }
   }
 
