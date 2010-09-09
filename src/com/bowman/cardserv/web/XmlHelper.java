@@ -1047,7 +1047,7 @@ public class XmlHelper implements CommandManager {
     Set ps = profiles == null ? null : new HashSet(Arrays.asList(profiles));
     xb.appendElement("error-log", "size", webBackend.eventLog.size());
 
-    for(Iterator iter = webBackend.eventLog.iterator(); iter.hasNext(); ) {
+    for(Iterator iter = new ArrayList(webBackend.eventLog).iterator(); iter.hasNext(); ) {
       event = (RemoteEvent)iter.next();
       if(ps == null || event.getProfile() == null || ps.contains(event.getProfile())) {
         xb.appendElement("event");
@@ -1066,7 +1066,7 @@ public class XmlHelper implements CommandManager {
     RemoteEvent event;
     xb.appendElement("file-log", "size", webBackend.fileLog.size());
 
-    for(Iterator iter = webBackend.fileLog.iterator(); iter.hasNext(); ) {
+    for(Iterator iter = new ArrayList(webBackend.fileLog).iterator(); iter.hasNext(); ) {
       event = (RemoteEvent)iter.next();
       xb.appendElement("event");
       xb.appendAttr("timestamp", formatTimeStamp(event.getTimeStamp()));

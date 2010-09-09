@@ -2,6 +2,7 @@ Cardservproxy changelog:
 ------------------------
 
 0.9.1 - RC0
+
 - Fixed: Handling for unknown sid (0 or a dummy sid listed in dummy-services) was broken in 0.9.0.
 - Fixed: Incoming requests for dummy sids should not retain the dummy when forwarded, now changed to 0.
 - Fixed: Per profile max-cw-wait could not be set below 1s (now both per profile and global allow down to 100 ms).

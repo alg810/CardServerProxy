@@ -14,8 +14,8 @@ import java.util.*;
 public class DefaultCache implements CacheHandler {
 
   protected ProxyLogger logger;
-  protected Map pendingEcms = new HashMap();
-  protected Map ecmMap = new LinkedHashMap();
+  protected MessageCacheMap pendingEcms;
+  protected MessageCacheMap ecmMap;
   protected CacheListener listener;
 
   private long maxAge;
@@ -41,6 +41,10 @@ public class DefaultCache implements CacheHandler {
       maxWaitPercent = -1;
       maxCacheWait = xml.getTimeValue("max-cache-wait", "s");
     }
+    if(pendingEcms == null) pendingEcms = new MessageCacheMap(maxAge);
+    else pendingEcms.setMaxAge(maxAge);
+    if(ecmMap == null) ecmMap = new MessageCacheMap(maxAge);
+    else ecmMap.setMaxAge(maxAge);
   }
 
   public long getMaxCacheWait(long maxCwWait) {
@@ -75,8 +79,7 @@ public class DefaultCache implements CacheHandler {
           String origin = ((CamdNetMessage)pendingEcms.get(request)).getOriginAddress();
 
           if(origin != null && origin.equals(request.getRemoteAddress())) {
-            // System.out.println("Skipping cache lock for " + request.hashCodeStr()  + " (cache origin: " + origin +
-            //    " client ip: " + request.getRemoteAddress() + ")");
+            // skip cache lock if the origin of the cache update is the same as that of the request
             break;
           }
 
@@ -114,9 +117,6 @@ public class DefaultCache implements CacheHandler {
           pendingEcms.remove(request);
           timeouts++;
           request.setTimeOut(true);
-
-          // todo
-          // System.err.println(new Date() + " - " + Thread.currentThread().getName() + " - Cache timeout waiting (" + request.getCacheTime() + ") request: " + request.hashCodeStr() + " " + request.getDataLength() + " [" + request.getServiceId() + "]");
           return null;
         }
 
@@ -129,7 +129,6 @@ public class DefaultCache implements CacheHandler {
 
   public synchronized boolean processReply(CamdNetMessage request, CamdNetMessage reply) {
     if(reply == null || reply.isEmpty()) {
-      // System.err.println(new Date() + " - " + Thread.currentThread() + " - Got empty reply for cache request " + request.hashCodeStr() + ", " + request.getDataLength() + " [" + request.getServiceId() + "] " + request.getOriginAddress());
       removeRequest(request);
       notifyAll();
     } else {
@@ -141,8 +140,6 @@ public class DefaultCache implements CacheHandler {
         notifyAll();
         return true;
       }
-      // todo
-      // if(!contains(request)) System.err.println(new Date() + " - " + Thread.currentThread() + " - Cache request " + request.hashCodeStr() + " not found pending for reply: " + reply.hashCodeStr() + ", " + request.getDataLength() + " [" + request.getServiceId() + "] " + reply.getOriginAddress());
       addReply(request, reply);
     }
     return false;
@@ -174,17 +171,10 @@ public class DefaultCache implements CacheHandler {
   protected synchronized void addRequest(CamdNetMessage request, boolean alwaysWait) {
     CamdNetMessage oldRequest = (CamdNetMessage)pendingEcms.put(request, request);
     if(oldRequest == null && listener != null) listener.onRequest(request);
-    /*
-    if(!pendingEcms.add(request)) { // todo
-      // System.err.println(new Date() + " - " + Thread.currentThread().getName() + " - Cache already had request: " + request.hashCodeStr() + " " + request.getDataLength() + " [" + request.getServiceId() + "]");
-    } else {
-      logger.finest("Added request: " + request.hashCodeStr());
-    }
-    */
   }
 
   protected synchronized void addReply(CamdNetMessage request, CamdNetMessage reply) {
-    cleanOld();
+    // cleanOld();
     if(reply.isEmpty()) return; // bad reply = unable to decode
     if(reply.getProfileName() == null) reply.setProfileName(request.getProfileName());
     CamdNetMessage oldReply = (CamdNetMessage)ecmMap.put(request, reply);
@@ -199,6 +189,7 @@ public class DefaultCache implements CacheHandler {
     } else if(listener != null) listener.onReply(request, reply);
   }
 
+  /*
   protected void cleanOld() {
     long now = System.currentTimeMillis();
     int count = 0;
@@ -224,6 +215,7 @@ public class DefaultCache implements CacheHandler {
 
     logger.finest("Cleared " + count + " old entries, " + ecmMap.size() + " entries left, maxAge: " + maxAge);
   }
+  */
 
   protected void removeRequest(CamdNetMessage request) {
     pendingEcms.remove(request);

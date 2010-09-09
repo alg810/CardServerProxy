@@ -4,7 +4,7 @@ import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.web.*;
 import com.bowman.cardserv.crypto.DESUtil;
 import com.bowman.cardserv.session.*;
-import com.bowman.cardserv.interfaces.ProxySession;
+import com.bowman.cardserv.interfaces.*;
 
 import java.io.*;
 import java.net.*;
@@ -16,7 +16,7 @@ import java.util.*;
  * Date: 2006-mar-02
  * Time: 03:32:47
  */
-public class ClusteredCache extends DefaultCache implements Runnable {
+public class ClusteredCache extends DefaultCache implements Runnable, StaleEntryListener {
 
   private static final int TYPE_REQUEST = 1, TYPE_REPLY = 2, TYPE_PINGREQ = 3, TYPE_PINGRPL = 4;
 
@@ -41,6 +41,8 @@ public class ClusteredCache extends DefaultCache implements Runnable {
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     super.configUpdated(xml);
+
+    pendingEcms.setStaleEntryListener(this);
 
     InetAddress remoteCache;
 
@@ -666,6 +668,10 @@ public class ClusteredCache extends DefaultCache implements Runnable {
   protected void removeRequest(CamdNetMessage request) {
     super.removeRequest(request);
     arbiter.cleanupArbitration(request);
+  }
+
+  public void onRemoveStale(CamdNetMessage msg) {
+    arbiter.cleanupArbitration(msg);
   }
 
   static class RequestArbiter {

@@ -356,11 +356,6 @@ public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsC
     lastEcmTimeStamp = reply.getTimeStamp();
     lastReadTimeStamp = reply.getTimeStamp();
 
-    if(replyPlugins) {
-      reply = applyFilters(reply);
-      if(reply == null) return false;
-    }
-
     QueueEntry qe = getSentEntry(reply.getSequenceNr());
     if(qe == null) {
       if(reply.isKeepAlive()) return false;
@@ -382,6 +377,11 @@ public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsC
       return false;
     } else {
       qe.setReply(reply); // valid reply received for this queue entry
+
+      if(replyPlugins) {
+        reply = applyFilters(reply);
+        if(reply == null) return false;
+      }      
 
       if(reply.getServiceId() != 0) {
         sidList.addRecord(reply.getServiceId());        
