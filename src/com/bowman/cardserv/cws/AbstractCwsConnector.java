@@ -345,7 +345,7 @@ public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsC
     return msg;
   }
 
-  protected boolean reportReply(CamdNetMessage reply) {
+  public boolean reportReply(CamdNetMessage reply) {
 
     // something received, cancel timeout state if set
     reply.setConnectorName(getName());

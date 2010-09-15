@@ -19,7 +19,8 @@ import java.util.*;
 public class ChameleonCwsConnector extends NewcamdCwsConnector implements MultiCwsConnector, CwsListener {
 
   private Set selectedProfiles = new HashSet();
-  private Set receivedData = new HashSet(), unmappedData = new HashSet();
+  private Set receivedData = new HashSet(); 
+  private Set unmappedData = Collections.synchronizedSet(new HashSet());
   private Map profileMap = new HashMap();
 
   private String remoteVersion;

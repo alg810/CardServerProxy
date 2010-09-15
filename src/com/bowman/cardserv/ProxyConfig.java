@@ -59,6 +59,9 @@ public class ProxyConfig implements FileChangeListener {
   private Map profiles = new HashMap();
   private Set disabledProfiles = new HashSet();
 
+  private boolean sidLinkerEnabled;
+  private SidCacheLinker sidLinker;
+
   private ProxyConfig() {}
 
   public Map getProfiles() {
@@ -207,6 +210,10 @@ public class ProxyConfig implements FileChangeListener {
 
   public CacheHandler getCacheHandler() {
     return cacheHandler;
+  }
+
+  public SidCacheLinker getSidCacheLinker() {
+    return sidLinker;
   }
 
   public UserManager getUserManager() {
@@ -404,13 +411,19 @@ public class ProxyConfig implements FileChangeListener {
     defaultConnectorMinDelay = connManConf.getTimeValue("default-min-delay", 20, "ms");
     defaultConnectorMaxQueue = connManConf.getIntValue("default-max-queue", 50);
 
+    ProxyXmlConfig cacheConf = currentConfig.getSubConfig("cache-handler");
+    sidLinkerEnabled = "true".equalsIgnoreCase(cacheConf.getStringValue("enable-service-linking", "false"));
+
     if(logger == null) logger = ProxyLogger.getLabeledLogger(getClass().getName());
     loadProfiles(currentConfig);
     loadPlugins(currentConfig);
 
     if(rootConfigurable != null) rootConfigurable.configUpdated(currentConfig);
 
-    if(!firstRead) updateModules(currentConfig);
+    if(!firstRead) {
+      updateModules(currentConfig);
+      loadCacheLinker();
+    }
   }
 
   public synchronized void readConfig(XmlConfigurable root, File cfgFile) throws FileNotFoundException, ConfigException {
@@ -453,6 +466,15 @@ public class ProxyConfig implements FileChangeListener {
     if(firstRead) {
       firstRead = false;
       loadModules(currentConfig);
+      loadCacheLinker();
+    }
+  }
+
+  private void loadCacheLinker() {
+    if(sidLinkerEnabled) {
+      if(sidLinker == null) sidLinker = new SidCacheLinker();
+    } else {
+      cacheHandler.setListener(null);
     }
   }
 

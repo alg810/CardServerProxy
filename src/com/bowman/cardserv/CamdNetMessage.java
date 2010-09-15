@@ -172,6 +172,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   private int type;
   private String remoteAddress, originAddress;
   private String connectorName;
+  private String linkedService;
 
   // cache metadata
   private boolean instant, timeOut;
@@ -218,6 +219,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     this.networkId = msg.networkId;
     this.customId = msg.customId;
     this.profileName = msg.profileName;
+    this.linkedService = msg.linkedService;
   }
 
   public CamdNetMessage(int commandTag) {
@@ -654,4 +656,11 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return profileName;
   }
 
+  public void setLinkedService(String linkedService) {
+    this.linkedService = linkedService;
+  }
+
+  public String getLinkedService() {
+    return linkedService;
+  }
 }

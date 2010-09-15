@@ -20,7 +20,10 @@ public class MessageCacheMap extends LinkedHashMap {
   }
 
   protected boolean removeEldestEntry(Map.Entry eldest) {
-    CamdNetMessage msg = (CamdNetMessage)eldest.getKey();
+    CamdNetMessage msg;
+    if(eldest.getKey() instanceof CamdNetMessage) msg = (CamdNetMessage)eldest.getKey();
+    else if(eldest.getValue() instanceof CamdNetMessage) msg = (CamdNetMessage)eldest.getValue();
+    else msg = (CamdNetMessage)((Set)eldest.getValue()).iterator().next();
     if(System.currentTimeMillis() - msg.getTimeStamp() > maxAge) {
       if(listener != null) listener.onRemoveStale(msg);
       return true;
@@ -34,9 +37,11 @@ public class MessageCacheMap extends LinkedHashMap {
   public void setMaxAge(long maxAge) {
     if(maxAge < this.maxAge) {
       long now = System.currentTimeMillis();
-      CamdNetMessage msg;
+      Object key; CamdNetMessage msg;
       for(Iterator iter = keySet().iterator(); iter.hasNext(); ) {
-        msg = (CamdNetMessage)iter.next();
+        key = iter.next();
+        if(key instanceof CamdNetMessage) msg = (CamdNetMessage)key;
+        else msg = (CamdNetMessage)get(key);
         if(now - msg.getTimeStamp() > maxAge) iter.remove();
       }
     }

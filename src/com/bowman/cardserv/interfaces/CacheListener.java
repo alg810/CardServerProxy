@@ -10,7 +10,8 @@ import com.bowman.cardserv.CamdNetMessage;
  */
 public interface CacheListener {
 
-  void onRequest(CamdNetMessage req);
+  boolean lockRequest(int successFactor, CamdNetMessage req);
+  void onRequest(int successFactor, CamdNetMessage req);
   void onReply(CamdNetMessage req, CamdNetMessage reply);
 
 }

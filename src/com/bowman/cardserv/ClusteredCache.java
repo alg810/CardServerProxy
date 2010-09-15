@@ -346,7 +346,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         if(hasPeers()) {
           if(!arbiter.resolveArbitration(request)) { // this proxy didn't win and should not process the request
             if(debug) logger.fine("Lost arbitration for: " + request.hashCodeStr());
-            super.addRequest(request, true); // achieve this by inserting into the pending set (= request already being processed)
+            super.addRequest(successFactor, request, true); // achieve this by inserting into the pending set (= request already being processed)
           } else if(debug) logger.fine("Won arbitration for: " + request.hashCodeStr()); // else process normally
         }
       }
@@ -355,8 +355,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     return super.processRequest(successFactor, request, alwaysWait, maxCwWait); // call the default processing
   }
 
-  protected void addRequest(CamdNetMessage request, boolean alwaysWait) {
-    super.addRequest(request, alwaysWait);
+  protected void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
+    super.addRequest(successFactor, request, alwaysWait);
     if(!alwaysWait) { // dont send any notification when we wont be forwarding to card
       request.setArbiterNumber(null); // remove any arbitration marker
       sendMessage(request, null); // tell all proxy peers that we're now processing this request
@@ -546,7 +546,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
                   packet.getAddress().getHostAddress() + ") arbiterNumber: " + request.getArbiterNumber());
             } else {
               receivedPending++;
-              super.addRequest(request, false);
+              super.addRequest(-1, request, false);
               if(debug) logger.fine("Pending request received: " + request.hashCodeStr() + " (from: " +
                   packet.getAddress().getHostAddress() + ") " + packet.getLength() + " bytes");
             }
@@ -569,11 +569,6 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
                 " size: " + packet.getLength());
         }
         dis.close();
-      /* } catch(InvalidClassException e) {
-        mismatchHost = packet.getAddress().getHostAddress();
-        logger.severe("Version mismatch with ClusteredCache @ " + mismatchHost + ", stopping cache receiver. (" +
-            e.getMessage() + ")");
-        alive = false; /*/
       } catch(IOException e) {
         logger.throwing(e);
         try {

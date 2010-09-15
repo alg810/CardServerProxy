@@ -71,7 +71,13 @@ public class DefaultCache implements CacheHandler {
 
         if(alwaysWait) {
           // no cached or pending transaction but cache-only mode is set, so assume another proxy will provide cw
-          if(!pendingEcms.containsKey(request)) addRequest(request, alwaysWait);
+          if(!pendingEcms.containsKey(request)) addRequest(successFactor, request, alwaysWait);
+        }
+
+        if(listener != null) {
+          // allow a set cache listener to introduce a lock for any other arbitrary reason
+          if(!pendingEcms.containsKey(request) && listener.lockRequest(successFactor, request))
+            addRequest(successFactor, request, alwaysWait);
         }
       
         while(pendingEcms.containsKey(request)) {
@@ -120,7 +126,7 @@ public class DefaultCache implements CacheHandler {
           return null;
         }
 
-        addRequest(request, alwaysWait);
+        addRequest(successFactor, request, alwaysWait);
       }
       return null;
     }
@@ -168,13 +174,12 @@ public class DefaultCache implements CacheHandler {
     return pendingEcms.containsKey(request);
   }
 
-  protected synchronized void addRequest(CamdNetMessage request, boolean alwaysWait) {
+  protected synchronized void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     CamdNetMessage oldRequest = (CamdNetMessage)pendingEcms.put(request, request);
-    if(oldRequest == null && listener != null) listener.onRequest(request);
+    if(oldRequest == null && listener != null) listener.onRequest(successFactor, request);
   }
 
   protected synchronized void addReply(CamdNetMessage request, CamdNetMessage reply) {
-    // cleanOld();
     if(reply.isEmpty()) return; // bad reply = unable to decode
     if(reply.getProfileName() == null) reply.setProfileName(request.getProfileName());
     CamdNetMessage oldReply = (CamdNetMessage)ecmMap.put(request, reply);
@@ -188,34 +193,6 @@ public class DefaultCache implements CacheHandler {
       }
     } else if(listener != null) listener.onReply(request, reply);
   }
-
-  /*
-  protected void cleanOld() {
-    long now = System.currentTimeMillis();
-    int count = 0;
-    CamdNetMessage msg;
-
-    do {
-      if(ecmMap.isEmpty()) break;
-      msg = (CamdNetMessage)ecmMap.keySet().iterator().next();
-      if(now - msg.getTimeStamp() > maxAge) {
-        count++;
-        ecmMap.remove(msg);
-        removeRequest(msg);
-      }
-    } while(now - msg.getTimeStamp() > maxAge);
-
-    if(pendingEcms.size() > 10) {
-      List tmp = new ArrayList(pendingEcms.keySet());
-      for(Iterator iter = tmp.iterator(); iter.hasNext(); ) {
-        msg = (CamdNetMessage)iter.next();
-        if(now - msg.getTimeStamp() > maxAge) removeRequest(msg);
-      }
-    }
-
-    logger.finest("Cleared " + count + " old entries, " + ecmMap.size() + " entries left, maxAge: " + maxAge);
-  }
-  */
 
   protected void removeRequest(CamdNetMessage request) {
     pendingEcms.remove(request);

@@ -554,7 +554,8 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
     }
     if(cached != null) {
       ecmCacheHits++;
-      session.setFlag(msg, cached.getOriginAddress()==null?'C':'R');
+      if(msg.getLinkedService() != null) session.setFlag(msg, 'L');
+      else session.setFlag(msg, cached.getOriginAddress()==null?'C':'R');
       if(config.isLogEcm() || userManager.isDebug(session.getUser())) {
         String origin = (cached.getOriginAddress() == null)?"":" - (remote origin)";
         logger.info("ECM cache hit for   - " + session + ": " + msg.hashCodeStr() + " [" +
