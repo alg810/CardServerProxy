@@ -418,9 +418,10 @@ public class NewcamdSession extends AbstractSession {
       else if(msg.isEmm()) emmCount++;
       else if(msg.isKeepAlive()) keepAliveCount++;
       if(card != null) {
-        msg.setProviderContext(card.getProviders());        
-        msg.setCaId(card.getCaId());
+        msg.setProviderContext(card.getProviders());
       }
+      msg.setCaId(listenPort.getProfile().getCaId());
+      msg.setProviderIdent(msg.getProviderFromHdr()); // todo - this could break things
       msg.setNetworkId(listenPort.getProfile().getNetworkId());
     }
     return msg;

@@ -17,14 +17,14 @@ import java.io.*;
  */
 public class SidCacheLinker implements CacheListener, FileChangeListener, CronTimerListener {
 
-  private static final int MAX_DELTA = 9000;
+  private static final int MAX_DELTA = 8000;
 
   private CacheHandler cache;
   private Map sidLinksMap = Collections.synchronizedMap(new HashMap());
 
   private Map sidLockMap = new MessageCacheMap(MAX_DELTA);  // ongoing original requests: sid > orig-req
   private Map requestMap = new MessageCacheMap(20000); // all requests linked to a specific req: orig-req > reqs
-  private Map sidRequestMap = new MessageCacheMap(10000); // undecodable held reqs, by sid: sid > req
+  private Map sidRequestMap = new MessageCacheMap(MAX_DELTA); // undecodable held reqs, by sid: sid > req
   private Map replyMap = new MessageCacheMap(20000); // recently received replies that may satisfy late reqs before hold
 
   private ProxyLogger logger;
@@ -232,7 +232,9 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   }  
 
   public boolean lockRequest(int successFactor, CamdNetMessage req) {
-    SidEntry se = new SidEntry(req);
+    SidEntry se;
+    if(req.getProfileName() == null) se = new SidEntry(req.getServiceId(), defaultProfile); // todo
+    else se = new SidEntry(req);
 
     if(sidLockMap.containsKey(se)) { // linked request already in progress
       CamdNetMessage origReq = (CamdNetMessage)sidLockMap.get(se);
@@ -275,8 +277,10 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   }
 
   public void onRequest(int successFactor, CamdNetMessage req) {
-    if(req.getProfileName() == null || successFactor == -1) return; // can't succeed - never create locks
-    SidEntry se = new SidEntry(req);
+    if(successFactor == -1) return; // can't succeed - never create locks
+    SidEntry se;
+    if(req.getProfileName() == null) se = new SidEntry(req.getServiceId(), defaultProfile); // todo 
+    else se = new SidEntry(req);
     if(sidLockMap.containsKey(se)) return; // already locked
 
     if(testService != null) { // test mode - lock all with specified sid
@@ -315,7 +319,11 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
         SidEntry s;
         for(Iterator iter = links.iterator(); iter.hasNext(); ) {
           s = (SidEntry)iter.next();
-          if(sidRequestMap.containsKey(s)) reqs.add(sidRequestMap.remove(s));
+          if(sidRequestMap.containsKey(s)) {
+            CamdNetMessage heldReq = (CamdNetMessage)sidRequestMap.remove(s);
+            if(System.currentTimeMillis() - heldReq.getTimeStamp() < MAX_DELTA)
+              reqs.add(heldReq);
+          }
         }
         if(reqs.isEmpty()) reqs = null;
       }
