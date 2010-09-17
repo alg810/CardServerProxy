@@ -49,6 +49,14 @@ NOTE:
 - The reason for the separate httpd is simply to allow the regular proxy httpd to use ssl, which wouldn't
   work with busybox builtin wget.
 
+- Since the addition of the sshd, the plugin has the following dependencies (fetched automatically at runtime, but
+  necessary for compiling the plugin - place them in lib/):
+
+  http://repo1.maven.org/maven2/org/apache/sshd/sshd-core/0.3.0/sshd-core-0.3.0.jar
+  http://repo1.maven.org/maven2/org/apache/mina/mina-core/2.0.0-M6/mina-core-2.0.0-M6.jar
+  http://repo2.maven.org/maven2/org/slf4j/slf4j-api/1.5.2/slf4j-api-1.5.2.jar
+  http://repo2.maven.org/maven2/org/slf4j/slf4j-jdk14/1.5.2/slf4j-jdk14-1.5.2.jar
+
 TODO/SUGGESTIONS:
 - Determine which boxes/images the agent and installer scripts work on and extend support to cover additional ones.
 - Extend the repository of scripts that can be remote executed by admin on any box running the agent via the plugin web.
