@@ -668,6 +668,12 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
     }
     // only return those known not to decode on _any_ card, if cannot decode requested
     if(!canDecode) sids.removeAll(Arrays.asList(getServicesForProfile(profileName, true)));
+    // add those provided by sid cache linker
+    if(config.getSidCacheLinker() != null) {
+      if(canDecode) sids.addAll(config.getSidCacheLinker().getServicesForProfile(profileName));
+      else sids.removeAll(config.getSidCacheLinker().getServicesForProfile(profileName));
+    }
+
     return (ServiceMapping[])sids.toArray(new ServiceMapping[sids.size()]);
   }
 

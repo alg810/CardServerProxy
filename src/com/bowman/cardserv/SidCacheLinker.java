@@ -2,8 +2,10 @@ package com.bowman.cardserv;
 
 import com.bowman.cardserv.interfaces.*;
 import com.bowman.cardserv.web.*;
-import com.bowman.cardserv.util.ProxyLogger;
+import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.crypto.DESUtil;
+import com.bowman.cardserv.cws.ServiceMapping;
+import com.bowman.cardserv.tv.TvService;
 import com.bowman.util.*;
 
 import java.util.*;
@@ -19,6 +21,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
 
   private static final int MAX_DELTA = 8000;
 
+  private ProxyConfig config;
   private CacheHandler cache;
   private Map sidLinksMap = Collections.synchronizedMap(new HashMap());
 
@@ -37,15 +40,19 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   private boolean linksChanged;
   private String defaultProfile;
 
+  private Map addedServices = Collections.synchronizedMap(new HashMap()); // extra services decodable through linking
+  private Map requiredServices = Collections.synchronizedMap(new HashMap()); // services that must be in cache for links
+
   public SidCacheLinker() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
-    cache = ProxyConfig.getInstance().getCacheHandler();
+    config = ProxyConfig.getInstance();
+    cache = config.getCacheHandler();
     cache.setListener(this);
     active = true;
     linksFile = new File("etc", "links.cfg");
 
     loadSidLinkMap();
-    registerCtrlCommands();
+    registerCommands();
 
     fw = new FileWatchdog(linksFile.getPath(), ProxyConfig.DEFAULT_INTERVAL);
     fw.addFileChangeListener(this);
@@ -141,7 +148,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     fw.addFile(linksFile.getPath());
   }
 
-  protected void registerCtrlCommands() {
+  protected void registerCommands() {
     CtrlCommand cmd;
     try {
       new CtrlCommand("toggle-linker", "Toggle sid linker", "Activate/deactivate sid linking.").register(this);
@@ -167,6 +174,13 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
 
       new CtrlCommand("clear-links", "Clear links", "Remove all sid links.").register(this);
 
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    }
+    StatusCommand sCmd;
+    try {
+      sCmd = new StatusCommand("required-services", "List required services", "List services that need to be permanently in cache for the sid linker to work", false);
+      sCmd.register(this);
     } catch (NoSuchMethodException e) {
       e.printStackTrace();
     }
@@ -229,7 +243,15 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     sidLinksMap.clear();
     testService = null;
     return new CtrlCommandResult(true, "Sid links cleared.");
-  }  
+  }
+
+  public void runStatusCmdRequiredServices(XmlStringBuffer xb, Map params, String user) {
+    String[] profiles = (String[])params.get("profiles");
+    TvService[] services = (TvService[])requiredServices.keySet().toArray(new TvService[requiredServices.size()]);
+    xb.appendElement("required-services", "count", services.length);
+    XmlHelper.xmlFormatServices(services, xb, false, true, false, null, profiles);
+    xb.closeElement("required-services");
+  }
 
   public boolean lockRequest(int successFactor, CamdNetMessage req) {
     SidEntry se;
@@ -242,8 +264,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
 
         if(replyMap.containsKey(origReq)) { // and reply already received
           logger.fine("Reply already available for: " + req);
-          req.setLinkedService(new SidEntry(origReq).toString());
-          cache.processReply(req, (CamdNetMessage)replyMap.get(origReq));
+          processReply(origReq, req, (CamdNetMessage)replyMap.get(origReq), new SidEntry(origReq).toString(), successFactor == -1);
           return false;
         }
 
@@ -304,6 +325,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     replyMap.put(req, reply);
     Set reqs = null;
     SidEntry se = null;
+    boolean undecodable = false;
 
     if(requestMap.containsKey(req)) { // reply matches specific linked request(s)
       reqs = (Set)requestMap.get(req);
@@ -326,6 +348,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
           }
         }
         if(reqs.isEmpty()) reqs = null;
+        else undecodable = true;
       }
     }
 
@@ -334,11 +357,16 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
       CamdNetMessage linkedReq;
       for(Iterator iter = reqs.iterator(); iter.hasNext(); ) {
         linkedReq = (CamdNetMessage)iter.next();
-        logger.fine("Copying reply to linked request: " + reply.toDebugString() + " -> " + linkedReq);
-        linkedReq.setLinkedService(se.toString());
-        cache.processReply(linkedReq, reply);
+        logger.fine("Copying reply to linked request: " + reply + " -> " + linkedReq);
+        processReply(req, linkedReq, reply, se.toString(), undecodable);
       }      
     }
+  }
+
+  private void processReply(CamdNetMessage origReq, CamdNetMessage linkedReq, CamdNetMessage reply, String linkStr, boolean undecodable) {
+    if(undecodable && testService == null) reportAddedService(linkedReq, origReq);
+    linkedReq.setLinkedService(linkStr);
+    cache.processReply(linkedReq, reply);
   }
 
   public void addMultipleLinks(String[] links) {
@@ -373,6 +401,29 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     links.remove(se2);
     boolean removed = (sidLinksMap.remove(se1) != null || sidLinksMap.remove(se2) != null);
     if(removed) linksChanged = true;
+  }
+
+  private void reportAddedService(CamdNetMessage req, CamdNetMessage origReq) {
+    TvService ts1 = config.getService(origReq);
+    Set services = (Set)requiredServices.get(ts1);
+    if(services == null) services = new TreeSet();
+    TvService ts2 = config.getService(req);
+    if(ts1.equals(ts2)) return;
+    services.add(ts2);
+    requiredServices.put(ts1, services); // required service -> all otherwise undecodable services that it unlocks
+
+    services = (Set)addedServices.get(req.getProfileName());
+    if(services == null) services = new TreeSet();
+    if(services.add(new ServiceMapping(req))) {
+      logger.info("Linked previously undecodable service: " + ts2 + " (unlocked by: " + ts1 + ")");
+      // config.getConnManager().cwsFoundService(null, ts2);  // todo
+    }
+    addedServices.put(req.getProfileName(), services); // profileName -> all services that wouldn't decode without links
+  }
+
+  public Set getServicesForProfile(String profileName) {
+    if(!addedServices.containsKey(profileName)) return Collections.EMPTY_SET;
+    else return (Set)addedServices.get(profileName);
   }
 
   static class SidEntry {

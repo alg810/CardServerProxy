@@ -1201,6 +1201,7 @@ Example:  <em class='italic'>&lt;chameleon-connector name="newcs" enabled="true"
 <a name="connection-manager/cws-connectors/chameleon-connector/profiles">
 <div class='indent'>connection-manager/cws-connectors/chameleon-connector/profiles</div><br />
 Optional list of profile names that should not be mapped for this connector (use this to avoid ambigious situations when there are multiple profiles using the same ca-id/ident pairs).<br />
+<strong>NOTE: </strong>If you DO have profiles that share one or more ca-id/ident pairs then this list is mandatory, or the connector will accept no traffic (and remember that provider idents are associated with profiles not only from manual config but also automatically - based on card-data received from servers that are part of the profile - unless this is manually overridden). <br />
 <br />
 </a>
 

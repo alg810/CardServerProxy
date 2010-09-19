@@ -213,7 +213,8 @@ public class ProxyConfig implements FileChangeListener {
   }
 
   public SidCacheLinker getSidCacheLinker() {
-    return sidLinker;
+    if(!sidLinkerEnabled) return null;
+    else return sidLinker;
   }
 
   public UserManager getUserManager() {

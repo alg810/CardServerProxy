@@ -833,6 +833,7 @@
             <strong>C</strong> = Cache hit (local)<br />
             <strong>R</strong> = Cache hit (received from remote cache)<br />
             <strong>I</strong> = Instant cache hit (no waiting at all in cache, both request and reply already available)<br />
+            <strong>L</strong> = Linked cache hit (CW from a different service was used, via sid linking)<br />
             <strong>1</strong> = This was the first transaction performed by a new session.<br />
             <strong>Z</strong> = SID changed (compared to previous transaction = user zap, can also indicate multiple tuners or users in one session if it occurs every time)<br />
 

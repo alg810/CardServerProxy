@@ -335,7 +335,7 @@ public class CspSession extends AbstractSession implements CwsListener {
   }
 
   public void cwsFoundService(CwsConnector cws, TvService service) {
-    if(cws.getProfile().getNetworkId() == 0) return;
+    if(cws.getProfile().getNetworkId() == 0) return;    
     CspNetMessage.ProfileKey key = new CspNetMessage.ProfileKey(cws.getProfile());
     Integer sid = new Integer(service.getId());
     List state = (List)sentState.get(key);
