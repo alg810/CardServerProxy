@@ -555,7 +555,7 @@ public class CwsServiceMapper implements XmlConfigurable {
           (source==null?"":" - Ecm source was: " + source));
       if(session != null) session.setFlag(msg, '+');
       cacheUpdated = true;
-      config.getConnManager().cwsFoundService(conn, config.getService(msg));
+      config.getConnManager().cwsFoundService(conn, config.getService(msg), !resetServices.contains(id));
     }
     connectors = (List)cannotDecodeMap.get(id);
     if(connectors != null) {
@@ -587,8 +587,8 @@ public class CwsServiceMapper implements XmlConfigurable {
           resetSingle(new ServiceMapping(id.serviceId, -1), conn.getName());
           if(session != null) session.setFlag(msg, '-');
           cacheUpdated = true;
-          if(!resetServices.contains(id) && !overrideCanDecodeMap.containsKey(id)) {
-            config.getConnManager().cwsLostService(conn, config.getService(msg));
+          if(!overrideCanDecodeMap.containsKey(id)) {
+            config.getConnManager().cwsLostService(conn, config.getService(msg), !resetServices.contains(id));
           }
           registerRediscovery(conn.getName(), id);
         } else {

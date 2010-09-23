@@ -742,14 +742,14 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
       ((CwsListener)iter.next()).cwsEcmTimeout(cws, message, failureCount);
   }
 
-  public void cwsLostService(CwsConnector cws, TvService service) {
+  public void cwsLostService(CwsConnector cws, TvService service, boolean show) {
     for(Iterator iter = listeners.iterator(); iter.hasNext(); )
-      ((CwsListener)iter.next()).cwsLostService(cws, service);
+      ((CwsListener)iter.next()).cwsLostService(cws, service, show);
   }
 
-  public void cwsFoundService(CwsConnector cws, TvService service) {
+  public void cwsFoundService(CwsConnector cws, TvService service, boolean show) {
     for(Iterator iter = listeners.iterator(); iter.hasNext(); )
-      ((CwsListener)iter.next()).cwsFoundService(cws, service);
+      ((CwsListener)iter.next()).cwsFoundService(cws, service, show);
   }
 
   public void cwsInvalidCard(CwsConnector cws, String message) {

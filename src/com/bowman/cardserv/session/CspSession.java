@@ -312,7 +312,7 @@ public class CspSession extends AbstractSession implements CwsListener {
     cwsConnected(cws);
   }
 
-  public void cwsLostService(CwsConnector cws, TvService service) {
+  public void cwsLostService(CwsConnector cws, TvService service, boolean show) {
     if(cws.getProfile().getNetworkId() == 0) return;
     // check if this service has disappeared entirely from all connectors
     ConnectorSelection conns = cm.getConnectorsForService(cws.getProfileName(), new ServiceMapping(service), null);
@@ -334,7 +334,7 @@ public class CspSession extends AbstractSession implements CwsListener {
     }
   }
 
-  public void cwsFoundService(CwsConnector cws, TvService service) {
+  public void cwsFoundService(CwsConnector cws, TvService service, boolean show) {
     if(cws.getProfile().getNetworkId() == 0) return;    
     CspNetMessage.ProfileKey key = new CspNetMessage.ProfileKey(cws.getProfile());
     Integer sid = new Integer(service.getId());

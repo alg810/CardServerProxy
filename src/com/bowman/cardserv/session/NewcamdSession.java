@@ -421,7 +421,7 @@ public class NewcamdSession extends AbstractSession {
         msg.setProviderContext(card.getProviders());
       }
       msg.setCaId(listenPort.getProfile().getCaId());
-      msg.setProviderIdent(msg.getProviderFromHdr()); // todo - this could break things
+      if(!noValidation) msg.setProviderIdent(msg.getProviderFromHdr()); 
       msg.setNetworkId(listenPort.getProfile().getNetworkId());
     }
     return msg;

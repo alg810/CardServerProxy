@@ -75,7 +75,8 @@ public class ProxyConfig implements FileChangeListener {
   }
   
   public CaProfile getProfile(String name) {
-    return (CaProfile)profiles.get(name);
+    if(name == null) return null;
+    else return (CaProfile)profiles.get(name);
   }
 
   public CaProfile getProfile() {
@@ -245,8 +246,8 @@ public class ProxyConfig implements FileChangeListener {
 
   public TvService getService(CamdNetMessage msg) {
     CaProfile profile;
-    if(msg.getNetworkId() <= 0) profile = getProfile(msg.getProfileName());
-    else profile = getProfileById(msg.getNetworkId(), msg.getCaId());    
+    profile = getProfile(msg.getProfileName());
+    if(profile == null) profile = getProfileById(msg.getNetworkId(), msg.getCaId());    
     String profileName = profile==null?"*":profile.getName();
     return getService(profileName, new ServiceMapping(msg));
   }

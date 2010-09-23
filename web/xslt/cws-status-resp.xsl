@@ -47,6 +47,7 @@
                   <xsl:when test="@type = 4">Connection attempt failed</xsl:when>
                   <xsl:when test="@type = 5">Warning (timeout)</xsl:when>
                   <xsl:when test="@type = 6">Lost service</xsl:when>
+                  <xsl:when test="@type = 9">Found service</xsl:when>
                   <xsl:when test="@type = 8">Invalid card data</xsl:when>
                   <xsl:when test="@type = 10">Startup</xsl:when>
                   <xsl:otherwise>Unknown</xsl:otherwise>

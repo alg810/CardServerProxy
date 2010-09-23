@@ -533,6 +533,7 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
         break;
       case RemoteEvent.CWS_DISCONNECTED:
       case RemoteEvent.CWS_WARNING:
+      case RemoteEvent.CWS_FOUND_SERVICE:
       case RemoteEvent.CWS_LOST_SERVICE:
       case RemoteEvent.PROXY_STARTUP:
         eventLog.add(0, event);

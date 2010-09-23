@@ -387,11 +387,11 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         }
       }
 
-      // 4 scenarios
-      // - request with arbiternumber:    1 + 1 + 2 + 4 + 8 (type request)
-      // - request without arbiternumber: 1 + 1 + 2 + 4     (type request)
-      // - request and reply:             1 + 1 + 2 + 4    1 + 2 + 4 + 16 + connectorNameLen (type reply)
-      // - request and empty reply:       1 + 1 + 2 + 4    1                                 (type reply)
+      // 4 scenarios (type + tag + sid + onid + caid + hash)
+      // - request with arbiternumber:    1 + 1 + 2 + 2 + 2 + 4 + 8 (type request)
+      // - request without arbiternumber: 1 + 1 + 2 + 2 + 2 + 4     (type request)
+      // - request and reply:             1 + 1 + 2 + 2 + 2 + 4    1 + 2 + 4 + 16 + connectorNameLen (type reply)
+      // - request and empty reply:       1 + 1 + 2 + 2 + 2 + 4    1                                 (type reply)
 
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(bos);
@@ -421,6 +421,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private static void writeCacheReq(DataOutputStream dos, CamdNetMessage msg) throws IOException {
     dos.writeByte(msg.getCommandTag());
     dos.writeShort(msg.getServiceId());
+    dos.writeShort(msg.getNetworkId());
+    dos.writeShort(msg.getCaId());
     dos.writeInt(msg.getDataHash());
     if(msg.getArbiterNumber() != null) dos.writeDouble(msg.getArbiterNumber().doubleValue());
   }
@@ -527,7 +529,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
             receivedEntries++;
             incrementReceived(packet.getAddress());
             request = CamdNetMessage.parseCacheReq(dis);
-            request.setOriginAddress(packet.getAddress().getHostAddress());
+            request.setOriginAddress(packet.getAddress().getHostAddress());            
             CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis);
             reply.setOriginAddress(packet.getAddress().getHostAddress());
             if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());

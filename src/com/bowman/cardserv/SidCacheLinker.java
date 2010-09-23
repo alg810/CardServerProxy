@@ -279,6 +279,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     }
 
     if(successFactor == -1 && (sidLinksMap.containsKey(se))) {
+      requiredServices.remove(config.getService(req));
 
       // no request in progress but sid is in a linked set and will not decode locally = always lock for all linked
       Set links = (Set)sidLinksMap.get(se);
@@ -404,21 +405,24 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   }
 
   private void reportAddedService(CamdNetMessage req, CamdNetMessage origReq) {
-    TvService ts1 = config.getService(origReq);
+    String profileName = req.getProfileName();
+    if(profileName == null) profileName = origReq.getProfileName(); // todo
+    if(profileName == null) profileName = defaultProfile;
+    TvService ts1 = config.getService(profileName, origReq.getServiceId());
     Set services = (Set)requiredServices.get(ts1);
     if(services == null) services = new TreeSet();
-    TvService ts2 = config.getService(req);
+    TvService ts2 = config.getService(profileName, req.getServiceId());
     if(ts1.equals(ts2)) return;
     services.add(ts2);
     requiredServices.put(ts1, services); // required service -> all otherwise undecodable services that it unlocks
 
-    services = (Set)addedServices.get(req.getProfileName());
+    services = (Set)addedServices.get(profileName);
     if(services == null) services = new TreeSet();
     if(services.add(new ServiceMapping(req))) {
       logger.info("Linked previously undecodable service: " + ts2 + " (unlocked by: " + ts1 + ")");
       // config.getConnManager().cwsFoundService(null, ts2);  // todo
     }
-    addedServices.put(req.getProfileName(), services); // profileName -> all services that wouldn't decode without links
+    addedServices.put(profileName, services); // profileName -> all services that wouldn't decode without links
   }
 
   public Set getServicesForProfile(String profileName) {

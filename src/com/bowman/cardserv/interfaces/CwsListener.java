@@ -15,8 +15,8 @@ public interface CwsListener {
   void cwsDisconnected(CwsConnector cws);
   void cwsConnectionFailed(CwsConnector cws, String message);
   void cwsEcmTimeout(CwsConnector cws, String message, int failureCount);
-  void cwsLostService(CwsConnector cws, TvService service);
-  void cwsFoundService(CwsConnector cws, TvService service);
+  void cwsLostService(CwsConnector cws, TvService service, boolean show);
+  void cwsFoundService(CwsConnector cws, TvService service, boolean show);
   void cwsInvalidCard(CwsConnector cws, String message);
   void cwsProfileChanged(CaProfile profile, boolean added);
 

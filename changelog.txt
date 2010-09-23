@@ -10,7 +10,11 @@ Cardservproxy changelog:
 - Fixed: Radegast support updated to make sense with 0.9.x.
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
   now considered identical by the proxy.
-    
+- Changed: ClusteredCache transport format now includes meta-data such as ca-id and onid. This breaks compatibility
+  with previous versions. If one node has the new format, all nodes must be upgraded.
+- Added: Cws event for found service now shown in the status-web (despite the command being called error-log).
+- Added: Experimental sid cache linking feature, allows cache hits based on meta-data rather than ecm payload. 
+
 
 0.9.0 - 2010-08-15 (see README.0.9.0.txt for conceptual changes and tips)
 

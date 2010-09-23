@@ -504,13 +504,14 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
       fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_WARNING, cws.getLabel(), message, cws.getProfileName()));
   }
 
-  public void cwsLostService(CwsConnector cws, TvService service) {
-    if(service != null)
-      fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_LOST_SERVICE, cws.getLabel(), service.toString(), cws.getProfileName()));
+  public void cwsLostService(CwsConnector cws, TvService service, boolean show) {
+    if(service != null && show)
+      fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_LOST_SERVICE, cws.getLabel(), service.toString(), service.getProfileName()));
   }
 
-  public void cwsFoundService(CwsConnector cws, TvService service) {
-    // ignore for now - todo
+  public void cwsFoundService(CwsConnector cws, TvService service, boolean show) {
+    if(service != null && show)
+      fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_FOUND_SERVICE, cws.getLabel(), service.toString(), service.getProfileName()));
   }
 
   public void cwsInvalidCard(CwsConnector cws, String message) {

@@ -129,6 +129,8 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   public static CamdNetMessage parseCacheReq(DataInputStream dais) throws IOException {
     CamdNetMessage msg = new CamdNetMessage(dais.readUnsignedByte());
     msg.setServiceId(dais.readUnsignedShort());
+    msg.setNetworkId(dais.readUnsignedShort());
+    msg.setCaId(dais.readUnsignedShort());
     msg.protocol = "Dummy";
     msg.dataHash = dais.readInt();
     if(dais.available() == 8) { // this is a request with arbitration set
