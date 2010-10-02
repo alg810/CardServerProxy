@@ -138,6 +138,7 @@ public class DefaultCache implements CacheHandler {
       removeRequest(request);
       notifyAll();
     } else {
+      if(listener != null) listener.onReply(request, reply);
       if(pendingEcms.containsKey(request)) {
         addReply(request, reply);
         logger.finer("Reply received: " + request.hashCodeStr() + " -> " + reply.hashCodeStr() +
@@ -191,7 +192,7 @@ public class DefaultCache implements CacheHandler {
         logger.warning("Overwrote cache reply with different DCW! - Previous: " + oldReply.toDebugString() +
             " Current: " + reply.toDebugString());
       }
-    } else if(listener != null) listener.onReply(request, reply);
+    } // else if(listener != null) listener.onReply(request, reply);
   }
 
   protected void removeRequest(CamdNetMessage request) {

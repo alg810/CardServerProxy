@@ -10,6 +10,14 @@
       <maximumStackSize value="32" />
       <properties />
     </buildFile>
+    <buildFile url="file://$PROJECT_DIR$/build.local.xml">
+      <additionalClassPath />
+      <antReference projectDefault="true" />
+      <customJdkName value="" />
+      <maximumHeapSize value="128" />
+      <maximumStackSize value="32" />
+      <properties />
+    </buildFile>
   </component>
   <component name="BuildJarProjectSettings">
     <option name="BUILD_JARS_ON_MAKE" value="false" />
@@ -21,7 +29,7 @@
   <component name="CodeStyleSettingsManager">
     <option name="PER_PROJECT_SETTINGS">
       <value>
-        <ADDITIONAL_INDENT_OPTIONS fileType="">
+        <ADDITIONAL_INDENT_OPTIONS fileType="java">
           <option name="INDENT_SIZE" value="4" />
           <option name="CONTINUATION_INDENT_SIZE" value="8" />
           <option name="TAB_SIZE" value="4" />
@@ -30,7 +38,7 @@
           <option name="LABEL_INDENT_SIZE" value="0" />
           <option name="LABEL_INDENT_ABSOLUTE" value="false" />
         </ADDITIONAL_INDENT_OPTIONS>
-        <ADDITIONAL_INDENT_OPTIONS fileType="java">
+        <ADDITIONAL_INDENT_OPTIONS fileType="jsp">
           <option name="INDENT_SIZE" value="4" />
           <option name="CONTINUATION_INDENT_SIZE" value="8" />
           <option name="TAB_SIZE" value="4" />
@@ -101,9 +109,7 @@
     <entry_points version="2.0" />
   </component>
   <component name="ExportToHTMLSettings">
-    <option name="PRINT_LINE_NUMBERS" value="false" />
-    <option name="OPEN_IN_BROWSER" value="false" />
-    <option name="OUTPUT_DIRECTORY" />
+    <option name="OUTPUT_DIRECTORY" value="C:\IdeaProjects\CSP-svn\exportToHTML" />
   </component>
   <component name="FacetAutodetectingManager">
     <autodetection-disabled>
@@ -130,13 +136,18 @@
           <option name="m_ignoreTestCases" value="true" />
           <option name="m_ignoreIgnoreParameter" value="true" />
         </inspection_tool>
-        <inspection_tool class="ImplicitTypeConversion" level="WARNING" enabled="false">
+        <inspection_tool class="ImplicitTypeConversion" enabled="false" level="WARNING" enabled_by_default="false">
           <option name="BITS" value="1720" />
           <option name="FLAG_EXPLICIT_CONVERSION" value="true" />
           <option name="IGNORE_NODESET_TO_BOOLEAN_VIA_STRING" value="true" />
         </inspection_tool>
         <inspection_tool class="SerializableHasSerialVersionUIDField" enabled="true" level="INFO" enabled_by_default="true">
           <option name="superClassString" value="java.awt.Component" />
+        </inspection_tool>
+        <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
+          <option name="processCode" value="true" />
+          <option name="processLiterals" value="true" />
+          <option name="processComments" value="true" />
         </inspection_tool>
         <inspection_tool class="ThrowableInstanceNeverThrown" enabled="true" level="INFO" enabled_by_default="true" />
         <inspection_tool class="ThrowableResultOfMethodCallIgnored" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -153,7 +164,23 @@
             </value>
           </option>
         </inspection_tool>
-        <inspection_tool class="UnterminatedStatementJS" level="WARNING" enabled="false" />
+        <inspection_tool class="UnterminatedStatementJS" enabled="false" level="WARNING" enabled_by_default="false" />
+        <inspection_tool class="UnusedDeclaration" enabled="false" level="WARNING" enabled_by_default="false">
+          <option name="ADD_MAINS_TO_ENTRIES" value="true" />
+          <option name="ADD_APPLET_TO_ENTRIES" value="true" />
+          <option name="ADD_SERVLET_TO_ENTRIES" value="true" />
+          <option name="ADD_NONJAVA_TO_ENTRIES" value="true" />
+          <option name="ADDITIONAL_ANNOTATIONS">
+            <value>
+              <list size="1">
+                <item index="0" class="java.lang.String" itemvalue="javax.ws.rs.*" />
+              </list>
+            </value>
+          </option>
+          <option name="ADD_EJB_TO_ENTRIES" value="true" />
+          <option name="ADD_TESTNG_TO_ENTRIES" value="true" />
+          <option name="ADD_JUNIT_TO_ENTRIES" value="true" />
+        </inspection_tool>
       </profile>
     </profiles>
     <option name="PROJECT_PROFILE" value="Project Default" />
@@ -315,7 +342,7 @@
     <option name="projectName" value="CardServProxy" />
   </component>
   <component name="ProjectKey">
-    <option name="state" value=":pserver:bowman@cvs.3dfxsweden.net:/home/cvs|CardServProxy/CardServProxy.ipr" />
+    <option name="state" value="http://streamboard.gmc.to/svn/CSP/trunk/CardServProxy.ipr" />
   </component>
   <component name="ProjectModuleManager">
     <modules>
@@ -331,6 +358,17 @@
     </option>
   </component>
   <component name="SvnBranchConfigurationManager">
+    <option name="myConfigurationMap">
+      <map>
+        <entry key="$PROJECT_DIR$">
+          <value>
+            <SvnBranchConfiguration>
+              <option name="trunkUrl" value="http://streamboard.gmc.to/svn/CSP/trunk" />
+            </SvnBranchConfiguration>
+          </value>
+        </entry>
+      </map>
+    </option>
     <option name="mySupportsUserInfoFilter" value="true" />
   </component>
   <component name="VcsDirectoryMappings">

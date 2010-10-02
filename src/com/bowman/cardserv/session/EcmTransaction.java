@@ -54,6 +54,10 @@ public class EcmTransaction {
     return sb.toString();
   }
 
+  public String getFilteredBy() {
+    return request.getFilteredBy();
+  }
+
   public void setFlag(char f) {
     trFlags.add(String.valueOf(f));
   }

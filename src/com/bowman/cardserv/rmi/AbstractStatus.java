@@ -14,7 +14,7 @@ public class AbstractStatus implements Serializable {
   Properties data = new Properties();
 
   public void setProperty(String name, String value) {
-    data.setProperty(name, value);
+    if(value != null) data.setProperty(name, value);
   }
 
   public void setProperties(Properties p) {

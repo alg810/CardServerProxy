@@ -57,6 +57,7 @@ public class ProxyConfig implements FileChangeListener {
   private Map proxyPlugins = new HashMap();
   private Map pluginLoadData = new HashMap();
   private Map profiles = new HashMap();
+  private Map profilesById = new HashMap();
   private Set disabledProfiles = new HashSet();
 
   private boolean sidLinkerEnabled;
@@ -83,14 +84,15 @@ public class ProxyConfig implements FileChangeListener {
     return (CaProfile)profiles.values().iterator().next();
   }
 
-  public CaProfile getProfileById(int onid, int caid) {
-    if(onid == 0) return null;
-    CaProfile profile;
-    for(Iterator iter = profiles.values().iterator(); iter.hasNext(); ) {
-      profile = (CaProfile)iter.next();
-      if(profile.getNetworkId() == onid && profile.getCaId() == caid) return profile;
-    }
-    return null;
+  public CaProfile getProfileById(int networkId, int caId) {
+    if(networkId == 0) return null;
+    return (CaProfile)profilesById.get(CaProfile.getKeyStr(networkId, caId));
+  }
+
+  public String getProfileNameById(int networkId, int caId) {
+    CaProfile profile = getProfileById(networkId, caId);
+    if(profile == null) return null;
+    else return profile.getName();
   }
 
   public boolean isLogEcm() {
@@ -496,11 +498,12 @@ public class ProxyConfig implements FileChangeListener {
         addProfile(profile);
         profileChanged(profile, true);
       } else {
+        profilesById.remove(profile.getKeyStr());
         profile.configUpdated(profileConfig);
         if(!profile.isEnabled()) {
           profiles.remove(profile.getName());
           disabledProfiles.add(profile.getName());
-        }
+        } else profilesById.put(profile.getKeyStr(), profile);
         profileChanged(profile, false);
       }
       newProfiles.add(profile.getName());
@@ -511,8 +514,10 @@ public class ProxyConfig implements FileChangeListener {
       if(CaProfile.MULTIPLE.getName().equals(name)) continue;
       if(!newProfiles.contains(name)) {
         profile = (CaProfile)profiles.remove(name);
+        profilesById.remove(profile.getKeyStr());
         profile.setEnabled(false);
         disabledProfiles.remove(profile.getName());
+
         profileChanged(profile, false);
       }
     }
@@ -528,6 +533,7 @@ public class ProxyConfig implements FileChangeListener {
         throw new ConfigException("ca-profiles", "Duplicate profile definition for network-id '" +
             profile.getNetworkIdStr() + "' and ca-id '" + profile.getCaIdStr() + "'.");
       profiles.put(profile.getName(), profile);
+      profilesById.put(profile.getKeyStr(), profile);
       // if the proxy is already running, start any new added profiles immediately
       if(defaultListener != null) profile.startListening(defaultListener);
     } else {

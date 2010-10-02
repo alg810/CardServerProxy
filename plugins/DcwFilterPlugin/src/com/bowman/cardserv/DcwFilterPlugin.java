@@ -102,8 +102,9 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
               ProxyConfig config = ProxyConfig.getInstance();
               links.add(config.getService(prev.getProfileName(), prev.getServiceId()).toString());
               links.add(config.getService(msg.getProfileName(), msg.getServiceId()).toString());
-              if(sidMap.put(prevId, links) == null || sidMap.put(msgId, links) == null)
+              if(sidMap.put(prevId, links) == null || sidMap.put(msgId, links) == null) {
                 System.out.println("Link found: " + links + "\n\t" + prev + "\n\t" + msg);
+              }
             }
 
           }

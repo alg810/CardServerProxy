@@ -534,6 +534,7 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
     re.setProperty("timestamp", String.valueOf(transaction.getReadTime()));
     re.setProperty("time", String.valueOf(transaction.getDuration()));
     re.setProperty("flags", transaction.getFlags());
+    re.setProperty("filtered-by", transaction.getFilteredBy());
     re.setProperty("service", transaction.getService().getName() + " (" + transaction.getService().getProfileName() +
         ":" + Integer.toHexString(sid) + ")");
     re.setProperty("sid", Integer.toHexString(sid));

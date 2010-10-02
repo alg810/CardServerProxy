@@ -22,7 +22,7 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
   private Map sentData = new HashMap();
 
   private CardData mainCard;
-  private int mainCaId;
+  private int mainCaId, mainNetworkId;
   private Integer[] mergedProviders;
 
   public ExtNewcamdSession(Socket conn, ListenPort listenPort, CamdMessageListener listener) {
@@ -88,8 +88,10 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
         }
         if(card.getCaId() == mainCaId && mergedProviders != null) card = CardData.createMergedData(card, mergedProviders);
 
-        if(au) this.mainCard = card;
-        else this.mainCard = new CardData(card.getData(true));
+        if(au) {
+          mainCard = card;
+          mainNetworkId = auConn.getProfile().getNetworkId();
+        } else mainCard = new CardData(card.getData(true));
 
         CamdNetMessage cardDataMsg = new CamdNetMessage(MSG_CARD_DATA);
         cardDataMsg.setCustomData(card.getData(!au));
@@ -175,13 +177,15 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
         else msg.setNetworkId(((CaProfile)sentData.get(pair)).getNetworkId());
       } else if(msg.isEmm()) {
         if(mainCard != null) {
-          msg.setCaId(mainCard.getCaId());
+          msg.setCaId(mainCard.getCaId());         
           msg.setProviderIdent(msg.getProviderFromHdr());
 
           CaidProviderPair pair = new CaidProviderPair(mainCard.getCaId(), msg.getProviderIdent());
-          if(!sentData.containsKey(pair))
-            logger.warning("User '" + user + "' sent request for ca-id/provider-ident not previously communicated: " + pair);
-          else msg.setNetworkId(((CaProfile)sentData.get(pair)).getNetworkId());
+          if(!sentData.containsKey(pair)) {
+            // not able to determine profile target for emm based on caid and ident in header (probably normal, no ident associated with emms?)
+            // obtain profile from the card data context instead
+            msg.setNetworkId(mainNetworkId);
+          } else msg.setNetworkId(((CaProfile)sentData.get(pair)).getNetworkId());
         }      
       }
     }

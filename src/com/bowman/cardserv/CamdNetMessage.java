@@ -656,7 +656,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
 
   public String getProfileName() {
     return profileName;
-  }
+  }    
 
   public void setLinkedService(String linkedService) {
     this.linkedService = linkedService;

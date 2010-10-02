@@ -399,7 +399,6 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
 
         ServiceMapping id = new ServiceMapping(msg);
 
-
         ConnectorSelection connectors;
 
         if(!profile.isCacheOnly()) {
@@ -485,7 +484,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
         if(msg.isEmm()) {  // 0x82 - 0x8F - only newcamd sessions send these atm
           emmCount++;
           int seqNr = msg.getSequenceNr();
-          if(!profile.isCacheOnly()) forwardEmmRequest(session, msg);
+          if(!profile.isCacheOnly() && msg.getProfileName() != null) forwardEmmRequest(session, msg);
           CamdNetMessage emmReplyMsg = msg.getEmmReply();
           ((NewcamdSession)session).sendMessageNative(emmReplyMsg, seqNr, true); // acknowledge the emm by giving the client the correct signature?
           ((NewcamdSession)session).fireCamdMessage(emmReplyMsg, true);

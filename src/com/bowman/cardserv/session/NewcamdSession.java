@@ -414,14 +414,21 @@ public class NewcamdSession extends AbstractSession {
     CamdNetMessage msg = conn.readMessage();
     if(msg != null) {
       msgCount++;
-      if(msg.isEcm()) ecmCount++;
-      else if(msg.isEmm()) emmCount++;
+      if(msg.isEcm()) {
+        ecmCount++;
+
+        if(msg.getProviderIdent() == - 1 && !noValidation) { // attempt to get provider ident from header if port is set to validating
+          if(msg.getProviderFromHdr() != 0) msg.setProviderIdent(msg.getProviderFromHdr()); // nonzero value, probably a real ident regardless of client
+          else {
+            // value is 0, could be ident 0 or just nothing set (significant difference for later handling)
+            if("CCcam".equals(clientId)) msg.setProviderIdent(msg.getProviderFromHdr());
+            // todo add any other clients that specify ident in hdr even for old newcamd
+          }
+        }
+      } else if(msg.isEmm()) emmCount++;
       else if(msg.isKeepAlive()) keepAliveCount++;
-      if(card != null) {
-        msg.setProviderContext(card.getProviders());
-      }
+      if(card != null) msg.setProviderContext(card.getProviders());
       msg.setCaId(listenPort.getProfile().getCaId());
-      if(!noValidation) msg.setProviderIdent(msg.getProviderFromHdr()); 
       msg.setNetworkId(listenPort.getProfile().getNetworkId());
     }
     return msg;

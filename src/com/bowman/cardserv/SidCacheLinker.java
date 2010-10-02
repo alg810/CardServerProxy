@@ -105,6 +105,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
         Set linkStrs = new TreeSet();
         for(Iterator iter = sidLinksMap.values().iterator(); iter.hasNext(); ) linkStrs.add(iter.next().toString());
         logger.info("Loaded sid links file, " + linkStrs.size() + " collections: " + linkStrs);
+        refreshAddedSet();
         linksChanged = false;
       } catch(Exception e) {
         logger.throwing(e);
@@ -248,15 +249,28 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   public void runStatusCmdRequiredServices(XmlStringBuffer xb, Map params, String user) {
     String[] profiles = (String[])params.get("profiles");
     TvService[] services = (TvService[])requiredServices.keySet().toArray(new TvService[requiredServices.size()]);
+    Set opens;
     xb.appendElement("required-services", "count", services.length);
-    XmlHelper.xmlFormatServices(services, xb, false, true, false, null, profiles);
+    for(int i = 0; i < services.length; i++) {
+      opens = (Set)requiredServices.get(services[i]);
+      if(opens != null && !opens.isEmpty()) {
+        xb.appendElement("link").appendAttr("id", i + 1).endElement(false);
+        xb.appendElement("required");
+        XmlHelper.xmlFormatServices(new TvService[] {services[i]}, xb, false, true, false, null, profiles);
+        xb.closeElement("required");
+        xb.appendElement("opens");
+        XmlHelper.xmlFormatServices((TvService[])opens.toArray(new TvService[opens.size()]), xb, false, true, false, null, profiles);
+        xb.closeElement("opens");
+        xb.closeElement("link");
+      }
+    }
     xb.closeElement("required-services");
   }
 
   public boolean lockRequest(int successFactor, CamdNetMessage req) {
-    SidEntry se;
-    if(req.getProfileName() == null) se = new SidEntry(req.getServiceId(), defaultProfile); // todo
-    else se = new SidEntry(req);
+
+    if(req.getProfileName() == null) req.setProfileName(config.getProfileNameById(req.getNetworkId(), req.getCaId()));
+    SidEntry se = new SidEntry(req);
 
     if(sidLockMap.containsKey(se)) { // linked request already in progress
       CamdNetMessage origReq = (CamdNetMessage)sidLockMap.get(se);
@@ -300,9 +314,8 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
 
   public void onRequest(int successFactor, CamdNetMessage req) {
     if(successFactor == -1) return; // can't succeed - never create locks
-    SidEntry se;
-    if(req.getProfileName() == null) se = new SidEntry(req.getServiceId(), defaultProfile); // todo 
-    else se = new SidEntry(req);
+    if(req.getProfileName() == null) req.setProfileName(config.getProfileNameById(req.getNetworkId(), req.getCaId()));
+    SidEntry se = new SidEntry(req);
     if(sidLockMap.containsKey(se)) return; // already locked
 
     if(testService != null) { // test mode - lock all with specified sid
@@ -332,9 +345,8 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
       reqs = (Set)requestMap.get(req);
     } else { // reply might match locked undecodable requests
 
-      if(req.getProfileName() == null) { // todo - clusteredcache format doesn't include profile info, guess wildly
-        se = new SidEntry(req.getServiceId(), defaultProfile);      
-      } else se = new SidEntry(req);
+      if(req.getProfileName() == null) req.setProfileName(config.getProfileNameById(req.getNetworkId(), req.getCaId()));
+      se = new SidEntry(req);
 
       Set links = (Set)sidLinksMap.get(se);
       if(links != null) {
@@ -401,13 +413,14 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     links.remove(se1);
     links.remove(se2);
     boolean removed = (sidLinksMap.remove(se1) != null || sidLinksMap.remove(se2) != null);
-    if(removed) linksChanged = true;
+    if(removed) {
+      linksChanged = true;
+      refreshAddedSet();
+    }
   }
 
   private void reportAddedService(CamdNetMessage req, CamdNetMessage origReq) {
     String profileName = req.getProfileName();
-    if(profileName == null) profileName = origReq.getProfileName(); // todo
-    if(profileName == null) profileName = defaultProfile;
     TvService ts1 = config.getService(profileName, origReq.getServiceId());
     Set services = (Set)requiredServices.get(ts1);
     if(services == null) services = new TreeSet();
@@ -423,6 +436,31 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
       // config.getConnManager().cwsFoundService(null, ts2);  // todo
     }
     addedServices.put(profileName, services); // profileName -> all services that wouldn't decode without links
+  }
+
+  private void refreshAddedSet() {
+    SidEntry se; TvService ts; Set retained = new HashSet();
+    for(Iterator iter = requiredServices.keySet().iterator(); iter.hasNext(); ) {
+      ts = (TvService)iter.next();
+      se = new SidEntry(ts.getId(), ts.getProfileName());
+      if(!sidLinksMap.containsKey(se)) iter.remove(); // service is no longer linked
+      else retained.addAll((Set)requiredServices.get(ts));
+    }
+    Set added; String profileName; ServiceMapping sm;
+    for(Iterator iter = addedServices.keySet().iterator(); iter.hasNext(); ) {
+      profileName = (String)iter.next();
+      added = (Set)addedServices.get(profileName);
+      for(Iterator i = added.iterator(); i.hasNext(); ) {
+        sm = (ServiceMapping)i.next();
+        ts = config.getService(profileName, sm);
+        if(!retained.contains(ts)) {
+          i.remove();
+          logger.info("Linked service no longer available: " + ts);
+          // config.getConnManager().cwsLostService(null, ts);  // todo
+        }
+      }
+      if(added.isEmpty()) iter.remove();
+    }
   }
 
   public Set getServicesForProfile(String profileName) {

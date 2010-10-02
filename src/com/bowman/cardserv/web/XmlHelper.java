@@ -1128,7 +1128,6 @@ public class XmlHelper implements CommandManager {
           xb.appendAttr("request-hash", event.getProperty("request-hash"));
           xb.appendAttr("ecm-size", event.getProperty("ecm-size"));
           if(event.getProperty("cw") != null) xb.appendAttr("cw", event.getProperty("cw"));
-          // if(event.getProperty("provider-ident") != null) xb.appendAttr("provider-ident", event.getProperty("provider-ident"));
           if(event.getProperty("ext-newcamd") != null) xb.appendAttr("ext-newcamd", event.getProperty("ext-newcamd"));
           xb.appendAttr("session-id", event.getProperty("id"));
           xb.appendAttr("service-name", event.getProperty("service"));
@@ -1139,6 +1138,7 @@ public class XmlHelper implements CommandManager {
           if(event.getProperty("reply-sid") != null) xb.appendAttr("reply-sid", event.getProperty("reply-sid"));
           xb.appendAttr("time", event.getProperty("time"));
           xb.appendAttr("flags", event.getProperty("flags"));
+          if(event.getProperty("filtered-by") != null) xb.appendAttr("filtered-by", event.getProperty("filtered-by"));
 
           if(cwsLog) xb.appendAttr("user-name", event.getMessage());
           else if(event.getProperty("cws-name") != null) xb.appendAttr("cws-name", event.getProperty("cws-name"));

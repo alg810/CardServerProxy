@@ -343,9 +343,7 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
   }
 
   public String getNetworkIdStr() {
-    String s = Integer.toHexString(networkId);
-    while(s.length() < 4) s = "0" + s;
-    return s;
+    return DESUtil.intToHexString(networkId, 4);
   }
 
   public Map getServices() {
@@ -445,6 +443,18 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
   public ServiceMapping[] getServices(boolean canDecode) {
     if(this == MULTIPLE) throw new IllegalStateException("getServices(" + canDecode +") called on profile *.");
     return ProxyConfig.getInstance().getConnManager().getServicesForProfile(name, canDecode);
+  }
+
+  public String getKeyStr() {
+    return getKeyStr(this);
+  }
+
+  public static String getKeyStr(CaProfile profile) {
+    return getKeyStr(profile.networkId, profile.caId);
+  }
+
+  public static String getKeyStr(int networkId, int caId) {
+    return DESUtil.intToHexString(networkId, 4) + '-' + DESUtil.intToHexString(caId, 4);
   }
 
   private static String getCaName(int id, boolean includeName) {
