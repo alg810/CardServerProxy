@@ -141,7 +141,7 @@ public class DreamboxPlugin implements ProxyPlugin {
     else return sshd.getPort();
   }
 
-  public String getBoxCpuArch(BoxMetaData box) {
+  public static String getBoxCpuArch(BoxMetaData box) {
     if(box == null) return null;
     else {
       if("ppc".equalsIgnoreCase(box.getProperty("machine"))) return "ppc";

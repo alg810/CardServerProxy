@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BINARIES="dropbearmulti.ppc dropbearmulti.static.ppc dropbearmulti.mips dropbearmulti.static.mips"
+BINARIES="dropbearmulti.ppc dropbearmulti.static.ppc dropbearmulti.04x.ppc dropbearmulti.mips dropbearmulti.static.mips"
 
 for BIN in $BINARIES
 do
