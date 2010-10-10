@@ -286,14 +286,20 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
 
       if(ecmReply.getCaId() != 0 && (ecmRequest.getCaId() != ecmReply.getCaId())) {
         setFlag(ecmRequest, 'M');
-        logger.warning("Ca-id mismatch, response (from " + ecmReply.getConnectorName() + ") had ca-id " + Integer.toHexString(ecmReply.getCaId()) +
-            " but request was for profile: " + ecmRequest.getProfileName() + " (from user '" + user + "' - " + clientId + ")");
-        if(ProxyConfig.getInstance().isBlockCaidMismatch()) ecmReply = ecmRequest.getEmptyReply();
+        String s = "Ca-id mismatch, response (from " + ecmReply.getConnectorName() + ") had ca-id " + Integer.toHexString(ecmReply.getCaId()) +
+            " but request was for profile: " + ecmRequest.getProfileName() + " (from user '" + user + "' - " + clientId + ")";
+        if(ProxyConfig.getInstance().isBlockCaidMismatch()) {
+          ecmReply = ecmRequest.getEmptyReply();
+          logger.warning(s);
+        } else logger.fine(s);
       } else if(ecmReply.getProfileName() != null && !ecmReply.getProfileName().equals(ecmRequest.getProfileName())) {
         setFlag(ecmRequest, 'M');
-        logger.warning("Profile mismatch, response (from " + ecmReply.getConnectorName() + ") had profile " + ecmReply.getProfileName() +
-            " but request was for profile: " + ecmRequest.getProfileName() + " (from user '" + user + "' - " + clientId + ")");
-        if(ProxyConfig.getInstance().isBlockCaidMismatch()) ecmReply = ecmRequest.getEmptyReply();
+        String s = "Profile mismatch, response (from " + ecmReply.getConnectorName() + ") had profile " + ecmReply.getProfileName() +
+            " but request was for profile: " + ecmRequest.getProfileName() + " (from user '" + user + "' - " + clientId + ")";
+        if(ProxyConfig.getInstance().isBlockCaidMismatch()) {
+          ecmReply = ecmRequest.getEmptyReply();
+          logger.warning(s);
+        } else logger.fine(s);
       }
 
       ecmRequest = ((EcmTransaction)transactions.get(ecmRequest)).getRequest(); // make sure original instance is used

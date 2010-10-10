@@ -68,7 +68,7 @@ chmod +r /tmp/dropbear/dropbearkey.rsa
 # Connect using the boxid as username
 if [ -e "/tmp/dropbear.04x" ]; then
   echo "Using dropbear 0.4x workaround..."
-  # No -y arg i 0.4x, and if dropbear can read from /dev/tty then it will not accept they "y" response on stdin, so make it unreadable for non-root users and create one to run as
+  # No -y arg i 0.4x, and if dropbear can read from /dev/tty then it will not accept the "y" response on stdin, so make it unreadable for non-root users and create one to run as
   chmod -r /dev/tty
   adduser -h /tmp -D -H dropbear 2> /dev/null
   echo "Running: echo y | /tmp/dropbear/dbclient -T -R $TUNNELPORT:localhost:$LOCALPORT -i /tmp/dropbear/dropbearkey.rsa -p $SSHDPORT -l $(cat /var/etc/cspagent.id) $CSPHOST &"

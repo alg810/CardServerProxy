@@ -555,7 +555,7 @@ public class CwsServiceMapper implements XmlConfigurable {
           (source==null?"":" - Ecm source was: " + source));
       if(session != null) session.setFlag(msg, '+');
       cacheUpdated = true;
-      config.getConnManager().cwsFoundService(conn, config.getService(msg), !resetServices.contains(id));
+      config.getConnManager().cwsFoundService(conn, config.getService(msg), !(resetServices.contains(id) || overrideCanDecodeMap.containsKey(id)));
     }
     connectors = (List)cannotDecodeMap.get(id);
     if(connectors != null) {

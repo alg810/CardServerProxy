@@ -1,4 +1,4 @@
-Cardservproxy 0.9.0
+Cardservproxy 0.9.1
 -------------------
 
 First, in order to avoid the usual confusion about the proxy:

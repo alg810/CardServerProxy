@@ -8,14 +8,18 @@ Cardservproxy changelog:
 - Fixed: Per profile max-cw-wait could not be set below 1s (now both per profile and global allow down to 100 ms).
 - Fixed: Probing was sometimes attempted even when there was only one candidate connector.
 - Fixed: Radegast support updated to make sense with 0.9.x.
+- Fixed: Emm handling for extended newcamd in systems with signifcant provider-idents.
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
   now considered identical by the proxy. Implications unknown.
 - Changed: ClusteredCache transport format now includes meta-data such as ca-id and network-id.
   NOTE: This breaks compatibility with previous versions. If one node has the new format, all nodes must be upgraded.
+  The source ip's of any received incompatible updates are listed in the property 'version-mismatch'.
 - Added: Cws event for found service now shown in the status-web (despite the command being called error-log).
 - Added: Experimental sid cache linking feature, allows cache hits based on meta-data like sid rather than ecm payload.
   Links added via the web commands are stored in etc/links.cfg (this file is monitored for changes and autoloaded also).
 - Added: More sanity checks to DcwFilterPlugin (checksums, length and an option to monitor all replies for duplicates).
+- Added: DreamboxPlugin (csp-agent) support for more/older dm500 images.
+- Added: proxy-reference.html updated with highlighting for important elements and additional examples.
 
 - Changes to proxy.xml:
   Added: Attribute 'enable-service-linking' to <cache-handler> (true/false, default: false). Enables sid cache linker.

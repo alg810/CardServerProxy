@@ -21,7 +21,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private static final int TYPE_REQUEST = 1, TYPE_REPLY = 2, TYPE_PINGREQ = 3, TYPE_PINGRPL = 4;
 
   private InetAddress mcGroup;
-  private String trackerKey, localHost, mismatchHost;
+  private String trackerKey, localHost;
   private URL trackerUrl;
   private Set peerList = new HashSet();
   private Map hostPings = new HashMap(), hostReceives = new HashMap();
@@ -39,10 +39,13 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private TimedAverageList sentAvg = new TimedAverageList(10), recvAvg = new TimedAverageList(10);
   private RequestArbiter arbiter = new RequestArbiter();
 
+  private Set mismatchedHosts = new HashSet();
+
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     super.configUpdated(xml);
 
     pendingEcms.setStaleEntryListener(this);
+    mismatchedHosts.clear();
 
     InetAddress remoteCache;
 
@@ -387,9 +390,9 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         }
       }
 
-      // 4 scenarios (type + tag + sid + onid + caid + hash)
-      // - request with arbiternumber:    1 + 1 + 2 + 2 + 2 + 4 + 8 (type request)
-      // - request without arbiternumber: 1 + 1 + 2 + 2 + 2 + 4     (type request)
+      // 4 scenarios (type + tag + sid + onid + caid + hash + maybe arbiternr)
+      // - request with arbiternumber:    1 + 1 + 2 + 2 + 2 + 4 + 8 (type request) negotiation for lock
+      // - request without arbiternumber: 1 + 1 + 2 + 2 + 2 + 4     (type request) lock
       // - request and reply:             1 + 1 + 2 + 2 + 2 + 4    1 + 2 + 4 + 16 + connectorNameLen (type reply)
       // - request and empty reply:       1 + 1 + 2 + 2 + 2 + 4    1                                 (type reply)
 
@@ -576,6 +579,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         try {
           logger.warning("Internal error receiving remote cache packet [" + packet.getAddress().getHostAddress() + " - " +
               DESUtil.bytesToString(packet.getData(), packet.getLength()) + "]: " + e);
+          mismatchedHosts.add(packet.getAddress().getHostAddress());
         } catch (Exception e2) {
           logger.throwing(e2);
           logger.warning("Internal error receiving remote cache packet [" + packet + "]: " + e2);
@@ -629,7 +633,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     p.setProperty("sent-cached", String.valueOf(sentEntries));
     p.setProperty("avg-sent-bytes/s", String.valueOf(sentAvg.getTotal(true) / 10));
     p.setProperty("avg-received-bytes/s", String.valueOf(recvAvg.getTotal(true) / 10));
-    if(mismatchHost != null) p.setProperty("version-mismatch", mismatchHost);
+    if(!mismatchedHosts.isEmpty()) p.setProperty("version-mismatch", mismatchedHosts.toString());
 
     if(debug) {
       p.setProperty("peer-pings", hostPings.toString());

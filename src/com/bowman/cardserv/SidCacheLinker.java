@@ -270,6 +270,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   public boolean lockRequest(int successFactor, CamdNetMessage req) {
 
     if(req.getProfileName() == null) req.setProfileName(config.getProfileNameById(req.getNetworkId(), req.getCaId()));
+    if(req.getProfileName() == null) return false;
     SidEntry se = new SidEntry(req);
 
     if(sidLockMap.containsKey(se)) { // linked request already in progress
@@ -315,6 +316,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   public void onRequest(int successFactor, CamdNetMessage req) {
     if(successFactor == -1) return; // can't succeed - never create locks
     if(req.getProfileName() == null) req.setProfileName(config.getProfileNameById(req.getNetworkId(), req.getCaId()));
+    if(req.getProfileName() == null) return;
     SidEntry se = new SidEntry(req);
     if(sidLockMap.containsKey(se)) return; // already locked
 
@@ -492,15 +494,15 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     public boolean equals(Object o) {
       if(this == o) return true;
       if(o == null || getClass() != o.getClass()) return false;
-      SidEntry sidEntry = (SidEntry)o;
+      SidEntry sidEntry = (SidEntry) o;
       if(serviceId != sidEntry.serviceId) return false;
-      if(!profileName.equals(sidEntry.profileName)) return false;
+      if(profileName != null ? !profileName.equals(sidEntry.profileName) : sidEntry.profileName != null) return false;
       return true;
     }
 
     public int hashCode() {
       int result = serviceId;
-      result = 31 * result + profileName.hashCode();
+      result = 31 * result + (profileName != null ? profileName.hashCode() : 0);
       return result;
     }
 

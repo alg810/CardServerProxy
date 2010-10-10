@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>Cardservproxy 0.9.0 Proxy.xml</title>
+<title>Cardservproxy 0.9.1 Proxy.xml</title>
 <style type="text/css">
   /* <![CDATA[ */
 body {
@@ -19,31 +19,40 @@ body {
 </style>
 <body>
 <p>
-Here's a run through of all the settings for <strong class='bold'>cardservproxy 0.9.0</strong>, roughly in the order that they appear in the example proxy-full.xml.<br />
+Here's a run through of all the settings for <strong class='bold'>cardservproxy 0.9.1</strong>, in the recommended order.<br />
 <br />
-An element path such as "connection-manager/service-map/mapper/reset-services" means the following element in proxy.xml: <br />
+An element path such as "connection-manager/service-map/mapper/<strong>reset-services</strong>" means the following element in proxy.xml: <br />
 <br />
-<em class='italic'>&lt;cardserv-proxy>&lt;connection-manager>&lt;service-map>&lt;mapper><br />
-&lt;reset-services/><br />&lt;/mapper>&lt;/service-map>&lt;/connection-manager>&lt;/cardserv-proxy></em><br />
+<em class='italic'>&lt;cardserv-proxy><br />
+  &lt;connection-manager><br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&lt;service-map><br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;mapper><br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<strong>reset-services/></strong><br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;/mapper><br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&lt;/service-map><br />
+  &lt;/connection-manager><br />
+  &lt;/cardserv-proxy>
+</em><br />
 <br />Attributes marked with * are mandatory.<br />
 <br />
 Glossary:<br />
-- <strong class='bold'>DVB</strong>: Digital video broadcasting, <a href="http://en.wikipedia.org/wiki/DVB">http://en.wikipedia.org/wiki/DVB</a><br />
+- <strong class='bold'>DVB</strong>: Digital video broadcasting, <a href="http://en.wikipedia.org/wiki/Digital_Video_Broadcasting">http://en.wikipedia.org/wiki/DVB</a><br />
 - <strong class='bold'>CA (DVB-CA, EMM, ECM) </strong>: Conditional Access, <a href="http://en.wikipedia.org/wiki/Conditional_access">http://en.wikipedia.org/wiki/Conditional_access</a><br />
 - <strong class="bold">TS</strong>: Transport stream, <a href="http://en.wikipedia.org/wiki/Transport_stream">http://en.wikipedia.org/wiki/Transport_stream</a><br />
 - <strong class='bold'>CWS</strong>: Codeword server, aka cardserver. The server application (e.g newcs) that accept client connections and manages card communication.<br />
+- <strong class='bold'>XML (element, attribute, xpath)</strong>: <a href="http://en.wikipedia.org/wiki/Xml#Key_terminology">http://en.wikipedia.org/wiki/Xml</a><br /> 
 - <strong class='bold'>Service</strong>: DVB-service, typically tv or radio channel (but can also be data containing software or just about anything). Identified by a numerical id refered to as the <strong>sid</strong>.<br />
 - <strong class='bold'>newcamd/radegast</strong>: Communication protocols (tcp) encapsulating the DVB-CA traffic for use over ip networks. Named after the applications that introduced them.<br />
 - <strong class='bold'>Profile</strong>: A proxy concept for keeping multiple card and client types separate without understanding the contents of the CA traffic. Typically corresponding to one provider/vendor (or one package in satellite terms). Within a profile there can only be one CA system, and all incoming messages to the profile listen port are assumed to belong to this system. A profile is essentially a virtual cardserver with a potentially infinite capacity card. <br />
   <br /><strong class='bold'>NOTE: </strong> as of 0.8.13 profiles use the original network-id (ONID) combined with ca-id as globally unique identifiers, meaning one profile now corresponds exactly to those pids from the transport stream that share the same ONID and caid.<br />
 <br />
 
-Contents:<br />
+Contents (element paths in <strong>bold</strong> represent common changes, anything else can be considered advanced tweaking):<br />
 <ul>
 <li><a href="#cardserv-proxy">/cardserv-proxy (attributes: *ver)</a></li>
 <li><a href="#ca-profiles">ca-profiles</a></li>
 <ul>
-<li><a href="#ca-profiles/default-des-key">ca-profiles/default-des-key</a></li>
+<li><a href="#ca-profiles/default-des-key"><strong>ca-profiles/default-des-key</strong></a></li>
 <li><a href="#ca-profiles/default-deny-list">ca-profiles/default-deny-list</a></li>
 <li><a href="#ca-profiles/max-threads">ca-profiles/max-threads</a></li>
 <li><a href="#ca-profiles/session-timeout">ca-profiles/session-timeout</a></li>
@@ -51,18 +60,18 @@ Contents:<br />
 <li><a href="#ca-profiles/newcamd-maxmsgsize">ca-profiles/newcamd-maxmsgsize</a></li>
 <li><a href="#ca-profiles/block-caid-mismatch">ca-profiles/block-caid-mismatch</a></li>
 <br />
-<li><a href="#ca-profiles/extended-newcamd">ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled)</a></li>
+<li><a href="#ca-profiles/extended-newcamd"><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled)</strong></a></li>
 <ul>
   <li><a href="#ca-profiles/extended-newcamd/des-key">extended-newcamd/des-key</a></li>
-  <li><a href="#ca-profiles/extended-newcamd/exclude-profiles">extended-newcamd/exclude-profiles</a></li>
+  <li><a href="#ca-profiles/extended-newcamd/exclude-profiles"><strong>extended-newcamd/exclude-profiles</strong></a></li>
   <li><a href="#ca-profiles/extended-newcamd/main-ca-id">extended-newcamd/main-ca-id</a></li>
   <li><a href="#ca-profiles/profile/[newcamd|radegast]/allow-list">extended-newcamd/allow-list</a></li>
   <li><a href="#ca-profiles/profile/[newcamd|radegast]/deny-list">extended-newcamd/deny-list</a></li>  
 </ul>
 <br />
-<li><a href="#ca-profiles/profile">ca-profiles/profile (attributes: *name, ca-id, network-id, enabled, debug, cache-only, provider-idents, require-provider-match)</a></li>
+<li><a href="#ca-profiles/profile"><strong>ca-profiles/profile (attributes: *name, ca-id, network-id, enabled, debug, cache-only, provider-idents, require-provider-match)</strong></a></li>
 <ul>
-  <li><a href="#ca-profiles/profile/newcamd">profile/newcamd (attributes: *listen-port, bind-ip)</a></li>
+  <li><a href="#ca-profiles/profile/newcamd"><strong>profile/newcamd (attributes: *listen-port, bind-ip)</strong></a></li>
   <ul>
     <li><a href="#ca-profiles/profile/newcamd/des-key">newcamd/des-key</a></li>
     <li><a href="#ca-profiles/profile/newcamd/card-data">newcamd/card-data (attributes: *type, name, ca-id, override-au)</a></li>
@@ -79,16 +88,16 @@ Contents:<br />
     <li><a href="#ca-profiles/profile/[newcamd|radegast]/allow-list">radegast/allow-list</a></li>
     <li><a href="#ca-profiles/profile/[newcamd|radegast]/deny-list">radegast/deny-list</a></li>
   </ul>
-  <li><a href="#ca-profiles/profile/services-file">profile/services-file (attributes: format, filter)</a></li>
-  <li><a href="#ca-profiles/profile/max-cw-wait">profile/max-cw-wait</a></li>
+  <li><a href="#ca-profiles/profile/services-file"><strong>profile/services-file (attributes: format, filter)</strong></a></li>
+  <li><a href="#ca-profiles/profile/max-cw-wait"><strong>profile/max-cw-wait</strong></a></li>
   <li><a href="#ca-profiles/profile/congestion-limit">profile/congestion-limit</a></li>
 </ul>
 </ul>
 <br />
-<li><a href="#logging">logging (attributes: log-ecm, log-emm, log-zapping, hide-ip-addresses)</a></li>
+<li><a href="#logging"><strong>logging (attributes: log-ecm, log-emm, log-zapping, hide-ip-addresses)</strong></a></li>
 <ul>
   <li><a href="#logging/log-file">logging/log-file (attributes: rotate-count, rotate-max-size)</a></li>
-  <li><a href="#logging/log-level">logging/log-level</a></li>
+  <li><a href="#logging/log-level"><strong>logging/log-level</strong></a></li>
   <li><a href="#logging/silent">logging/silent</a></li>
   <li><a href="#logging/debug">logging/debug</a></li>
   <li><a href="#logging/warning-threshold">logging/warning-threshold (attributes: *bad-flags, *max-delay, include-file-events)</a></li>
@@ -104,7 +113,7 @@ Contents:<br />
   <li><a href="#rmi/display-name">rmi/display-name</a></li>
   <li><a href="#rmi/status-web">rmi/status-web (attributes: enabled)</a></li>
   <ul>
-    <li><a href="#rmi/status-web/listen-port">status-web/listen-port</a></li>
+    <li><a href="#rmi/status-web/listen-port"><strong>status-web/listen-port</strong></a></li>
     <li><a href="#rmi/status-web/bind-ip">status-web/bind-ip</a></li>
     <li><a href="#rmi/status-web/ssl">status-web/ssl (attributes: enabled)</a></li>
     <ul>
@@ -114,7 +123,7 @@ Contents:<br />
     <li><a href="#rmi/status-web/war-file">status-web/war-file</a></li>
     <li><a href="#rmi/status-web/welcome-file">status-web/welcome-file</a></li>
     <li><a href="#rmi/status-web/log-file">status-web/log-file (attributes: rotate-count, rotate-max-size)</a></li>
-    <li><a href="#rmi/status-web/super-users">status-web/super-users</a></li>
+    <li><a href="#rmi/status-web/super-users"><strong>status-web/super-users</strong></a></li>
   </ul>
 </ul>
 <br />
@@ -128,15 +137,15 @@ Contents:<br />
         <li><a href="#user-manager/auth-config/open-access/open-password">open-access/open-password</a></li>
         <li><a href="#user-manager/auth-config/open-access/open-profiles">open-access/open-profiles</a></li>
       </ul>
-      <li><a href="#user-manager/auth-config/user">auth-config/user (attributes: *name, *password, display-name, ip-mask, profiles, max-connections, admin, enabled)</a></li>
+      <li><a href="#user-manager/auth-config/user"><strong>auth-config/user (attributes: *name, *password, display-name, ip-mask, profiles, max-connections, admin, enabled)</strong></a></li>
     </ul>
   </ul>
 <br />
 <li><a href="#connection-manager">connection-manager</a></li>
   <ul>
     <li><a href="#connection-manager/reconnect-interval">connection-manager/reconnect-interval</a></li>
-    <li><a href="#connection-manager/max-cw-wait">connection-manager/max-cw-wait</a></li>
-    <li><a href="#connection-manager/default-des-key">connection-manager/default-des-key</a></li>
+    <li><a href="#connection-manager/max-cw-wait"><strong>connection-manager/max-cw-wait</strong></a></li>
+    <li><a href="#connection-manager/default-des-key"><strong>connection-manager/default-des-key</strong></a></li>
     <li><a href="#connection-manager/default-keepalive-interval">connection-manager/default-keepalive-interval</a></li>
     <li><a href="#connection-manager/default-max-queue">connection-manager/default-max-queue</a></li>
     <li><a href="#connection-manager/default-min-delay">connection-manager/default-min-delay</a></li>
@@ -153,9 +162,9 @@ Contents:<br />
         <li><a href="#connection-manager/service-map/mapper/cache-dir">mapper/cache-dir</a></li>
         <li><a href="#connection-manager/service-map/mapper/cache-save-age">mapper/cache-save-age</a></li>
         <li><a href="#connection-manager/service-map/mapper/auto-map-services">mapper/auto-map-services</a></li>
-        <li><a href="#connection-manager/service-map/mapper/reset-services">mapper/reset-services</a></li>
-        <li><a href="#connection-manager/service-map/mapper/allow-services">mapper/allow-services</a></li>
-        <li><a href="#connection-manager/service-map/mapper/block-services">mapper/block-services</a></li>
+        <li><a href="#connection-manager/service-map/mapper/reset-services"><strong>mapper/reset-services</strong></a></li>
+        <li><a href="#connection-manager/service-map/mapper/allow-services"><strong>mapper/allow-services</strong></a></li>
+        <li><a href="#connection-manager/service-map/mapper/block-services"><strong>mapper/block-services</strong></a></li>
         <li><a href="#connection-manager/service-map/mapper/dummy-services">mapper/dummy-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/auto-reset-threshold">mapper/auto-reset-threshold</a></li>
         <li><a href="#connection-manager/service-map/mapper/log-missing-sid">mapper/log-missing-sid</a></li>
@@ -165,7 +174,7 @@ Contents:<br />
         <li><a href="#connection-manager/service-map/mapper/hide-unknown-services">mapper/hide-unknown-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/hide-disabled-connectors">mapper/hide-disabled-connectors</a></li>
       </ul>
-      <li><a href="#connection-manager/service-map/mapper-override">service-map/mapper (attributes: *profile, enabled)</a></li>
+      <li><a href="#connection-manager/service-map/mapper-override"><strong>service-map/mapper (attributes: *profile, enabled)</strong></a></li>
     </ul>
   <br />
   <li><a href="#connection-manager/external-connector-config">connection-manager/external-connector-config (attributes: enabled)</a></li>
@@ -177,7 +186,7 @@ Contents:<br />
   <br />
   <li><a href="#connection-manager/cws-connectors">connection-manager/cws-connectors</a></li>
   <ul>
-    <li><a href="#connection-manager/cws-connectors/[newcamd-connector|radegast-connector]">cws-connectors/newcamd-connector (attributes: *name, profile, provider-idents, metric, enabled, qos-class, override-checks)</a></li>
+    <li><a href="#connection-manager/cws-connectors/[newcamd-connector|radegast-connector]"><strong>cws-connectors/newcamd-connector (attributes: *name, profile, provider-idents, metric, enabled, qos-class, override-checks)</strong></a></li>
     <ul>
       <li><a href="#connection-manager/cws-connectors/[newcamd-connector|radegast-connector]/host">newcamd-connector/host</a></li>
       <li><a href="#connection-manager/cws-connectors/[newcamd-connector|radegast-connector]/port">newcamd-connector/port</a></li>
@@ -198,7 +207,7 @@ Contents:<br />
       <li><a href="#connection-manager/cws-connectors/[newcamd-connector|radegast-connector]/can-decode-services">radegast-connector/can-decode-services (attributes: exclusive)</a></li>
       <li><a href="#connection-manager/cws-connectors/[newcamd-connector|radegast-connector]/cannot-decode-services">radegast-connector/cannot-decode-services</a></li>
     </ul>
-    <li><a href="#connection-manager/cws-connectors/csp-connector">cws-connectors/csp-connector (attributes: *name, metric, enabled, qos-class)</a></li>
+    <li><a href="#connection-manager/cws-connectors/csp-connector"><strong>cws-connectors/csp-connector (attributes: *name, metric, enabled, qos-class)</strong></a></li>
     <ul>
       <li><a href="#connection-manager/cws-connectors/csp-connector/url">csp-connector/url</a></li>
       <li><a href="#connection-manager/cws-connectors/csp-connector/url-backup">csp-connector/url-backup</a></li>
@@ -241,20 +250,20 @@ The root element for the proxy config file. <br />
 <br />
 - <strong class='bold'>ver</strong>: The version attribute must always match the version of the proxy itself (lib/cardservproxy.jar). This is an intentional safeguard to force a manual check of the proxy.xml contents when upgrading to a new version. Even if no changes are strictly required from one particular version to the next, it makes sense to double-check. To get a fresh start that is guaranteed to work with the currently installed version, simply remove proxy.xml entirely and start without it. A blank template will then be generated.<br />
 <br />
-Example: <em class='italic'>&lt;cardserv-proxy ver="0.8.4"></em><br />
+Example: <em class='italic'>&lt;cardserv-proxy ver="0.9.1"></em><br />
 <br />
 </a>
 
 <a name="ca-profiles">
 <div class='indent'>ca-profiles</div><br />
 A profile in the proxy corresponds to one type of card or provider/vendor. Each incoming message that is to be processed by the proxy must be assigned to a profile, either as a result of being received on a port that is locked to a profile or by mapping information (ca-id, provider idents, sid etc) in the request to information associated with the profile. The proxy can open listening-ports for each profile, and clients connecting to these will be assumed to only be sending traffic relevant to this profile (but there is no mechanism in the protocols that makes this happen, you have to make sure manually that all clients connecting to a port never send the wrong traffic).<br />
-CWS connectors can be assigned either by manually configuring them to a specific profile, or by auto-assignment based on the ca-id of the card data thats returned on login (auto-assignment only works for newcamd CWS). As of 0.9.0 multi-context connectors and ports are supported, but these only work for traffic that can be properly identified (i.e where the protocol or circumstances allow ca-id, network-id, provider-ident and sid to always be set correctly).<br />
-Cards within a profile typically need to be identical. For some ca-systems, multiple cards cannot be placed within the same profile even though they appear to decode the same services on their own. The proxy will gather card-information from all connectors in a profile (specifically provider-idents) and merge those automatically as long as there is no overlap. Cards with different ca-ids can never be included in the same profile.<br />
+<br />CWS connectors can be assigned either by manually configuring them to a specific profile, or by auto-assignment based on the ca-id of the card data thats returned on login (auto-assignment only works for newcamd CWS). As of 0.9.0 multi-context connectors and ports are supported, but these only work for traffic that can be properly identified (i.e where the protocol or circumstances allow ca-id, network-id, provider-ident and sid to always be set correctly).<br />
+<br />Cards within a profile typically need to be identical. For some ca-systems, multiple cards cannot be placed within the same profile even though they appear to decode the same services on their own. The proxy will gather card-information from all connectors in a profile (specifically provider-idents) and merge those automatically as long as there is no overlap. Cards with different ca-ids can never be included in the same profile.<br />
 <br />
 </a>
 
 <a name="ca-profiles/default-des-key">
-<div class='indent'>ca-profiles/default-des-key</div><br />
+<div class='indent'><strong>ca-profiles/default-des-key</strong></div><br />
 The default des key for all incoming newcamd connections. Clients will need to match this. <br />
 <br />
 Example: <em class='italic'>&lt;default-des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14&lt;/default-des-key></em><br />
@@ -273,7 +282,7 @@ Example:  <em class='italic'>&lt;deny-list>192.168.66.* 10.0.0.7&lt;/deny-list><
 <a name="ca-profiles/max-threads">
 <div class='indent'>ca-profiles/max-threads</div><br />
 Maximum number of java threads the proxy will allow to be spawned (default: 1000). This is a global limit affecting all profiles and connectors. Each ca profile, connected client session and cws connector requires at least 1 thread each. If the limit is exceeded, no new connections will be accepted until the total thread count drops again. Most JVM's will experience problems once the count reaches somewhere between 2000 and 3000 threads, but significantly more (or less!) may be possible depending on os/hardware.<br />
-<strong>NOTE: </strong>If you do increase this, keep in mind that most OS'es have a limit on the number of open file handles (and each socket counts as a file). On most *nix variants you can use <strong>ulimit -n</strong> and the <strong>lsof</strong> util (list open files) to find such limits, but the methods for increasing them vary. See <strong>README.Optimization.txt</strong> for more details.</strong> <br />
+<br /><strong>NOTE: </strong>If you do increase this, keep in mind that most OS'es have a limit on the number of open file handles (and each socket counts as a file). On most *nix variants you can use <strong>ulimit -n</strong> and the <strong>lsof</strong> util (list open files) to find such limits, but the methods for increasing them vary. See <strong>README.Optimization.txt</strong> for more details. <br />
 <br />
 Example: <em class='italic'>&lt;max-threads>1500&lt;/max-threads></em><br />
 <br />
@@ -307,15 +316,16 @@ Example: <em class='italic'>&lt;newcamd-maxmsgsize>480&lt;/newcamd-maxmsgsize></
 
 <a name="ca-profiles/block-caid-mismatch">
 <div class='indent'>ca-profiles/block-caid-mismatch</div><br />
-true/false (default: true) Block all replies where the request had a different ca-id. Determines whether M flag transactions are blocked or not (i.e returned as failures to the clients). Since the cache is global, it is possible for a client to send requests to the wrong port and still get valid replies (which may cause it to ignore the caid in the card-data and keep sending to the wrong port - potentially destroying the service mapping for that profile). If you see this happening, make sure this is set to true. <br />
+true/false (default: true) Block all replies where the request had a different ca-id. Determines whether M flag transactions are blocked or not (i.e returned as failures to the clients). Since the cache is global, it is possible for a client to send requests to the wrong port and still get valid replies (which may cause it to ignore the caid in the card-data and keep sending to the wrong port - potentially destroying the service mapping for that profile).<br />
+<br /><strong>NOTE: </strong>As of 0.9.1, this will also apply to cross-profile cache hits that have the same ca-id (but where ecms were sent to different profiles). Such configurations with several profiles receiving the same traffic aren't really supported, but if you you know what you're doing and you're sure you understand the implications - it will continue to work as before if you set this to false.<br />  
 <br />
 </a>
 
 <a name="ca-profiles/extended-newcamd">
-<div class='indent'>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled)</div><br />
+<div class='indent'><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled)</strong></div><br />
 Defines a listener for the extended version of the newcamd protocol used between mgcamd and newcs, allowing multiple systems to be accessed over one session. This will behave like newcs does when chameleon is used, and mgcamd clients (or any other that implement these protocol extensions) will receive a list of multiple cards when connecting.<br />
 The proxy will compile the list of available cards (or rather ca-id/provider-ident pairs) when a new session is created, based on which connectors and profiles are available at the time. If new connectors/profiles are added or removed after the client has connected, the extended protocol allows them to receive real-time updates without having to reconnect.<br />
-<strong>NOTE: </strong>AU will work over this port, but only if the au-user in question is configured to only update a single card (across all profiles). If there are more, dummy data will be returned instead.<br /><br />    
+<br /><strong>NOTE: </strong>AU will work over this port, but only if the au-user in question is configured to only update a single card (across all profiles). If there are more, dummy data will be returned instead.<br /><br />
 - <strong class='bold'>listen-port</strong>: TCP port number.<br />
 - <strong class='bold'>bind-ip</strong>: Optional local IP to bind the listener to (default: all - 0.0.0.0).<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true).<br />
@@ -336,10 +346,14 @@ Example: <br /><br />
 </a>
 
 <a name="ca-profiles/extended-newcamd/exclude-profiles">
-<div class='indent'>ca-profiles/extended-newcamd/exclude-profiles</div><br />
+<div class='indent'><strong>ca-profiles/extended-newcamd/exclude-profiles</strong></div><br />
 Optional list of profile names that are to be excluded from this port. Only use this if overlapping/ambigious profiles exist (where it is not possible to find a single profile based on only ca-id and provider-ident).<br />
+Every single defined profile has to have the correct ca-id and network-id for the extended-newcamd port to work (the logs will show which ones are at fault, otherwise). If the same exact ca-id + ident combo exists within multiple profiles, they cannot be combined on this port and one of them has to be excluded (if not configured here, then one will be excluded at random).<br />
 <br />
-Example:  <em class='italic'>&lt;exclude-profiles>profile1 testprofile&lt;/exclude-profiles></em>  <br />
+Example: <br /><br />
+  <em class='italic'>&lt;extended-newcamd listen-port="5556"></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;exclude-profiles>profile1 testprofile&lt;/exclude-profiles></em>  <br />
+  <em class='italic'>&lt;/extended-newcamd></em> <br />
 <br />
 </a>
 
@@ -352,7 +366,7 @@ Example:  <em class='italic'>&lt;main-ca-id>0500&lt;/main-ca-id></em>  <br />
 </a>
 
 <a name="ca-profiles/profile">
-<div class='indent'>ca-profiles/profile (attributes: *name, ca-id, network-id, enabled, debug, cache-only, provider-idents, require-provider-match)</div><br />
+<div class='indent'><strong>ca-profiles/profile (attributes: *name, ca-id, network-id, enabled, debug, cache-only, provider-idents, require-provider-match)</strong></div><br />
 One proxy profile definition. All traffic that you plan to pass through the proxy must be identified and bound to a profile (meaning you have to know where it came from and take steps to avoid users sending you the wrong traffic). In a satellite setup this may mean you have to manually list a large number of profiles to cover everything, one for each card vendor/network operator. It will no longer be enough to just know the ca-id and provider-idents involved.<br />
 <strong>NOTE: </strong>It is possible to define profiles with no listen ports at all, for use with extended-newcamd or csp-connect.<br /><br />
 - <strong class='bold'>name</strong>: Typically the provider/vendor name but can be any short string (case sensetive, may not contain spaces). Names are local labels and not transmitted when using csp-connect.<br />
@@ -371,12 +385,20 @@ Example:  <em class='italic'>&lt;profile name="cableVendorX" network-id="0064" c
 </a>
 
 <a name="ca-profiles/profile/newcamd">
-<div class='indent'>ca-profiles/profile/newcamd (attributes: *listen-port, bind-ip)</div><br />
-Defines a newcamd listener for the profile.<br />
+<div class='indent'><strong>ca-profiles/profile/newcamd (attributes: *listen-port, bind-ip)</strong></div><br />
+Defines a newcamd listener port for the profile. Multiple ports can be used in a profile, each with individual configurations.<br />
 - <strong class='bold'>listen-port</strong>: TCP port number.<br />
 - <strong class='bold'>bind-ip</strong>: Optional local IP to bind the listener to (default: all - 0.0.0.0).<br />
 <br />
 Example:  <em class='italic'>&lt;newcamd listen-port="13112" bind-ip="192.168.0.23"/></em> <br />
+<br />
+Example: <br /><br />
+  <em class='italic'>&lt;newcamd listen-port="13112"></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;des-key>14 13 12 11 10 09 08 07 06 05 04 03 02 01&lt;/des-key></em><br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;card-data type="config" ca-id="0604">&lt;provider-idents>00 00 00,00 00 01&lt;/provider-idents>&lt;/card-data></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;no-encryption>false&lt;/no-encryption></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;no-validation>true&lt;/no-validation></em> <br />
+  <em class='italic'>&lt;/newcamd></em> <br />
 <br />
 </a>
 
@@ -388,12 +410,13 @@ Example: <br /><br />
   <em class='italic'>&lt;newcamd listen-port="13112"></em> <br />
   &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;des-key>14 13 12 11 10 09 08 07 06 05 04 03 02 01&lt;/des-key></em><br />
   <em class='italic'>&lt;/newcamd></em> <br />
-<br />  
+<br />
 </a>
 
 <a name="ca-profiles/profile/newcamd/card-data">
 <div class='indent'>ca-profiles/profile/newcamd/card-data (attributes: *type, name, ca-id, override-au)</div><br />
 Allows specifying the card-data given to clients that connect to this newcamd port (in response to MSG_CARD_DATA_REQ, see protocol.txt). Only use this if you know you need it. If this element is omitted, the proxy will return data from the least loaded card in the profile, except with provider idents from any another cards (or from the provider-idents in the profile config) merged into it.<br />
+<br /><strong>NOTE:</strong> As of 0.9.1 it should be possible to use configured card-data to trick clients with custom handling for tunneled systems (one ca-system within another) into sending you desired ecms, even when the profile and the connectors need to be set to another ca-id. Incoming messages will always be assigned the ca-id of the profile, even if the card-data for a particular port said something else.<br /><br />
 - <strong class='bold'>type</strong>: Set to either <em class='italic'>config</em>, <em class='italic'>connector</em>, <em class='italic'>file</em> or <em class='italic'>empty</em>. If set to empty, the name attribute is ignored and dummy data with only the ca-id for the profile is returned (and a single 000000 provider ident).<br />
 - <strong class='bold'>name</strong>: If type is <em class='italic'>connector</em> then name should be a connector name. If type is <em class='italic'>file</em> then name is path and filename to read the card-data from.<br />
 - <strong class='bold'>ca-id</strong>: If type is <em class='italic'>config</em> then ca-id can be set to a valid hex string, i.e: 0B00. If no ca-id is set for type config, the ca-id from the profile is used.<br />
@@ -421,7 +444,10 @@ true/false (default: false) Set to true and the proxy will assume newcamd traffi
 
 <a name="ca-profiles/profile/newcamd/no-validation">
 <div class='indent'>ca-profiles/profile/newcamd/no-validation</div><br />
-true/false (default: false) Set to true and the proxy will ignore incorrect ca-id/provider-ident specified in the newcamd header. Only use this if you know a particular client is in fact sending the right ecms, but putting the wrong ca-id/ident in the header.<br />
+true/false (default: false) Set to true and the proxy will ignore incorrect ca-id/provider-ident specified in the newcamd header. Only use this if you know a particular client is in fact sending the right ecms, but putting the wrong ca-id/ident in the header (or something else entirely, like the original newcamd client).<br />
+<br /><strong>NOTE:</strong> If no-validation is true, the port cannot be used with clients that do include the correct caid/ident in the header (notably cccam), when the ident is relevant in the ca-system in question - since such information is lost with no-validation. I.e. if you wish to combine for example cccam and the original newcamd client in the same setup, you have to connect them to different ports, and set no-validation to true only for the one used by old newcamd.<br />
+<br />
+Example:  <em class='italic'>&lt;newcamd listen-port="11112">&lt;no-validation>true&lt;/no-validation>&lt;/newcamd></em> <br />
 <br />
 </a>
 
@@ -480,28 +506,34 @@ Example:  <em class='italic'>&lt;services-file format="neutrino">etc/services.xm
 </a>
 
 <a name="ca-profiles/profile/max-cw-wait">
-<div class='indent'>ca-profiles/profile/max-cw-wait</div><br />
-This defines the maximum wait time (in seconds) for anything trying to get a CW reply from this profile, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze. Applies to all CWS connectors in this profile, if set here it overrides the global setting in connection-manager.<br />
-<strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is the global value, not the per profile one.<br />
+<div class='indent'><strong>ca-profiles/profile/max-cw-wait</strong></div><br />
+This defines the maximum wait time (in seconds) for anything trying to get a CW reply from this profile, before aborting with a timeout (flag T). <br />
+Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze, but if clients have a lower timeout value that can't be easily reconfigured - setting it lower may be necessary (meaning cannot-decode replies will start happening earlier as connector queues grow).<br />
+Applies to all CWS connectors in this profile, if set here it overrides the global setting in <a href="#connection-manager/max-cw-wait">connection-manager</a>.<br />
+<br /><strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is the global value, not the per profile one.<br /><br />
 To determine a reasonable value for max-cw-wait, it is possible to use the test-delay feature in the LoggingPlugin. This can insert an artificial delay into the processing of requests for a specific test-user (source ip address). Increase the delay gradually until freezes occur for the test-user and note the total ecm time in the client logs when this happens, this is your max-cw-wait. Make sure the client ecm timeout is set high enough not to interfere with the result.<br /> 
-See <strong>README.Optimization.txt</strong> for more details.<br />
+<br />See <strong>README.Optimization.txt</strong> for more details.<br />
+<br />
+Example:  <em class='italic'>&lt;max-cw-wait>7&lt;/max-cw-wait></em><br />
+Example:  <em class='italic'>&lt;max-cw-wait>3900 ms&lt;/max-cw-wait></em><br />
 <br />
 </a>
 
 <a name="ca-profiles/profile/congestion-limit">
 <div class='indent'>ca-profiles/profile/congestion-limit</div><br />
 The maximum estimated queue time on a connector before the proxy considers it to be congested, and tries to avoid using it (by instead using connectors that would normally be excluded due to a higher metric number). Value in seconds, must be between max-cw-wait/2 and max-cw-wait. Use with care, and primarily if you have many connectors with differing metric priority set. Applies to all CWS connectors in this profile, if set here it overrides the global setting in connection-manager.<br />
-<strong>NOTE: </strong>If max-cw-wait is below 1s, congestion-limit is automatically set to the same value.<br />
+<br /><strong>NOTE: </strong>If max-cw-wait is below 1s, congestion-limit is automatically set to the same value.<br />
 <br />
 </a>
 
 <a name="logging">
-<div class='indent'>logging (attributes: log-ecm, log-emm, log-zapping, hide-ip-addresses)</div><br />
+<div class='indent'><strong>logging (attributes: log-ecm, log-emm, log-zapping, hide-ip-addresses)</strong></div><br />
 Main log configuration for the proxy. File logging only.<br />
 - <strong class='bold'>log-ecm</strong>: true/false (default: true). Set to false to disable the INFO level ECM logging.<br />
 - <strong class='bold'>log-emm</strong>: true/false (default: true). Set to false to disable the INFO level EMM logging.<br />
 - <strong class='bold'>log-zapping</strong>: true/false (default: true). Set to false to disable the INFO level logging when users switch service.<br />
 - <strong class='bold'>hide-ip-addresses</strong>: true/false (default: false). Set to true to mask any ip addresses (xxx.xxx.xxx.123) or hostnames (host.xxx.xxx) logged for the normal INFO level non-debug output. This does not apply to web access logs or logging filters.<br />
+<br /><strong>NOTE: </strong>For any non-trivial live setup with multiple users, it will likely become necessary to turn all off ecm/emm/zap logging once initial configuration is completed and verified to be working. Use the debug flag for individual users instead to do live tracing.<br />
 <br />
 Example:  <em class='italic'>&lt;logging log-ecm="false" log-emm="false" log-zapping="false" hide-ip-addresses="true"></em> <br />
 <br />
@@ -518,8 +550,8 @@ Example:  <em class='italic'>&lt;log-file rotate-count="5" rotate-max-size="1024
 </a>
 
 <a name="logging/log-level">
-<div class='indent'>logging/log-level</div><br />
-The log level determines the verbosity. Supported levels are:<br />
+<div class='indent'><strong>logging/log-level</strong></div><br />
+The log level determines the verbosity. Supported levels are:<br /><br />
 OFF - no logging<br />
 SEVERE - only errors that should normally not occur<br />
 WARNING - warnings and common errors only<br />
@@ -528,6 +560,9 @@ FINE - includes some cache events, remote api access and similar<br />
 FINER - all cache events, some net traffic events<br />
 FINEST - all net traffic/encryption related events<br />
 ALL - everything, same as FINEST<br />
+<br /><strong>NOTE: </strong>All levels beyond FINE are extremely verbose and cannot really be used in a live multi-user environment, it will eventually crash or at the very least alter the behavior you were trying to trace.<br />
+Level FINE should be ok for a while however, enabling short term troubleshooting under most circumstances.<br />
+Level INFO (or in extreme cases WARNING) should be used as default for all non-trivial traffic loads.<br />
 <br />
 Example:  <em class='italic'>&lt;log-level>WARNING&lt;/log-level></em> <br />
 <br />
@@ -620,7 +655,7 @@ Controls the built in http interface. This is built on top of RMI and allows non
 </a>
 
 <a name="rmi/status-web/listen-port">
-<div class='indent'>rmi/status-web/listen-port</div><br />
+<div class='indent'><strong>rmi/status-web/listen-port</strong></div><br />
 TCP port for the built in httpd.<br />
 <br />
 </a>
@@ -644,10 +679,10 @@ Enable to use https instead of http (enabling/disabling ssl requires a proxy res
 If ssl is enabled, the proxy needs a certificate to present to connecting clients (enabling/disabling ssl requires a proxy restart). This needs to be in a java keystore file, specified here.
 To create such a file, use the keytool that is included with the jre/j2sdk. The following syntax will generate a new keystore with a self-signed certificate for localhost (use the hostname or IP that your status-web will be accessed via) and a 1000 day validity: <br />
 <em class='italic'>keytool -keystore cs_keystore -genkey -alias Cardservproxy -keyalg RSA -storepass 123456 -keypass 123456 -dname "cn=localhost" -validity 1000</em><br />
-<strong>NOTE: </strong>As of 0.9.0 there is a control command in the admin page of the status web for automatically generating a keystore file.<br /><br />
+<br /><strong>NOTE: </strong>As of 0.9.0 there is a control command in the admin page of the status web for automatically generating a keystore file.<br /><br />
 - <strong class='bold'>password</strong>: The password for the keystore file (and the key password, both must use the same)<br />
 <br />
-Example: <br/>
+Example: <br /><br />
 <em class='italic'>&lt;ssl enabled="true"><br />
 &nbsp;&nbsp;&lt;keystore password="123456">etc/cs_keystore&lt;/keystore><br />
 &lt;/ssl>
@@ -693,7 +728,7 @@ Example:  <em class='italic'>&lt;log-file>log/web-access.log&lt;/log-file></em> 
 </a>
 
 <a name="rmi/status-web/super-users">
-<div class='indent'>rmi/status-web/super-users</div><br />
+<div class='indent'><strong>rmi/status-web/super-users</strong></div><br />
 List of user names (separated by space) that should have access to the Config and Admin sections (control commands). Users must have admin set to true or they will be ignored.<br />
 <strong>NOTE: </strong>Users with admin set to true will still have access to other admin features in the web, even if they are not listed here.<br />
 <br />
@@ -727,7 +762,7 @@ Allows optional open newcamd access for the SimpleUserManager (also works for th
 <br />
 <strong>NOTE: </strong> The temporary users will be ignored by the "last-seen" log, and will have the display-name set to whatever they tried to login as.<br />
 <br />
-Example:<br />
+Example:<br /><br />
 <em class='italic'>&lt;open-access enabled="true"><br />
 &nbsp;&nbsp;&lt;open-username-prefix>csp-&lt;/open-username-prefix><br />
 &nbsp;&nbsp;&lt;open-password>publicaccess&lt;/open-password><br />
@@ -755,18 +790,22 @@ Optionally restricts open access to only the listed profile names (separated by 
 </a>
 
 <a name="user-manager/auth-config/user">
-<div class='indent'>user-manager/auth-config/user (attributes: *name, *password, display-name, ip-mask, profiles, max-connections, admin, enabled)</div><br />
-One user definition for the SimpleUserManager (also used by the XmlUserManager, see <strong>README.XmlUserManager.txt</strong> for more details):<br />
+<div class='indent'><strong>user-manager/auth-config/user (attributes: *name, *password, display-name, ip-mask, profiles, max-connections, admin, enabled)</strong></div><br />
+One user definition for the SimpleUserManager (also used by the XmlUserManager, see <strong>README.XmlUserManager.txt</strong> for more details):<br /><br />
 - <strong class='bold'>name</strong>: User name, avoid long names, spaces and special characters. There are no particular limitations as far as the proxy is concerned, but the camd clients may have them.<br />
 - <strong class='bold'>password</strong>: Avoid special characters.<br />
 - <strong class='bold'>display-name</strong>: An optional non-unique alias for the user (used by the http/xml api). <br />
-- <strong class='bold'>ip-mask</strong>: Only allow connections from a particular ip or ip range, for this user. This applies only to the newcamd protocol, not http/xml. Masks can use glob wildcards (? *).<br />
+- <strong class='bold'>ip-mask</strong>: Only allow connections from a particular ip or ip range, for this user. This applies only to the newcamd protocol, not http/xml. Masks can use glob wildcards (? *), but this should typically not be used for users with dynamic ips - fixed only (no dns reverse lookups are performed, hostname masks will not be allowed).<br />
 - <strong class='bold'>profiles</strong>: List of profiles that this user has access to, separated by space. If this is empty or omitted the user will have access to all defined profiles. <strong>NOTE: </strong> This is a performance safeguard, not an access control feature. It's there only to reduce the risk of users accidentally connecting to the wrong profile and poisoning the service mapper.<br />
 - <strong class='bold'>max-connections</strong>: Number of connections to allow, if the user exceeds this then any older existing connections will be closed. <strong>NOTE: </strong> as of 0.9.0 this has changed to max-connections per profile, meaning and old values will likely need to be changed. Since it is no longer the total number of connections, the value should now reflect the number of clients/boxes the user is expected to connect with (regardless of how many profiles the user has access to) .<br />
 - <strong class='bold'>admin</strong>: true/false (default: false). Is this user an administrator? Affects access to http/xml api features only.<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true). Allows disabling of accounts without deleting them.<br />
 - <strong class='bold'>map-exclude</strong>: true/false (default: false). Set to true to prevent the user from causing changes to the service maps. If a particular user is sending bad ecms or is otherwise misbehaving, this will protect the service mappings and ensure no other users are affected. Only use this if you are sure a particular client is misbehaving, the service mapping can't work if no clients are allowed to update the map.<br />
 - <strong class='bold'>debug</strong>: true/false (default: false). Set to true to enable ecm/emm/zap logging for this user only (has no effect if these are already enabled globally).<br />
+<br />
+Example:  <em class='italic'>&lt;user name="usr1" password="secret" display-name="User one" profiles="profile1 otherprofile" max-connections="3" enabled="false"/></em> <br />
+Example:  <em class='italic'>&lt;user name="usr2" password="secret2" display-name="User two" profiles="otherprofile" max-connections="1" map-exclude="true"/></em> <br />
+Example:  <em class='italic'>&lt;user name="admin" password="secret3" display-name="Administrator" admin="true" debug="true"/></em> <br />
 <br />
 </a>
 
@@ -779,22 +818,23 @@ This section deals with the connections to the CW servers, and everything relate
 <a name="connection-manager/reconnect-interval">
 <div class='indent'>connection-manager/reconnect-interval</div><br />
 The interval between connection attempts (in seconds) for servers that are not are not connected. Applies to all CWS connectors. Minimum interval is 3 seconds (anything lower will result in the default of 60 secs).<br />
-<strong>NOTE: </strong>If you have connectors that sporadically seem to get stuck and never reconnect, it very likely means you have this set too low. <br />
+<br /><strong>NOTE: </strong>If you have connectors that sporadically seem to get stuck and never reconnect, it very likely means you have this set too low. <br />
 <br />
 </a>
 
 <a name="connection-manager/max-cw-wait">
-<div class='indent'>connection-manager/max-cw-wait</div><br />
-If a CWS connection is congested or not responding, this defines the maximum wait time (in seconds, default: 9) for anything trying to get a CW reply, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze (or 1 second above that). This is the default for all CWS connectors in all profiles.<br />
-<strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is always this global value, not the per profile one.<br />
-To determine a reasonable value for max-cw-wait, it is possible to use the test-delay feature in the LoggingPlugin. This can insert an artificial delay into the processing of requests for a specific test-user (source ip address). Increase the delay gradually until freezes occur for the test-user and note the total ecm time in the client logs when this happens, this is your max-cw-wait. Make sure the client ecm timeout is set high enough not to interfere with the result.<br />
-See <strong>README.Optimization.txt</strong> for more details.<br />
+<div class='indent'><strong>connection-manager/max-cw-wait</strong></div><br />
+If a CWS connection is congested or not responding, this defines the maximum wait time (in seconds, default: 9) for anything trying to get a CW reply, before aborting with a timeout (flag T). Under normal circumstances this should be set to the maximum time a client can wait for CW reply without experiencing a freeze, but if clients have a lower timeout value that can't be easily reconfigured - setting it lower may be necessary (meaning cannot-decode replies will start happening earlier as connector queues grow).<br />
+This is the default for all CWS connectors in all profiles.<br />
+<br /><strong>NOTE: </strong> When using multi-context connectors (e.g csp-connector or chameleon-connector) the max-cw-wait in effect is always this global value, not the per profile one.<br />
+<br />To determine a reasonable value for max-cw-wait, it is possible to use the test-delay feature in the LoggingPlugin. This can insert an artificial delay into the processing of requests for a specific test-user (source ip address). Increase the delay gradually until freezes occur for the test-user and note the total ecm time in the client logs when this happens, this is your max-cw-wait. Make sure the client ecm timeout is set high enough not to interfere with the result.<br />
+<br />See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
 </a>
 
 <a name="connection-manager/default-des-key">
-<div class='indent'>connection-manager/default-des-key</div><br />
-The des key the proxy will use when connecting to a newcamd CWS, if nothing else is specified for a particular connector.<br />
+<div class='indent'><strong>connection-manager/default-des-key</strong></div><br />
+The des key the proxy will use when connecting to a newcamd CWS, if nothing else is specified for a particular connector. Applies to all outgoing connections made by newcamd and chameleon connectors.<br />
 <br />
 Example:  <em class='italic'>&lt;default-des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14&lt;/default-des-key></em> <br />
 <br />
@@ -805,9 +845,9 @@ Example:  <em class='italic'>&lt;default-des-key>01 02 03 04 05 06 07 08 09 10 1
 If a newcamd CWS connection is inactive longer than this period (in seconds) the proxy will send a keep alive msg. <br />
 <br />
 <div class='indent'>connection-manager/default-client-id</div><br />
-The 2 bytes that identify a newcamd client on login (for newcs). Can be set to anything (as of 0.4.11). Use 00 00 or anything unknown to be identified as "generic". <strong>NOTE: </strong> avoid identifying as Mgcamd when connecting to newcs, as this will apparently cause newcs to switch to an incompatible variant of the protocol.<br />
+The 2 bytes that identify a newcamd client on login (for newcs). Can be set to anything (as of 0.4.11). Use 00 00 or anything unknown to be identified as "generic". <strong>NOTE: </strong> Avoid identifying as Mgcamd when connecting to newcs, as this will apparently cause newcs to switch to an incompatible variant of the protocol.<br />
 <br />
-Example: <em class='italic'>&lt;default-client-id>67 62&lt;/default-client-id> &lt;!-- identify as Gbox2CS --></em> <br />
+Example: <em class='italic'>&lt;default-client-id>67 62&lt;/default-client-id></em> <br />
 <br />
 </a>
 
@@ -845,7 +885,7 @@ This increases the chances of a cache hit through sharing. It will have no effec
 <a name="connection-manager/congestion-limit">
 <div class='indent'>connection-manager/congestion-limit</div><br />
 The maximum estimated queue time on a connector before the proxy considers it to be congested, and tries to avoid using it (by instead using connectors that would normally be excluded due to a higher metric number). Value in seconds, must be between max-cw-wait/2 and max-cw-wait. Use with care, and primarily if you have many connectors with differing metric priority set.<br />
-<strong>NOTE: </strong>If max-cw-wait is below 1s, congestion-limit is automatically set to the same value.<br />
+<br /><strong>NOTE: </strong>If max-cw-wait is below 1s, congestion-limit is automatically set to the same value.<br />
 <br />
 </a>
 
@@ -871,7 +911,7 @@ If you do have users that don't send sid, and this causes problems for them, jus
 <a name="connection-manager/service-map">
 <div class='indent'>connection-manager/service-map</div><br />
 The service mapper keeps track of which cards can decode which services, and tries to keep this information up to date with a minimum of probing/trial &amp; error.<br />
-<strong>NOTE: </strong> See the end of <strong>README.txt</strong> for more information on service mapping. <br />
+<br /><strong>NOTE: </strong> See the end of <strong>README.txt</strong> for more information on service mapping. <br />
 <br />
 </a>
 
@@ -901,7 +941,7 @@ true/false (default: true). If the mapper receives an ECM for a service where it
 </a>
 
 <a name="connection-manager/service-map/mapper/reset-services">
-<div class='indent'>connection-manager/service-map/mapper/reset-services</div><br />
+<div class='indent'><strong>connection-manager/service-map/mapper/reset-services</strong></div><br />
 A list of service ids (hex integers, separated by space) that define services for which the proxy should not remember the state for each card. This can be PPV services or services with shared ids (i.e one service during day time and another at night). The service mapper will forget these services every hour, on the hour (as of 0.4.10).<br />
 It probably makes little sense to set this globally when you have more than one profile, as service ids are very likely to be profile-specific (see below for <a href="#connection-manager/service-map/mapper-override">overrides per profile</a>).<br />
 <br /><strong>NOTE: </strong> By listing services here, you're indicating to the proxy that you expect the decode-status for them to change over time - so you will no longer receive "lost service" warnings when they suddenly stop working. In fact seeing repeated lost service warnings for a specific service or group of services is a good indication that you should probably list them in reset-services.<br />
@@ -911,7 +951,7 @@ Example:  <em class='italic'>&lt;reset-services>51f 520 515&lt;/reset-services><
 </a>
 
 <a name="connection-manager/service-map/mapper/allow-services">
-<div class='indent'>connection-manager/service-map/mapper/allow-services</div><br />
+<div class='indent'><strong>connection-manager/service-map/mapper/allow-services</strong></div><br />
 A list of service ids (hex integers, separated by space). Inverse of block-services, only sids listed here will be forwarded to cards. If you know exactly which sids exist on the cards in the profile, use this to eliminate probing and also trap bad ecms (with bogus sids) before they get forwarded. I.e: Either set this to list <strong>all</strong> of the services the provider has, or don't use it at all (omit the element or keep it empty to disable the allow list).<br />
 It probably makes little sense to set this globally as service ids are likely to be profile-specific (see below for <a href="#connection-manager/service-map/mapper-override">overrides per profile</a>).<br />
 <br /><strong>NOTE: </strong> this is a performance tweak, not an access control feature! Blocked sids can still be watched by all users if they appear in the cache. By design the proxy has no limitations on what users can access, everything is meant to be fully available to everyone.<br />
@@ -921,7 +961,7 @@ Example:  <em class='italic'>&lt;allow-services>44f 43b 456 45f 421 452 44e 458 
 </a>
 
 <a name="connection-manager/service-map/mapper/block-services">
-<div class='indent'>connection-manager/service-map/mapper/block-services</div><br />
+<div class='indent'><strong>connection-manager/service-map/mapper/block-services</strong></div><br />
 A list of service ids (hex integers, separated by space), that are known not to exist on any connected cards. <strong>NOTE: </strong> As of 0.9.0, if the system used in the profile has additional significant information besides just sids (such as provider-idents or irdeto-chids) this must also be specified, using this syntax: sid:ident, sid:chid, sid:ident:chid or sid:chid:ident (e.g: 0000:000000, 0000:0000, 0000:000000:0000 or 0000:0000:000000).<br /><br />
 Specifying them here will mean less probing, if users try to watch them (the proxy will return cannot decode instantly and not bother the cards). This can significantly reduce failure-traffic in large shares, recommended for all profiles with or without service mapping enabled.<br />
 It probably makes little sense to set this globally as service ids are likely to be profile-specific (see below for <a href="#connection-manager/service-map/mapper-override">overrides per profile</a>).<br />
@@ -935,7 +975,7 @@ Example:  <em class='italic'>&lt;block-services>0438:020500 038e:020500 03ca:020
 <a name="connection-manager/service-map/mapper/dummy-services">
 <div class='indent'>connection-manager/service-map/mapper/dummy-services</div><br />
 Some clients who are unable to known the real sid (i.e typically hardware solutions) send fixed dummy sids instead of 0. To make sure these aren't treated as real sids by the service mapping, list any such dummy sids here.<br />
-<strong>NOTE: </strong> The first sid listed here will also be used when forwarding unknown sid request to connectors, so if you want unknown forwards to keep the sid 0 - set 0 as the first entry in this list. If for some reason you absolutely want to retain the original dummy-services in the forwards too, set -1 as the first entry.<br />
+<br /><strong>NOTE: </strong> The first sid listed here will also be used when forwarding unknown sid request to connectors, so if you want unknown forwards to keep the sid 0 - set 0 as the first entry in this list. If for some reason you absolutely want to retain the original dummy-services in the forwards too, set -1 as the first entry.<br />
 <br />
 Example:  <em class='italic'>&lt;dummy-services>0 101 1101&lt;/dummy-services></em> <br />
 </a>
@@ -962,7 +1002,7 @@ true/false (default: false). Enable this to have ecms without sid always forward
 <div class='indent'>connection-manager/service-map/mapper/redundant-forwarding</div><br />
 true/false (default: false). If this is true, the proxy will pick two connectors for each forward instead of just one (assuming there are at least two available). The ideal candidate will still be considered the primary choice, but the secondary will also receive the same forward (triggering transaction flag '2').<br />
 Secondary forwards are treated like probes, they are only carried out if there is unused capacity. If the secondary forward gets a reply before the primary, the transaction will end up with the flags '2FC' since the result is obtained through the cache (in the statistics these will still be counted only as forwards however).<br />
-<strong>NOTE: </strong> This will significantly increase the load on connectors (up to double) but should improve reliability if you have issues with individual connectors failing sporadically or their network being unstable.
+<br /><strong>NOTE: </strong> This will significantly increase the load on connectors (up to double) but should improve reliability if you have issues with individual connectors failing sporadically or their network being unstable.
 <br />
 </a>
 
@@ -971,34 +1011,35 @@ Secondary forwards are treated like probes, they are only carried out if there i
 true/false (default: true). Whenever the service-mapper registers a service lost from a card that could previously decode it, it will register a background probe to see if it returns.<br />
 The status for the service on the particular card in question will be reset with an increasing interval (doubles every time, starting at 5 minutes after it was lost and ending if it hasn't been found after 48 hours).
 Under normal circumstances, you probably want to keep this switched on, for all profiles with service-mapping enabled.<br />
-<strong>NOTE: </strong> This mainly helps when there are multiple cards in the profile, if there is only one then lost services would be found within minutes when someone tried to watch them, through the auto-reset-threshold.<br />
+<br /><strong>NOTE: </strong> This mainly helps when there are multiple cards in the profile, if there is only one then lost services would be found within minutes when someone tried to watch them, through the auto-reset-threshold.<br />
 <br />
 </a>
 
 <a name="connection-manager/service-map/mapper/hide-unknown-services">
 <div class='indent'>connection-manager/service-map/mapper/hide-unknown-services</div><br />
 true/false (default: false). Determines whether to hide services with no known names (sids that were not found in the services file for the profile) from the query api and hence the status web.<br />
-<strong>NOTE: </strong> If you're not using a services file, setting this to true would hide all services.
+<br /><strong>NOTE: </strong> If you're not using a services file, setting this to true would hide all services.
 <br />
 </a>
 
 <a name="connection-manager/service-map/mapper/hide-disabled-connectors">
 <div class='indent'>connection-manager/service-map/mapper/hide-disabled-connectors</div><br />
 true/false (default: false). Determines whether to hide disabled connectors from the query api and hence the status web.<br />
-<strong>NOTE: </strong> Disconnected or disabled connectors without a profile assigned will always be hidden regardless of this setting.
+<br /><strong>NOTE: </strong> Disconnected or disabled connectors without a profile assigned will always be hidden regardless of this setting.
 <br />
 </a>
 
 <a name="connection-manager/service-map/mapper-override">
-<div class='indent'>connection-manager/service-map/mapper (attributes: *profile, enabled)</div><br />
+<div class='indent'><strong>connection-manager/service-map/mapper (attributes: *profile, enabled)</strong></div><br />
 When you use the mapper element with a profile attribute set, it allows overriding of any of the above mapper settings for a specific profile.<br />
 - <strong class='bold'>profile</strong>: Name of the profiles that the overrides apply to, this profile must exist.<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true). Enable/disable service mapping entirely for this profile.<br />
-<strong>NOTE: </strong> See the end of <strong>README.txt</strong> for more information on service mapping. <br />
+<br /><strong>NOTE: </strong> See the end of <strong>README.txt</strong> for more information on service mapping. <br />
 <br />
-Example:<br /><em class='italic'>&lt;mapper profile="providerX" enabled="true"> <br />
-&lt;reset-services>51f 520 515&lt;/reset-services><br />
-&lt;block-services>44f 43b 456 45f 421 452 44e 458 43d 45e 43c 3fd&lt;/block-services><br />
+Example:<br /><br />
+<em class='italic'>&lt;mapper profile="providerX" enabled="true"> <br />
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;reset-services>51f 520 515&lt;/reset-services><br />
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;block-services>44f 43b 456 45f 421 452 44e 458 43d 45e 43c 3fd&lt;/block-services><br />
 &lt;/mapper> </em><br />
 <br />
 </a>
@@ -1036,7 +1077,7 @@ This section contains the list of CW servers that the proxy should try to mainta
 </a>
 
 <a name="connection-manager/cws-connectors/[newcamd-connector|radegast-connector]">
-<div class='indent'>connection-manager/cws-connectors/[newcamd-connector|radegast-connector] (attributes: *name, profile, provider-idents, metric, enabled, qos-class, override-checks)</div><br />
+<div class='indent'><strong>connection-manager/cws-connectors/[newcamd-connector|radegast-connector] (attributes: *name, profile, provider-idents, metric, enabled, qos-class, override-checks)</strong></div><br />
 Defines one newcamd or radegast CW server connection.<br />
 - <strong class='bold'>name</strong>: Name of the connection. Just an arbitrary label to identify this particular card/cardserver, must be unique.<br />
 - <strong class='bold'>profile</strong>: Which profile this connection belongs to. If this is not configured, the connector will only work if the card ca-id received on login matches the ca-id for exactly 1 defined profile (it will then be auto-assigned to this profile). In general profile should always be specified, and for radegast it is mandatory.<br />
@@ -1068,8 +1109,8 @@ TCP port for the CW server.<br />
 <a name="connection-manager/cws-connectors/[newcamd-connector|radegast-connector]/can-decode-services">
 <div class='indent'>connection-manager/cws-connectors/[newcamd-connector|radegast-connector]/can-decode-services (attributes: exclusive, profile)</div><br />
 Optional list of sids (hex) that the service mapper should always consider as decode'able on this connector, regardless of what the server actually returns. <br />
-<strong>NOTE: </strong> As of 0.9.0, if the system used in the profile has additional significant information besides just sids (such as provider-idents or irdeto-chids) this must also be specified, using this syntax: sid:ident, sid:chid, sid:ident:chid or sid:chid:ident (e.g: 0000:000000, 0000:0000, 0000:000000:0000 or 0000:0000:000000).<br />
-Under normal circumstances (with auto discovery working reliably) this element should not be used. To force auto-discovery of a service on a connector, use the reset commands on the status web (admin section) instead.<br />
+<br /><strong>NOTE: </strong> As of 0.9.0, if the system used in the profile has additional significant information besides just sids (such as provider-idents or irdeto-chids) this must also be specified, using this syntax: sid:ident, sid:chid, sid:ident:chid or sid:chid:ident (e.g: 0000:000000, 0000:0000, 0000:000000:0000 or 0000:0000:000000).<br />
+<br />Under normal circumstances (with auto discovery working reliably) this element should not be used. To force auto-discovery of a service on a connector, use the reset commands on the status web (admin section) instead.<br />
 - <strong class='bold'>exclusive</strong>: true/false (default: false). Set to true to indicate that no probing should be done for this connector, i.e that anything not explicitly listed in can-decode should be assumed to be cannot-decode.<br />
 - <strong class='bold'>profile</strong>: Only applicable for multi-context connectors (chameleon-connector, csp-connector). Since these connector types have multiple profiles, it is necessary to indicate which profile each can-decode-services element is for (multiple lists supported).<br />
 <br />
@@ -1115,7 +1156,7 @@ Client id bytes for newcs identification, overriding the default-client-id.<br /
 <div class='indent'>connection-manager/cws-connectors/newcamd-connector/au-users</div><br />
 List of user names allowed to update the card hosted by this connector (separated by space). All EMMs sent to the proxy by these users will be forwarded to this connector.<br />
 One user can only update a single card (per profile). If you want to use a single box/client to update multiple cards, you need to create several user accounts and have the client connect once for each account (the sessions will receive different card-data depending on the user name). Not all clients support multiple connections to the same server with only different login credentials to separate them.<br />
-<strong>NOTE: </strong> As of 0.9.0, changes to this element will take effect immediately (existing sessions for affected users will be kicked if needed). Additionally, the target connector for any given au-session is shown by name in the sessions list (emm count column).<br />
+<br /><strong>NOTE: </strong> As of 0.9.0, changes to this element will take effect immediately (existing sessions for affected users will be kicked if needed). Additionally, the target connector for any given au-session is shown by name in the sessions list (emm count column).<br />
 <br />
 Example:  <em class='italic'>&lt;au-users>testuser1 testuser2&lt;/au-users></em> <br />
 <br />
@@ -1124,7 +1165,7 @@ Example:  <em class='italic'>&lt;au-users>testuser1 testuser2&lt;/au-users></em>
 <a name="connection-manager/cws-connectors/newcamd-connector/asynchronous">
 <div class='indent'>connection-manager/cws-connectors/newcamd-connector/asynchronous</div><br />
 true/false (default: false). Determines whether to use asynchronous mode. This can greatly increase efficiency for a connector, since all pending requests are sent immediately to the server, rather than sending one at a time and waiting for a response before sending again. Unless the server fails somehow when in asynchronous mode, set this to true.<br />
-See <strong>README.Optimization.txt</strong> for more details.<br />
+<br />See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
 </a>
 
@@ -1138,25 +1179,33 @@ Example:  <em class='italic'>&lt;caid-profile-map>0b00=cable 0500=terrestrial&lt
 </a>
 
 <a name="connection-manager/cws-connectors/csp-connector">
-<div class='indent'>connection-manager/cws-connectors/csp-connector (attributes: *name, metric, enabled, qos-class)</div><br />
+<div class='indent'><strong>connection-manager/cws-connectors/csp-connector (attributes: *name, metric, enabled, qos-class)</strong></div><br />
 Defines one csp connection (to another proxy). Note that these differ from the other connector types in that they do not have a profile association, they're always bound to all profiles (or rather, those profiles that have a correct network-id and ca-id set, the rest are ignored).<br />
 Csp-connections are established using the httpd of the target proxy, but then switches to a fully asynchronous protocol (while keeping the same connection, so ssl remains if enabled). The service mapper states of remote proxies connected in this way will be communicated automatically on connect (and as changes occur).<br />
 Each proxy is assigned a random id every time it is restarted, that is used to prevent loops where ecm requests end up forwarded back to the proxy that originally received it.<br />
 A remote context received through a csp-connector is not relayed. E.g: if you connect one proxy to another with csp-connect, you will only see the locally defined connectors there (not anything it may have received from another csp/chameleon-connection of its own).<br />
-<strong>NOTE: </strong> If the user account at the target proxy has profile restrictions, the connector will not see all available network-ids, just the ones allowed by the remote user-manager.<br /><br />
+<br /><strong>NOTE: </strong> If the user account at the target proxy has profile restrictions, the connector will not see all available network-ids, just the ones allowed by the remote user-manager.<br /><br />
 - <strong class='bold'>name</strong>: Name of the connection. Just an arbitrary label to identify this particular proxy connection, must be unique.<br />
 - <strong class='bold'>metric</strong>: This is an integer value similar to interface metric used to determine preference when routing (here it is: 0 - 10, default 1).<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true). Allows for disabling a connection without deleting it.<br />
 - <strong class='bold'>qos-class</strong>: Integer value with the  qos class to set for each outgoing connection (default: 16) or "none", to disable. Only disable or change this if the JVM fails to set the qos class (causing SocketExceptions with "Unrecognized option" when connecting).<br />
 <br />
-Example:  <em class='italic'>&lt;csp-connector name="otherproxy" enabled="true"></em> <br />
+Example: <br /><br />
+  <em class='italic'>&lt;csp-connector name="otherproxy" enabled="true"></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;url>https://remote.proxy.com:8443&lt;/url></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;url-backup>https://backup.proxy.com:8443&lt;/url-backup></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;user>user1&lt;/user></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;password>user1pw&lt;/user></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;exclude-profiles>unwantedprofilename1 unwantedprofilename2&lt;/exclude-profiles></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;request-cache-updates>false&lt;/request-cache-updates></em>  <br />
+  <em class='italic'>&lt;/csp-connector></em> <br />
 <br />
 </a>
 
 <a name="connection-manager/cws-connectors/csp-connector/url">
 <div class='indent'>connection-manager/cws-connectors/csp-connector/url</div><br />
 Url to connect to (i.e the root location of the status web for the remote proxy). If ssl is enabled at the remote proxy (recommended), this will be a https url. <br />
-<strong>NOTE: </strong>Do not attempt to specify the login credentials in the url, use the separate user/password elements for this.<br />
+<br /><strong>NOTE: </strong>Do not attempt to specify the login credentials in the url, use the separate user/password elements for this.<br />
 <br />
 Example:  <em class='italic'>&lt;url>https://remote.proxy.com:8443&lt;/url></em> <br />
 <br />
@@ -1187,22 +1236,32 @@ List of profile names that should not be mapped for this connector, even when th
 Defines one extended newcamd connection specifically for accessing multiple systems in one session (as supported by newcs/mgcamd). Despite the name, this does not use the chameleon protocol. It only uses the same newcamd extensions that allows mgcamd to access multiple cards from one newcs (this newcs in turn then uses chameleon2 to connect to to other newcs instances).<br />
 Note that these differ from the other connector types in that they do not have a profile association, they're always bound to all profiles (or rather, those profiles that have a correct network-id and ca-id set, the rest are ignored).<br /><br />
 For chameleon-connector, there is an additional requirement in that the profiles must have provider-ident lists associated with them (either from manually specifying them using the 'provider-ident' attribute introduced in 0.9.0, or from live connectors to actual cards that are bound to the profile).<br />
-A list of ca-ids and provider-idents is returned from newcs to this type of connector, and only those ca-id/ident pairs that can be mapped to exactly one (1) profile will actually be used by the proxy. The rest will be ignored (but visible in the remote-properties for the connector, in the status web). <br /><br />
-<strong>NOTE: </strong>If you have profiles without active connectors and would like to map them to what is available through a chameleon-connector, you must manually list all the provider-idents that are relevant for the profile using the provider-ident attribute (so you have to know which ones are on the cards). <br />
+A list of ca-ids and provider-idents is returned from newcs to this type of connector, and only those ca-id/ident pairs that can be mapped to exactly one (1) profile will actually be used by the proxy. The rest will be ignored (but visible in the remote-properties for the connector, in the status web). <br />
+<br /><strong>NOTE: </strong>If you have profiles without active connectors and would like to map them to what is available through a chameleon-connector, you must manually list all the provider-idents that are relevant for the profile using the provider-ident attribute (so you have to know which ones are on the cards). <br />
 <br />
 - <strong class='bold'>name</strong>: Name of the connection. Just an arbitrary label to identify this particular newcs connection, must be unique.<br />
 - <strong class='bold'>metric</strong>: This is an integer value similar to interface metric used to determine preference when routing (here it is: 0 - 10, default 1).<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true). Allows for disabling a connection without deleting it.<br />
 - <strong class='bold'>qos-class</strong>: Integer value with the  qos class to set for each outgoing connection (default: 16) or "none", to disable. Only disable or change this if the JVM fails to set the qos class (causing SocketExceptions with "Unrecognized option" when connecting).<br />
 <br />
-Example:  <em class='italic'>&lt;chameleon-connector name="newcs" enabled="true"></em> <br />
+Example: <br /><br />
+  <em class='italic'>&lt;chameleon-connector name="newcs" enabled="true"></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14&lt;/des-key></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;host>192.168.2.113&lt;/host></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;port>5354&lt;/port></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;user>user1&lt;/user></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;password>user1pw&lt;/user></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;profiles>satprofile1 satprofile2&lt;/profiles></em>  <br />
+  <em class='italic'>&lt;/chameleon-connector></em> <br />
 <br />
 </a>
 
 <a name="connection-manager/cws-connectors/chameleon-connector/profiles">
 <div class='indent'>connection-manager/cws-connectors/chameleon-connector/profiles</div><br />
 Optional list of profile names that should not be mapped for this connector (use this to avoid ambigious situations when there are multiple profiles using the same ca-id/ident pairs).<br />
-<strong>NOTE: </strong>If you DO have profiles that share one or more ca-id/ident pairs then this list is mandatory, or the connector will accept no traffic (and remember that provider idents are associated with profiles not only from manual config but also automatically - based on card-data received from servers that are part of the profile - unless this is manually overridden). <br />
+<br /><strong>NOTE: </strong>If you DO have profiles that share one or more ca-id/ident pairs then this list is mandatory, or the connector will accept no traffic (and remember that provider idents are associated with profiles not only from manual config but also automatically - based on card-data received from servers that are part of the profile - unless this is manually overridden). <br />
+<br />
+Example: <em class='italic'>&lt;profiles>satprofile1 satprofile2&lt;/profiles></em>  <br />
 <br />
 </a>
 
@@ -1217,7 +1276,7 @@ Allows for custom-written arbitrary plugins. See <strong>README.Plugins.txt</str
 Defines one plugin for the proxy to load.<br />
 - <strong class='bold'>class</strong>: Java class name for the plugin. A plugin must implement the interface com.bowman.cardserv.interfaces.ProxyPlugin. See the example LoggingPlugin for tips.<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true). Allows enabling/disabling plugins while running.<br />
-- <strong class='bold'>jar-file</strong>: Allows loading the plugin using a separate classloader, from an external jar file in the "plugins" dir. This way plugins can be replaced/reloaded at runtime without restarting the proxy (they are reloaded and restarted each time the proxy.xml config is touched/updated).<br />
+- <strong class='bold'>jar-file</strong>: Allows loading the plugin using a separate classloader, from an external jar file in the "plugins" dir. This way plugins can be replaced/reloaded at runtime without restarting the proxy (they are reloaded and restarted each time the proxy.xml config is touched/updated, and as of 0.8.11: when the plugin jar itself is touched/updated).<br />
 <br />
 Example:  <em class='italic'>&lt;plugin class="com.bowman.cardserv.LoggingPlugin" enabled="true"></em> <br />
 <br />
@@ -1261,7 +1320,7 @@ The maximum age (in seconds) of an ECM -> CW mapping in the cache, before it can
 <a name="cache-handler/cache-config/max-cache-wait">
 <div class='indent'>cache-handler/cache-config/max-cache-wait</div><br />
 The maximum time (in seconds) that a client can be kept waiting in the cache for a pending request.<br />
-<strong>NOTE: </strong> As of 0.9.0, this can also be configured with a percentage string, e.g "50%" to indicate a max-cache-wait of 50% of the max-cw-wait for the request. This makes more sense when using profiles with radically different max-cw-waits in the same proxy (e.g some with 9 seconds and others with 650 ms).<br />
+<br /><strong>NOTE: </strong> As of 0.9.0, this can also be configured with a percentage string, e.g "50%" to indicate a max-cache-wait of 50% of the max-cw-wait for the request. This makes more sense when using profiles with radically different max-cw-waits in the same proxy (e.g some with 9 seconds and others with 650 ms).<br />
 See <strong>README.Optimization.txt</strong> for more details.<br />
 <br />
 The clustered cache (which is an extension of the default cache) has many additional settings, see <strong>README.ClusteredCache.txt</strong> for full docs.<br />
