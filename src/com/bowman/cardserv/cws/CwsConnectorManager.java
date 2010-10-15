@@ -54,7 +54,6 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
 
     maxCwWait = xml.getTimeValue("max-cw-wait", 9, "s");
     if(maxCwWait <= 100) throw new ConfigException(xml.getFullName(), "max-cw-wait must be > 100 ms");
-    // if(maxCwWait != 9000) logger.warning("max-cw-wait has been changed: " + (maxCwWait / 1000) + " s (default 9 s)");
 
     timeoutThreshold = xml.getIntValue("timeout-disconnect-threshold", 2);
     if(timeoutThreshold < 1) throw new ConfigException(xml.getFullName(), "timeout-disconnect-threshold must be >= 1");
@@ -733,27 +732,27 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
   }
 
   public void cwsConnectionFailed(CwsConnector cws, String message) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext(); )
+    for(Iterator iter = new ArrayList(listeners).iterator(); iter.hasNext(); )
       ((CwsListener)iter.next()).cwsConnectionFailed(cws, message);
   }
 
   public void cwsEcmTimeout(CwsConnector cws, String message, int failureCount) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext(); )
+    for(Iterator iter = new ArrayList(listeners).iterator(); iter.hasNext(); )
       ((CwsListener)iter.next()).cwsEcmTimeout(cws, message, failureCount);
   }
 
   public void cwsLostService(CwsConnector cws, TvService service, boolean show) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext(); )
+    for(Iterator iter = new ArrayList(listeners).iterator(); iter.hasNext(); )
       ((CwsListener)iter.next()).cwsLostService(cws, service, show);
   }
 
   public void cwsFoundService(CwsConnector cws, TvService service, boolean show) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext(); )
+    for(Iterator iter = new ArrayList(listeners).iterator(); iter.hasNext(); )
       ((CwsListener)iter.next()).cwsFoundService(cws, service, show);
   }
 
   public void cwsInvalidCard(CwsConnector cws, String message) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext(); )
+    for(Iterator iter = new ArrayList(listeners).iterator(); iter.hasNext(); )
       ((CwsListener)iter.next()).cwsInvalidCard(cws, message);    
   }
 

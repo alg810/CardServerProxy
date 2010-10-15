@@ -152,6 +152,7 @@ public class NewcamdCwsConnector extends AbstractCwsConnector implements CamdCon
       close();
       connecting = true;
     } else {
+      if(conn == null) throw new SocketException("Connection aborted during newcamd handshake.");
       conn.setDesKey16(DESUtil.desKeySpread(DESUtil.xorUserPass(configKey14, DESUtil.cryptPassword(password))));
       logger.info("Login successful, key changed");
       sendMessage(new CamdNetMessage(MSG_CARD_DATA_REQ));

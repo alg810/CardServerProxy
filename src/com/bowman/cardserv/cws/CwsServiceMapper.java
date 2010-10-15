@@ -262,7 +262,11 @@ public class CwsServiceMapper implements XmlConfigurable {
       id = (ServiceMapping)iter.next();
       if(id.getCustomData() == -1) continue;  // hide entries with customId -1
       Set tmp = new HashSet();
-      if(map.containsKey(id)) tmp.addAll((List)map.get(id));
+      if(map.containsKey(id)) try {
+        tmp.addAll((List)map.get(id));
+      } catch (Exception e) {
+        tmp.addAll((List)map.get(id));
+      }
       if(overrideMap1.containsKey(id)) tmp.addAll((List)overrideMap1.get(id)); // add manual overrides
       if(overrideMap2.containsKey(id)) tmp.removeAll((List)overrideMap2.get(id)); // remove opposing
 

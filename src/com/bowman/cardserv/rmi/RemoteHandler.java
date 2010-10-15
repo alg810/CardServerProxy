@@ -31,7 +31,7 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
   private ProxyLogger logger;
   private SessionManager sm;
 
-  private List eventQueue = new ArrayList();
+  private List eventQueue = Collections.synchronizedList(new ArrayList());
   private Thread eventThread;
   private String name;
 

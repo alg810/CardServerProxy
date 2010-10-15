@@ -519,6 +519,8 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
 
   public void eventRaised(RemoteEvent event) throws RemoteException {
 
+    if(event == null) return;
+
     switch(event.getType()) {
       case RemoteEvent.CWS_CONNECTED:
         connecting.remove(event.getLabel());
