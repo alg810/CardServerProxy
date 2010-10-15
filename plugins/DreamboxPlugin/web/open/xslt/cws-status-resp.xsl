@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output method="html"/>
 
@@ -39,9 +39,11 @@
         </xsl:if>
       </input>
       <label for="hideInactiveCb">Hide idle/old</label>
-      <span style="float: right">
-        Invert box selection: <input type="button" id="invertSelection" value="OK"/>
-      </span>
+      <xsl:if test="@admin = 'true'">
+        <span style="float: right">
+          Invert box selection: <input type="button" id="invertSelection" value="OK"/>
+        </span>
+      </xsl:if>
       </div>
       <br />
       <div class="cwsheader" style="width: 750px;">
