@@ -1,14 +1,16 @@
 Cardservproxy changelog:
 ------------------------
 
-0.9.1 - RC0
+0.9.1 - RC0 (see README.0.9.0.txt for conceptual changes and tips)
 
 - Fixed: Handling for unknown sid (0 or a dummy sid listed in dummy-services) was broken in 0.9.0.
 - Fixed: Incoming requests for dummy sids should not retain the dummy when forwarded, now changed to 0.
 - Fixed: Per profile max-cw-wait could not be set below 1s (now both per profile and global allow down to 100 ms).
+  NOTE: While it may now be possible to configure such low values, whether it works or not below 1s is still undefined.
 - Fixed: Probing was sometimes attempted even when there was only one candidate connector.
 - Fixed: Radegast support updated to make sense with 0.9.x.
 - Fixed: Emm handling for extended newcamd in systems with signifcant provider-idents.
+- Fixed: Now possible to move messages between profiles from plugins, changes to networkid/caid were previously ignored.
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
   now considered identical by the proxy. Implications unknown.
 - Changed: ClusteredCache transport format now includes meta-data such as ca-id and network-id.

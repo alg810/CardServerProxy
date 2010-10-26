@@ -1,5 +1,5 @@
-Cardservproxy 0.9.1
--------------------
+Cardservproxy 0.9.1 (See README.0.9.0.txt for features/changes specific to 0.9.x versions)
+------------------------------------------------------------------------------------------
 
 First, in order to avoid the usual confusion about the proxy:
 - This is not a cam emulator or card server, it knows next to nothing about ca systems, DVB concepts, iso7816 or the md api.
@@ -92,7 +92,7 @@ INSTALL NOTES:
 CONFIGURATION NOTES: (checklist for a basic setup)
 
 - Define ca-profiles, one for each provider/vendor/card-type (yes if two providers happen to use the same ca-system, two
-  separate profiles are still required). Ca-profiles can be thought of as virtual cardservers, and will seem to the
+  separate profiles may still be required). Ca-profiles can be thought of as virtual cardservers, and will seem to the
   clients like single cards (with a potentially infinite capacity). If you have an enigma1 services file (dreambox)
   you can fetch that and place it where the proxy can read it and point it out in the profile definition. This will
   get you friendly readable names for each service rather than just service id. Multiple profiles can read from the
@@ -101,7 +101,8 @@ CONFIGURATION NOTES: (checklist for a basic setup)
 - Define newcamd/radegast listen-ports as needed for each profile (always use newcamd if you have a choice). Usually
   only one port is required per profile (or two if you need both newcamd and radegast listeners), but it is now
   possible to have an arbitrary number of listen ports for the same profile, complete with their own accept/deny lists
-  and other protocol-specific settings.
+  and other protocol-specific settings. If it is a satellite setup for mgcamd clients alone, you can create profiles
+  without ports and use the combined extended-newcamd listen port (top of the generated config) to access all profiles.
 
 - Define cws-connectors for each cardserver that the proxy should connect to. Use one newcamd-connector or
   radegast-connector for each card, and again newcamd is prefered if you have the option (and there would be no point

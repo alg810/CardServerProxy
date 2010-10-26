@@ -25,7 +25,8 @@ Changing from one user-manager to another requires a proxy restart.
   
 - The url of the xml file with user definitions. The file should match the auth-config for SimpleUserManager, but
 the top level element is ignored. See config/users.example.xml for an example. 
-Any url can be used, including https/ftp with user:passwd@hostname type auth info. File urls are also accepted.
+Any url can be used, including https/ftp with user:passwd@hostname type auth info.
+File urls are also accepted. NOTE: Relative file urls are written with no initial slashes, e.g: file:etc/users.xml
 
 NOTE: When using a http/https url, it doesn't have to point to an actual static xml file. A php/jsp/asp page that
 renders the xml dynamically from an underlying database is a more flexible solution.

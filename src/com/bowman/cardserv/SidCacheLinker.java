@@ -182,6 +182,9 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     try {
       sCmd = new StatusCommand("required-services", "List required services", "List services that need to be permanently in cache for the sid linker to work", false);
       sCmd.register(this);
+
+      sCmd = new StatusCommand("linked-services", "List linked services", "List all services that have been configured for sid-cache-linking", false);
+      sCmd.register(this);
     } catch (NoSuchMethodException e) {
       e.printStackTrace();
     }
@@ -256,15 +259,46 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
       if(opens != null && !opens.isEmpty()) {
         xb.appendElement("link").appendAttr("id", i + 1).endElement(false);
         xb.appendElement("required");
-        XmlHelper.xmlFormatServices(new TvService[] {services[i]}, xb, false, true, false, null, profiles);
+        XmlHelper.xmlFormatServices(new TvService[] {services[i]}, xb, false, true, true, null, profiles);
         xb.closeElement("required");
         xb.appendElement("opens");
-        XmlHelper.xmlFormatServices((TvService[])opens.toArray(new TvService[opens.size()]), xb, false, true, false, null, profiles);
+        XmlHelper.xmlFormatServices((TvService[])opens.toArray(new TvService[opens.size()]), xb, false, true, true, null, profiles);
         xb.closeElement("opens");
         xb.closeElement("link");
       }
     }
     xb.closeElement("required-services");
+  }
+
+  public void runStatusCmdLinkedServices(XmlStringBuffer xb, Map params, String user) {
+    String[] profiles = (String[])params.get("profiles");
+    Set linkStrs = new TreeSet();
+    Set set; int i = 0;
+    xb.appendElement("linked-services", "count", sidLinksMap.values().size());
+    for(Iterator iter = sidLinksMap.values().iterator(); iter.hasNext(); ) {
+      set = (Set)iter.next();
+      if(!linkStrs.contains(set.toString())) {
+        xb.appendElement("link").appendAttr("id", (i++) + 1).endElement(false);
+        XmlHelper.xmlFormatServices(toTvServiceArray(set), xb, false, true, true, null, profiles);
+        xb.closeElement("link");
+        linkStrs.add(set.toString());
+      }
+    }
+    xb.closeElement("linked-services");
+  }
+
+  private TvService[] toTvServiceArray(Set set) {
+    TvService[] ts = new TvService[set.size()];
+    SidEntry se; int i = 0; ServiceMapping sm;
+    for(Iterator iter = set.iterator(); iter.hasNext(); ) {
+      se = (SidEntry)iter.next();
+      ts[i] = config.getService(se.profileName, se.serviceId);
+      sm = new ServiceMapping(se.serviceId, 0);
+      sm.setProviderIdent(ServiceMapping.NO_PROVIDER);
+      ts[i].setCustomData(sm.getCustomData());
+      i++;
+    }
+    return ts;
   }
 
   public boolean lockRequest(int successFactor, CamdNetMessage req) {
@@ -423,17 +457,20 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
 
   private void reportAddedService(CamdNetMessage req, CamdNetMessage origReq) {
     String profileName = req.getProfileName();
-    TvService ts1 = config.getService(profileName, origReq.getServiceId());
+    TvService ts1 = config.getService(profileName, origReq.getServiceId());    
     Set services = (Set)requiredServices.get(ts1);
     if(services == null) services = new TreeSet();
     TvService ts2 = config.getService(profileName, req.getServiceId());
     if(ts1.equals(ts2)) return;
     services.add(ts2);
+    ServiceMapping sm = new ServiceMapping(req);
+    ts2.setCustomData(sm.getCustomData()); // make sure full custom data shows up in the status cmd xml views
+    ts1.setCustomData(new ServiceMapping(origReq).getCustomData());
     requiredServices.put(ts1, services); // required service -> all otherwise undecodable services that it unlocks
 
     services = (Set)addedServices.get(profileName);
     if(services == null) services = new TreeSet();
-    if(services.add(new ServiceMapping(req))) {
+    if(services.add(sm)) {
       logger.info("Linked previously undecodable service: " + ts2 + " (unlocked by: " + ts1 + ")");
       // config.getConnManager().cwsFoundService(null, ts2);  // todo
     }

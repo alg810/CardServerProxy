@@ -75,6 +75,9 @@ may be necessary to insert an artifical delay between asynch requests (see defau
 3. Proxy configuration
 ----------------------
 
+Always start from scratch with the auto-generated config. Do not add any options until you understand what they do and
+you see an actual need from analyzing the logs.
+
 To get a definitive overview of what the proxy does with each config value (and where it does it), you can start java
 with the following param: -Dcom.bowman.cardserv.util.tracexmlcfg=true
 That will track all access to proxy.xml and when you request it (via the admin section of the status web), dump the
@@ -172,7 +175,7 @@ different max-cw-wait times then you should definately use a percentage setting.
 This only determines how often the proxy will attempt to reconnect to disconnected servers. It can be reduced to
 10-15 seconds (but avoid lower values) to minimize downtime due to shaky connections when there are few cards available.
 Keep in mind that whenever a connection is lost one immediate retry is performed, so its usually best to leave this
-at 30-60 seconds.
+at 30-60 seconds. Setting too low may cause connectors to never reconnect.
 
 <connection-manager> / <default-keepalive-interval>
 If there are nat-routers or some equivalent between proxy and server, tcp's that are idle for more than a set time
