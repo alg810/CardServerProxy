@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+
+<project name="betacrypttunnelplugin" default="build-app" basedir=".">
+
+  <target name="prepare-build">
+    <delete dir="classes" />
+    <mkdir dir="classes" />
+    <mkdir dir="classes/web" />
+    <copy todir="lib" failonerror="false">
+      <fileset dir="../../dist">
+        <include name="cardservproxy.jar"/>
+      </fileset>
+    </copy>
+    <path id="classpath">
+      <fileset dir="lib">
+        <include name="**/*.jar"/>
+      </fileset>
+    </path>
+    <delete dir="build" />
+    <mkdir dir="build" />
+    <mkdir dir="build/lib" />
+    <copy todir="build/lib">
+      <fileset dir="lib">
+        <include name="*.jar" />
+      </fileset>
+    </copy>
+    <copy todir="classes">
+      <fileset dir="src">
+        <include name="**/*.properties"/>
+        <include name="**/*.xml"/>
+      </fileset>
+    </copy>
+    <copy todir="classes/web" failonerror="false">
+      <fileset dir="web">
+        <include name="**/*.*"/>        
+      </fileset>
+    </copy>    
+    <property name="classpath" refid="classpath" />
+  </target>
+
+  <target name="build-app" depends="prepare-build">
+    <javac srcdir="src" includes="**/*.java"
+      destdir="classes" classpath="${classpath}"
+      source="1.4" target="1.4"
+      debug="on">
+    </javac>
+
+    <jar jarfile="build/lib/betacrypttunnelplugin.jar">
+      <fileset dir="classes">
+        <include name="**/*" />
+      </fileset>
+    </jar>
+    <copy todir="dist" file="build/lib/betacrypttunnelplugin.jar" />
+    <delete dir="build"/>
+    <delete dir="classes"/>
+  </target>
+
+  <target name="tar-src" depends="prepare-build">
+    <mkdir dir="build/src"/>
+    <copy todir="build/src">
+      <fileset dir="src">
+        <include name="**/*" />
+      </fileset>
+    </copy>
+    <copy todir="build/web">
+      <fileset dir="web">
+        <include name="**/*" />
+      </fileset>
+    </copy>
+    <copy todir="build">
+      <fileset dir=".">
+        <include name="README.BetacryptTunnelPlugin.txt" />
+        <include name="BetacryptTunnelPlugin.iml" />
+        <include name="BetacryptTunnelPlugin.ipr" />
+      </fileset>
+    </copy>    
+    <copy todir="build" file="build.xml"/>
+    <tar tarfile="dist/BetacryptTunnelPlugin-src.tar" basedir="build"/>
+    <gzip zipfile="dist/BetacryptTunnelPlugin-src.tar.gz" src="dist/BetacryptTunnelPlugin-src.tar"/>
+    <delete file="dist/BetacryptTunnelPlugin-src.tar" />
+    <delete dir="build"/>
+  </target>
+
+</project>

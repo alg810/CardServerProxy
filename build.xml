@@ -108,8 +108,8 @@
     <ant inheritAll="false" dir="plugins/ProviderIdentPlugin"/>
     <ant inheritAll="false" dir="plugins/IrdetoPlugin"/>
     <ant inheritAll="false" dir="plugins/DreamboxPlugin"/>
-    <ant inheritAll="false" dir="plugins/SoftNdsPlugin"/>
-
+	<ant inheritAll="false" dir="plugins/SoftNdsPlugin"/>
+	<ant inheritAll="false" dir="plugins/BetaCryptTunnelPlugin"/>
     <ant inheritAll="false" dir="plugins/ConaxConnector"/>
 
     <mkdir dir="build/plugins" />
