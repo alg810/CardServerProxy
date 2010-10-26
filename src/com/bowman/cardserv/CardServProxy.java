@@ -363,8 +363,10 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
           return;
         }
       } else { // allow plugins to move messages to other profiles regardless of origin
-        profile = config.getProfileById(msg.getNetworkId(), msg.getCaId());
-        if(profile == null) profile = session.getProfile();
+        if(msg.getNetworkId() != profile.getNetworkId()) {
+          profile = config.getProfileById(msg.getNetworkId(), msg.getCaId());
+          if(profile == null) profile = session.getProfile();
+        }
       }
       msg.setProfileName(profile.getName()); // just a lookup shortcut for all remaining processing
     }
