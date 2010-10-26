@@ -380,7 +380,11 @@ public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsC
 
       if(replyPlugins) {
         reply = applyFilters(reply);
-        if(reply == null) return false;
+        if(reply == null) { // blocked by reply plugin, reinsert it in sentmap and have it time out
+          sentMap.put(new Integer(reply.getSequenceNr()), qe);
+          blackListRequest(qe.getRequest()); // and blacklist request to prevent resends of the same one
+          return true;
+        }
       }      
 
       if(reply.getServiceId() != 0) {
