@@ -32,11 +32,13 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
       profiles = new HashSet(Arrays.asList(profilesStr.toLowerCase().split(" ")));
     } else profiles = Collections.EMPTY_SET;
 
-    if (targetNetworkIdConfig > 0)
-        targetNetworkId = targetNetworkIdConfig;
+    if (targetNetworkIdConfig == 0)
+      throw new ConfigException(xml.getFullName(), "target-network-id should not be zero: " + targetNetworkIdConfig);
+    else
+      targetNetworkId = targetNetworkIdConfig;
 
     if(custEcmHeader.length != 9)
-        throw new ConfigException(xml.getFullName(), "ecm-header not 9 bytes: " + DESUtil.bytesToString(custEcmHeader));
+      throw new ConfigException(xml.getFullName(), "ecm-header not 9 bytes: " + DESUtil.bytesToString(custEcmHeader));
     else
       ecmHeader = custEcmHeader;
   }
