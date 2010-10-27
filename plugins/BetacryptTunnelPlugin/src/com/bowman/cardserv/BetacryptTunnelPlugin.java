@@ -17,8 +17,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
   private ProxyLogger logger;
   private Set profiles = new HashSet();
   private int targetNetworkId, tunneledCount = 0;
-
-  private static final byte[] headerN3 = DESUtil.stringToBytes("C7 00 00 00 01 10 10 00 87 12");
+  private byte [] ecmHeader;
 
   public BetacryptTunnelPlugin() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -26,17 +25,25 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     String profilesStr = xml.getStringValue("profiles", "");
+    int targetNetworkIdConfig = Integer.parseInt(xml.getStringValue("target-network-id", "0085"), 16);
+    byte[] custEcmHeader = DESUtil.stringToBytes(xml.getStringValue("ecm-header", "C7 00 00 00 01 10 10 00 87"));
+
     if(profilesStr != null && profilesStr.length() > 0) {
       profiles = new HashSet(Arrays.asList(profilesStr.toLowerCase().split(" ")));
     } else profiles = Collections.EMPTY_SET;
 
-    int targetNetworkIdConfig = Integer.parseInt(xml.getStringValue("target-network-id", "0000"), 16);
-    if (targetNetworkIdConfig > 0) {
+    if (targetNetworkIdConfig > 0)
         targetNetworkId = targetNetworkIdConfig;
-    } else targetNetworkId = 0x0085;
+
+    if(custEcmHeader.length != 9)
+        throw new ConfigException(xml.getFullName(), "ecm-header not 9 bytes: " + DESUtil.bytesToString(custEcmHeader));
+    else
+      ecmHeader = custEcmHeader;
   }
 
-  public void start(CardServProxy proxy) {}
+  public void start(CardServProxy proxy) {
+    logger.info("Adding header to Nagra3 ECMs: " + DESUtil.bytesToString(ecmHeader));
+  }
   public void stop() {}
 
   public String getName() {
@@ -50,6 +57,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
   public Properties getProperties() {
     Properties p = new Properties();
     if(tunneledCount > 0) p.setProperty("tunneled-count", String.valueOf(tunneledCount));
+    if(ecmHeader != null) p.setProperty("ecm-header", DESUtil.bytesToString(ecmHeader));
     if(p.isEmpty()) return null;
     else return p;
   }
@@ -70,13 +78,14 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
             boolean odd = ((msg.getCommandTag() & 1) > 0) ? true : false;
 
             // copy new header
-            System.arraycopy(headerN3, 0, ecmData, 0, 10);
+            System.arraycopy(ecmHeader, 0, ecmData, 0, 9);
 
             // copy old ecm behind the header
             System.arraycopy(msg.getCustomData(), 0, ecmData, 10, msg.getDataLength());
 
-            // set odd marker in new betacrypt header
+            // set odd/even marker in new betacrypt header
             if (odd) ecmData[9] = 0x13;
+            else ecmData[9] = 0x12;
            
 			// set new caid and network id
             switch (msg.getCaId()) {
