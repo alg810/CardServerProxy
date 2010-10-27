@@ -14,7 +14,6 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
   private int targetNetworkId;
 
   private static final byte[] headerN3 = DESUtil.stringToBytes("C7 00 00 00 01 10 10 00 87 12");
-  private static final byte[] headerN2 = DESUtil.stringToBytes("C9 00 00 00 01 10 10 00 48 12");
 
   public BetacryptTunnelPlugin() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -40,7 +39,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
   }
 
   public String getDescription() {
-    return "Adds an Betacrypt Header to plain Nagra ECMs (CaId 0x1833/0x1834)";
+    return "Converts plain Nagra3 ECMs to Betacrypt tunneled ECMs (CaId 0x1833/0x1834).";
   }
   
   public Properties getProperties() {
