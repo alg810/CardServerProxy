@@ -11,7 +11,7 @@ public class SoftNdsPlugin implements ProxyPlugin {
 
   private static final String PLUGIN_NAME = "SoftNdsPlugin";
   private static final String PLUGIN_DESC = "Softcam decryption of NDS";
-  private static final int CAID = 0x090F; // are there other nds ca-ids where this plugin can be used?
+  private static final int CAID[] = {0x090F, 0x093E}; // are there other nds ca-ids where this plugin can be used?
 
   private ProxyLogger logger;
   private Set profiles = new HashSet();
@@ -44,7 +44,11 @@ public class SoftNdsPlugin implements ProxyPlugin {
   
   public Properties getProperties() {
     Properties p = new Properties();
-    p.setProperty("ca-id", Integer.toHexString(CAID));
+    String caids = "";
+    for(int i = 0; i < CAID.length; i++) {
+      caids += Integer.toHexString(CAID[i]) + " ";
+    }
+    p.setProperty("ca-id's", caids);
     p.setProperty("decoded-count", String.valueOf(count));
     if(!services.isEmpty()) p.setProperty("decoded-services", String.valueOf(services));
     if(!profiles.isEmpty()) p.setProperty("profiles", String.valueOf(profiles));
@@ -65,8 +69,8 @@ public class SoftNdsPlugin implements ProxyPlugin {
         if(profiles.isEmpty() || profiles.contains(msg.getProfileName().toLowerCase())) { // restrict to profile if set
           if(msg.getDataLength() < 10) return msg; // ignore bad/truncated ecms
 
-          switch(msg.getCaId()) {
-            case CAID:
+          for(int i = 0; i < CAID.length; i++) {
+            if(CAID[i] == msg.getCaId()) {
               CamdNetMessage reply = handleSoftNds(msg);
               if(reply != null) {
                 count++;
@@ -78,6 +82,7 @@ public class SoftNdsPlugin implements ProxyPlugin {
                 // do nothing
               }
               break;
+            }
           }
         }
       }
