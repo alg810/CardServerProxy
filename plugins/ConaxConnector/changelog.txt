@@ -1,5 +1,7 @@
 ConaxConnector changelog:
 ------------------------
+2010-11-15
+- Changed: From now on changelog is available on http://streamboard.gmc.to/CSP/timeline
 
 2010-01-03: 
 - Fixed: Sequence number wasn't set in some special cases.

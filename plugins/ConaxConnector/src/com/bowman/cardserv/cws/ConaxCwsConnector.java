@@ -13,7 +13,11 @@ import java.util.concurrent.Semaphore;
 
 public class ConaxCwsConnector extends AbstractCwsConnector {
 
+  private static final String CONNECTOR_PROTOCOL = "Conax";
+
   // Output parameters
+  
+  private static final int CA_SYS_ID           = 0x28;
   private static final int CA_DESC_EMM         = 0x22;
   private static final int CW                  = 0x25;
   private static final int ACCESS_STATUS       = 0x31;
@@ -32,19 +36,20 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
   private static final int ADDRESS             = 0x23;
   private static final int TIME                = 0x30;
 
+  private static byte[] INIT_OAA = new byte[]{CAT, (byte)0x12,(byte)0x01, (byte)0xD0, (byte)0x0F, (byte)0xFF, (byte)0xFF, (byte)0xDD, (byte)0x00, (byte)0x00, (byte)0x09, (byte)0x04, (byte)0x0B, (byte)0x00, (byte)0xE0, (byte)0x30, (byte)0xF4, (byte)0xDD, (byte)0x44, (byte)0x3F};
   private static final CommandAPDU INIT_CASS = new CommandAPDU(0xDD, 0x26, 0x00, 0x00, new byte[]{HOST_VER, 0x01, 0x40});
-  private static final CommandAPDU INIT_OAA = new CommandAPDU(0xDD, 0x82, 0x00, 0x00, new byte[]{CAT, (byte)0x12,(byte)0x01, (byte)0xD0, (byte)0x0F, (byte)0xFF, (byte)0xFF, (byte)0xDD, (byte)0x00, (byte)0x00, (byte)0x09, (byte)0x04, (byte)0x0B, (byte)0x00, (byte)0xE0, (byte)0x30, (byte)0xF4, (byte)0xDD, (byte)0x44, (byte)0x3F});
   private static final CommandAPDU CA_STATUS_SELECT = new CommandAPDU(0xDD, 0xC6, 0x00, 0x00, new byte[] { 0x1C, 0x01, 0x00 });
   private static final CommandAPDU REQ_CARD_NUMBER = new CommandAPDU(0xDD, 0xC2, 0x00, 0x00, new byte[] { 0x66, 0x00 });
 
   private static final byte[] HISTORICAL_BYTES = new byte[] {'0', 'B', '0', '0'};
   private int sequenceNr;
 
+  byte[] DW = null;
+
   private Vector dcwReplies = new Vector();
   private Semaphore replyAvailable = new Semaphore(10, true);
-  CardChannel channel;
 
-  private CardData cardData;
+  CardChannel channel;
 
   private int emmCount;
 
@@ -54,6 +59,44 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
 
   private long lastTrafficTimeStamp = System.currentTimeMillis();
 
+  private ConaxCardData internalCardData = new ConaxCardData(); 
+
+  private class ConaxCardData {
+    String connectorName = null;
+    int caid;
+    byte UA[] = new byte[8];
+    byte SA[] = new byte[8];
+    byte cardSerial[] = new byte[4];
+
+    Set subscriptions = new HashSet();
+    
+    CardData getCardData() {
+      byte rawCardData[] = new byte[1 + 2 + 8 + 1 + 3 + 8];
+
+      rawCardData[0] = 1;
+      rawCardData[1] = (byte)((caid>>8)&0xFF);
+      rawCardData[2] = (byte)((caid)&0xFF);
+      System.arraycopy(UA, 0, rawCardData, 3, 8);
+
+      // One provider, id 00 00 00
+      rawCardData[11] = 0x01;
+      rawCardData[12] = 0x00;
+      rawCardData[13] = 0x00;
+      rawCardData[14] = 0x00;
+      
+      System.arraycopy(SA, 0, rawCardData, 15, 8);
+      
+      return new CardData(rawCardData, connectorName);
+    }
+  }
+  
+  private class SubStatus {
+    String id, name, octet1, octet2, start1, start2, end1, end2;
+    public String toString() {
+      return "Provider: " + id + "," + name + "\r\n" + octet1;
+    }
+  }
+  
   private class ConaxResponse {
     private int sw;
     private byte[] data;
@@ -159,7 +202,7 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
     alive = true;
 
     try {
-      initConaxCard();
+      initCard();
 
       connectTimeStamp = System.currentTimeMillis();
       connManager.cwsConnected(this);
@@ -190,7 +233,6 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
     }
 
     readerThread = null;
-    cardData = null;
     internalClose();
 
     reset();
@@ -226,7 +268,8 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
   }
 
   public CardData getRemoteCard() {
-    return cardData;
+    internalCardData.connectorName = getName();
+    return internalCardData.getCardData();
   }
 
   public boolean isAuAllowed(String userName) {
@@ -279,12 +322,10 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
       apdu = new CommandAPDU(0xDD, 0xA2, 0x00, 0x00, cardCommand);
     }
 
-    byte[] DW = null;
-
     try {
       ConaxResponse response = null;
       try {
-        response = sendConaxCommand(apdu);
+        response = sendCommand(apdu);
       } catch (CardException e) {
         throw new IOException("Card communication failure");
       } catch (IllegalStateException e) {
@@ -292,8 +333,10 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
       }
       lastTrafficTimeStamp = System.currentTimeMillis();
 
+      DW = null;
+
       if(response != null && response.getSW() == 0x9000 && response.getData() != null) {
-        DW = parseConaxResponse(response, -1);
+        parseResponse(response, -1);
       }
       CamdNetMessage reply = null;
 
@@ -368,9 +411,8 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
     TerminalFactory factory = TerminalFactory.getDefault();
     try {
       CardTerminal terminal = null;
-      Card card = null;
       List terminals = null;
-      factory.terminals().list();
+//      factory.terminals().list();
 
       if(nodeSerial != null) {
         terminals = factory.terminals().list(CardTerminals.State.CARD_PRESENT);
@@ -394,6 +436,7 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
       // establish a connection with the card
       channel = terminal.connect("*").getBasicChannel();
 
+      logger.info("PCSC node: " + host);
       logger.info("Card : " + channel.getCard());
       logger.info("ATR :" + DESUtil.bytesToString(channel.getCard().getATR().getBytes()));
     } catch (CardException e) {
@@ -412,15 +455,33 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
   }
 
   public String getProtocol() {
-    return "Conax";
+    return CONNECTOR_PROTOCOL;
   }
 
+  public Properties getRemoteInfo() {
+    Properties p = new Properties();
+
+    p.setProperty("CAID: ", Integer.toHexString(internalCardData.caid));
+    p.setProperty("Unique Address: ", DESUtil.bytesToString(internalCardData.UA));
+    p.setProperty("Shared Address: ", DESUtil.bytesToString(internalCardData.SA));
+
+    int i = 1;
+    if(!internalCardData.subscriptions.isEmpty()) {
+      Iterator iter = internalCardData.subscriptions.iterator();
+      if(iter != null) while(iter.hasNext()) {
+        p.setProperty("subscription " + i++, String.valueOf(iter.next()));
+      }
+    }
+    return p;
+  }
+  
   public String getRemoteAddress() {
     return channel.getCard().toString();
   }
 
   private byte[] getCardSerial() throws IOException, CardException, IllegalStateException {
-    return parseConaxResponse(sendConaxCommand(REQ_CARD_NUMBER), -1);
+    parseResponse(sendCommand(REQ_CARD_NUMBER), -1);
+    return internalCardData.cardSerial;
   }
 
   private void internalClose() {
@@ -441,7 +502,7 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
     super.close();
   }
 
-  private ConaxResponse getConaxResponse(int sw) throws CardException, IllegalStateException {
+  private ConaxResponse getResponse(int sw) throws CardException, IllegalStateException {
     byte[] rawData = new byte[0];
 
     while((sw & 0x9800) == 0x9800) {
@@ -458,7 +519,7 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
     return response;
   }
 
-  private ConaxResponse sendConaxCommand(CommandAPDU apdu) throws CardException, IllegalStateException {
+  private ConaxResponse sendCommand(CommandAPDU apdu) throws CardException, IllegalStateException {
     try {
       channel.getCard().beginExclusive();
       logger.finest("Sending to card : " + DESUtil.bytesToString(apdu.getBytes()));
@@ -466,7 +527,7 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
       ResponseAPDU r = channel.transmit(apdu);
       logger.finest("SW: " + Integer.toHexString(r.getSW()));
       if((r.getSW1() & 0x98) == 0x98) {
-        return getConaxResponse(r.getSW());
+        return getResponse(r.getSW());
       }
       return new ConaxResponse(r.getSW());
     } finally {
@@ -474,11 +535,13 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
     }
   }
 
-  void initConaxCard() throws IOException {
+  void initCard() throws IOException {
     try {
-      parseConaxResponse(sendConaxCommand(INIT_CASS), -1);
-      parseConaxResponse(sendConaxCommand(INIT_OAA), -1);
-      //parseConaxResponse(sendConaxCommand(CA_STATUS_SELECT), -1);
+      parseResponse(sendCommand(INIT_CASS), -1);
+//      parseConaxResponse(sendConaxCommand(INIT_OAA), -1, null);
+      
+      parseResponse(sendCommand(new CommandAPDU(0xDD, 0x82, 0x00, 0x00, INIT_OAA)), -1);
+      parseResponse(sendCommand(CA_STATUS_SELECT), -1);
     } catch (CardException e) {
       throw new IOException("Card communication failure");
     } catch (IllegalStateException e) {
@@ -486,10 +549,9 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
     }
   }
 
-  byte[] parseConaxResponse(ConaxResponse response, int parentNano) throws IOException {
-    byte[] cwData = null;
-    byte[] rawCardData = null;
-
+  void parseResponse(ConaxResponse response, int parentNano) throws IOException {
+    if(response.getData() == null) return;    
+    
     ByteArrayInputStream input = new ByteArrayInputStream(response.getData());
 
     while(input.available() > 0) {
@@ -502,13 +564,14 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
 
       case ASCII_TEXT:
         if(parentNano != -1) {
-          if(parentNano == SUBSCRIPTION_STATUS) logger.info("Provider name: " + new String(nanoData));
-          else logger.info("ASCII_TEXT : " + new String(nanoData));
+          logger.info("ASCII_TEXT : " + new String(nanoData));
         }
         break;
 
       case OCTET_STR:
-        if(parentNano != -1) logger.info("OCTET_STR : " + DESUtil.bytesToString(nanoData));
+        if(parentNano != -1) {
+          logger.fine("OCTET_STR : " + DESUtil.bytesToString(nanoData));
+        }
         break;
 
       case TIME:
@@ -518,57 +581,92 @@ public class ConaxCwsConnector extends AbstractCwsConnector {
           int year = (nanoData[1]>>4)&0x0F;
           int month = (nanoData[1])&0x0F;
           year += 1990+year_offset*10;
-          logger.info("TIME : " + year + "/" + month + "/" + day);
+          logger.fine("TIME : " + year + "/" + month + "/" + day);
         }
+        break;
+        
+      case CA_SYS_ID:
+        INIT_OAA[12] = nanoData[0];
+        INIT_OAA[13] = nanoData[1];
+        internalCardData.caid = ((nanoData[0] & 0xFF) << 8) | (nanoData[1] & 0xFF);
+        logger.fine("CA_SYS_ID: " + Integer.toHexString(internalCardData.caid));
         break;
 
       case ADDRESS: // card serial
         if(parentNano != -1) {
-          if(rawCardData == null) {
-            rawCardData = new byte[1 + 2 + 8 + 1 + 3 + 8];
-            rawCardData[0] = 1;
-            rawCardData[1] = 0x0B;
-            rawCardData[2] = 0x00;
-            rawCardData[3] = 0x00;
-            System.arraycopy(nanoData, 0, rawCardData, 4, 7);
-          } else {
-            rawCardData[11] = 0x01;
-            rawCardData[12] = 0x00;
-            rawCardData[13] = 0x00;
-            rawCardData[14] = 0x00;
-            rawCardData[15] = 0x00;
-            System.arraycopy(nanoData, 0, rawCardData, 16, 7);
-            cardData = new CardData(rawCardData);
-          }
           logger.info("ADDRESS : " + DESUtil.bytesToString(nanoData));
+
+          if(nanoData[3] != 0x00) {
+            System.arraycopy(nanoData, 0, internalCardData.UA, 1, 7);
+          } else {
+            System.arraycopy(nanoData, 0, internalCardData.SA, 1, 7);
+          }
         }
         break;
 
       case CW:
-        if (cwData == null) cwData = new byte[16];
+        if (DW == null) DW = new byte[16];
 
         if(nanoData[2] == 0x01) {
-          System.arraycopy(nanoData, 5, cwData, 8, 8);
+          System.arraycopy(nanoData, 5, DW, 8, 8);
         } else {
-          System.arraycopy(nanoData, 5, cwData, 0, 8);
+          System.arraycopy(nanoData, 5, DW, 0, 8);
         }
         break;
 
       case CA_DESC_EMM:
-        parseConaxResponse(new ConaxResponse(nanoData), cmd);
+        parseResponse(new ConaxResponse(nanoData), cmd);
         break;
 
       case SUBSCRIPTION_STATUS:
-        logger.info("Provider id : " + Integer.toHexString(nanoData[0]&0xFF) + Integer.toHexString(nanoData[1]&0xFF));
-        parseConaxResponse(new ConaxResponse(nanoData, 2, len - 2), cmd);
+        parseSubscription(nanoData);
         break;
 
       case CARD_NUMBER: 
         logger.info("CARD_NUMBER : " + DESUtil.bytesToString(nanoData));
-        return nanoData;
+        System.arraycopy(nanoData, 0, internalCardData.cardSerial, 0, 4);
+        break;
       }
     }
+  }
 
-    return cwData;
+  /*
+   * Provider: 6080, HD , TIME : 2010/4/1, TIME : 2010/4/30, OCTET_STR01 04 00 00, TIME : 2010/5/1, TIME : 2010/5/31, OCTET_STR01 04 00 00
+   */
+  void parseSubscription(byte[] subscriptionData) throws IOException {
+    ByteArrayInputStream input = new ByteArrayInputStream(subscriptionData);
+    String subscriptionString = "Provider : " + Integer.toHexString(input.read()) + Integer.toHexString(input.read());
+    logger.fine(subscriptionString);
+
+    while(input.available() > 0) {
+      int cmd = input.read();
+      int len = input.read();
+      byte[] nanoData = new byte[len];
+      input.read(nanoData);
+
+      switch (cmd) {
+
+      case ASCII_TEXT:
+        logger.info("Provider name: " + new String(nanoData));
+        subscriptionString += ", " + new String(nanoData);
+        break;
+
+      case OCTET_STR:
+        logger.info("OCTET_STR : " + DESUtil.bytesToString(nanoData));
+        subscriptionString += ", OCTET_STR : " + DESUtil.bytesToString(nanoData);
+        break;
+
+      case TIME:
+        int year_offset = (nanoData[0]>>5)&0x07;
+        int day = (nanoData[0])&0x1F;
+        int year = (nanoData[1]>>4)&0x0F;
+        int month = (nanoData[1])&0x0F;
+        year += 1990+year_offset*10;
+        logger.info("TIME : " + year + "/" + month + "/" + day);
+        subscriptionString += ", TIME : " + year + "/" + month + "/" + day;
+        break;
+      }
+    }
+    internalCardData.subscriptions.add(subscriptionString);
   }
 }
