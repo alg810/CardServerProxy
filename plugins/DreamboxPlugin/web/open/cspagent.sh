@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=0.9.7
+AGENTV=0.9.8
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 
@@ -129,6 +129,9 @@ get_imginfo()
   elif [ $(ps | grep blackholesocker | grep -v grep | wc -l) -ge 1 ] || [ -e /usr/bin/blackholesocker ]
   then
     IMGGUESS="Dreamelite"
+  elif [ $(cat /proc/version | grep -i newnigma | wc -l) -ge 1 ]
+  then       
+    IMGGUESS="Newnigma2"
   else
     IMGGUESS="Unknown"
   fi
