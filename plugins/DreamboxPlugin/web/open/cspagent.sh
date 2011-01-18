@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=0.9.8
+AGENTV=0.9.9
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 
@@ -114,7 +114,10 @@ get_cputype()
 get_imginfo()
 {
   # Try to gather additional image characterstics that can be used to figure out which one is installed
-  if [ $(ps | grep gdaemon | grep -v grep | wc -l) -ge 1 ] || [ -e /etc/gemini_dissociation.txt ]
+  if [ $(grep iCVS /var/etc/image-version | wc -l) -ge 1 ]
+  then                                                                                                                                    
+    IMGGUESS="iCVS" 
+  elif [ $(ps | grep gdaemon | grep -v grep | wc -l) -ge 1 ] || [ -e /etc/gemini_dissociation.txt ]
   then
     IMGGUESS="Gemini"
   elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ]
@@ -136,6 +139,11 @@ get_imginfo()
     IMGGUESS="Unknown"
   fi
 
+  # Check if GP3 Plugin exists and add marker to Image Guess
+  if [ -e /etc/enigma2/gemini_plugin.conf ]
+  then
+    IMGGUESS=$IMGGUESS"+GP3"
+  fi
 
   if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
   then
