@@ -2821,7 +2821,7 @@ public class regionName {
     if (country_code.equals("DE") == true) {
       switch (region_code2) {
         case 1:
-        name = "Baden-Württemberg";
+        name = "Baden-WÃ¼rttemberg";
         break;
         case 2:
         name = "Bayern";
@@ -3549,7 +3549,7 @@ public class regionName {
     if (country_code.equals("FI") == true) {
       switch (region_code2) {
         case 1:
-        name = "Åland";
+        name = "ï¿½land";
         break;
         case 6:
         name = "Lapland";
@@ -6648,7 +6648,7 @@ public class regionName {
         name = "Aqmola";
         break;
         case 4:
-        name = "Aqtöbe";
+        name = "Aqtï¿½be";
         break;
         case 5:
         name = "Astana";
@@ -7036,7 +7036,7 @@ public class regionName {
         name = "Bauskas";
         break;
         case 5:
-        name = "Césu";
+        name = "Cï¿½su";
         break;
         case 6:
         name = "Daugavpils";
@@ -7051,7 +7051,7 @@ public class regionName {
         name = "Gulbenes";
         break;
         case 10:
-        name = "Jékabpils";
+        name = "Jï¿½kabpils";
         break;
         case 11:
         name = "Jelgava";
@@ -7063,16 +7063,16 @@ public class regionName {
         name = "Jurmala";
         break;
         case 14:
-        name = "Kráslavas";
+        name = "Krï¿½slavas";
         break;
         case 15:
         name = "Kuldigas";
         break;
         case 16:
-        name = "Liepája";
+        name = "Liepï¿½ja";
         break;
         case 17:
-        name = "Liepájas";
+        name = "Liepï¿½jas";
         break;
         case 18:
         name = "Limbazu";
@@ -7090,10 +7090,10 @@ public class regionName {
         name = "Preilu";
         break;
         case 23:
-        name = "Rézekne";
+        name = "RÄ“zekne";
         break;
         case 24:
-        name = "Rézeknes";
+        name = "RÄ“zeknes";
         break;
         case 25:
         name = "Riga";
