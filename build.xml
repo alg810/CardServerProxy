@@ -66,10 +66,19 @@
   </target>
 
   <target name="build-app" depends="prepare-build">
-    <javac srcdir="src" includes="**/*.java"
+    <pathconvert property="mysql.lib.present" setonempty="false" pathsep=" ">
+	  <path>
+	    <fileset dir="lib" includes="mysql-connector-java.jar" />
+	  </path>
+    </pathconvert>
+    <javac sourcepath="" srcdir="src"
       destdir="classes" classpath="${classpath}"
       source="1.4" target="1.4"
       debug="on">
+	  <include name="**/*.java"/>
+	  <!-- exclude all mysql stuff from compiling when the mysql lib is not available -->
+	  <exclude name="**/MySQLUserManager.java" unless="mysql.lib.present"/>
+	  <exclude name="**/mysql/*" unless="mysql.lib.present"/>
     </javac>
     <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.rmi.RemoteHandler" base="classes"/>
     <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.test.RemoteTestClient" base="classes"/>
@@ -111,6 +120,7 @@
 	<ant inheritAll="false" dir="plugins/SoftNdsPlugin"/>
 	<ant inheritAll="false" dir="plugins/BetacryptTunnelPlugin"/>
     <ant inheritAll="false" dir="plugins/ConaxConnector"/>
+    <ant inheritAll="false" dir="plugins/MySQLWebManagementPlugin"/>
 
     <mkdir dir="build/plugins" />
     <copy todir="build/plugins" flatten="true">

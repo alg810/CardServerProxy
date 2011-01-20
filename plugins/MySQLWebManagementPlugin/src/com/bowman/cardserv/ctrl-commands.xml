@@ -1,0 +1,98 @@
+<ctrl-commands ver="1.0">
+
+  <!-- predefined sources: @connectors, @connected-users, @active-users, @known-users, @offline-users, @profiles -->
+  <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper --> 
+
+  <command name="mysql-add-user" label="Add MySQL user" description="Adds a new user to the MySQL database." confirm="true">
+    <command-param name="username" label="" allow-arbitrary="true" />
+    <command-param name="password" label="password" allow-arbitrary="true" />
+    <command-param name="passwordretyped" label="retype password" allow-arbitrary="true" />
+    <command-param name="displayname" label="displayname" allow-arbitrary="true"/>
+    <command-param name="mail" label="mail" allow-arbitrary="true"/>
+    <command-param name="ipmask" label="ipmask" allow-arbitrary="true"/>
+    <command-param name="profiles" label="profiles" allow-arbitrary="true"/>
+    <command-param name="maxconnections" label="maxconnections" allow-arbitrary="false">
+      <option value="0"/>
+      <option value="1"/>
+      <option value="2"/>
+      <option value="3"/>
+      <option value="4"/>
+      <option value="5"/>
+      <option value="6"/>
+      <option value="7"/>
+      <option value="8"/>
+      <option value="9"/>
+    </command-param>
+    <command-param name="enabled" label="enabled" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="admin" label="admin" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="debug" label="debug" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="mapexcluded" label="mapexcluded" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+  </command>
+
+  <command name="mysql-edit-user" label="Edit MySQL user" description="Edit an existing MySQL database user." confirm="true">
+    <command-param name="username" label="" allow-arbitrary="true" />
+    <command-param name="password" label="password" allow-arbitrary="true" />
+    <command-param name="displayname" label="displayname" allow-arbitrary="true"/>
+    <command-param name="mail" label="mail" allow-arbitrary="true"/>
+    <command-param name="ipmask" label="ipmask" allow-arbitrary="true"/>
+    <command-param name="profiles" label="profiles" allow-arbitrary="true"/>
+    <command-param name="maxconnections" label="maxconnections" allow-arbitrary="false">
+      <option value="0"/>
+      <option value="1"/>
+      <option value="2"/>
+      <option value="3"/>
+      <option value="4"/>
+      <option value="5"/>
+      <option value="6"/>
+      <option value="7"/>
+      <option value="8"/>
+      <option value="9"/>
+    </command-param>
+    <command-param name="enabled" label="enabled" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="admin" label="admin" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="debug" label="debug" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+    <command-param name="mapexcluded" label="mapexcluded" allow-arbitrary="false">
+      <option value="TRUE"/>
+      <option value="FALSE"/>
+    </command-param>
+  </command>
+
+  <command name="mysql-delete-user" label="Delete MySQL user" description="Deletes the specified user from the MySQL database." confirm="true">
+    <command-param name="username" label="" allow-arbitrary="true"/>
+  </command>
+
+  <command name="mysql-import-users" label="Import MySQL users" description="Import users from a xml source to the MySQL database." confirm="true">
+    <command-param name="url" label="URL" allow-arbitrary="true"/>
+    <command-param name="key" label="Key" allow-arbitrary="true"/>
+ </command>
+
+  <command name="mysql-add-profile" label="Add MySQL profile" description="Adds a new profile to the MySQL database." confirm="true">
+    <command-param name="name" label="" allow-arbitrary="true"/>
+  </command>
+  
+  <command name="mysql-delete-profile" label="Delete MySQL profile" description="Deletes the specified profile from the MySQL database." confirm="true">
+    <command-param name="name" label="" allow-arbitrary="true"/>
+  </command>
+
+</ctrl-commands>

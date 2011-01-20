@@ -1,0 +1,26 @@
+<status-commands ver="1.0">
+
+  <!-- predefined sources: @connectors, @connected-users, @active-users, @known-users, @offline-users, @profiles -->
+  <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper -->
+
+  <command name="mysql-users" label="All MySQL users" description="Returns all users stored in the mysql database."/>
+  
+  <command name="mysql-add-user" label="Show add user" description="Shows the MySQL add user panel."/>
+  
+  <command name="mysql-edit-user" label="Show edit user" description="Shows the MySQL edit user panel.">
+        <command-param name="username" label="" optional="false" admin-only="true"/>
+  </command>
+  
+  <command name="mysql-select-user" label="Show select user" description="Shows the MySQL select user panel."/>
+  
+  <command name="mysql-delete-user" label="Show delete user" description="Shows the MySQL delete user panel."/>
+  
+  <command name="mysql-user-details" label="MySQL user details" description="All details for a specific user.">
+        <command-param name="username" label="" optional="false" admin-only="true"/>
+  </command>
+  
+  <command name="mysql-database-details" label="MySQL database details" description="Gives all MySQL database connection details."/>
+
+  <command name="mysql-profiles" label="Show profiles" description="Shows the MySQL profiles panel."/>
+
+</status-commands>
