@@ -11,6 +11,8 @@ var currentSection;
 var autoExec;
 var interval = 5000;
 var eventGrpVis = {};
+var pluginsPostProcess = new Array(); // contains plugins postProcess functions
+var pluginsLogout = new Array(); // plugins logout functions
 
 var loginWindow = ['<form action="" onsubmit="executeLogin(); return false;" name="loginForm">',
     '<input type="text" name="userId"/>', '<input type="password" name="password"/>',
@@ -283,6 +285,13 @@ function setHref(elem, href) {
 
 function postProcess() { // always executed after each xslt transform
 
+  // execute the registered plugin postProcess functions
+  if(getCookie('sessionId') && currentSection != 'config') {
+	  for(var i = 0; i < pluginsPostProcess.length; i++) {
+	    eval(pluginsPostProcess[i]);
+	  }
+  }
+	  
   setHref(getById('logout'), 'javascript:logout();');
   setHref(getById('viewXml'), 'javascript:viewXml();');
 
@@ -548,6 +557,9 @@ function processBouquetFile(xmlReply) {
 }
 
 function logout() {
+  for(var i = 0; i < pluginsLogout.length; i++) {
+    eval(pluginsLogout[i]);
+  }
   autoExec = null;
   profileFilter = null;
   currentSection = null;

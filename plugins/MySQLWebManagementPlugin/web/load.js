@@ -1,9 +1,12 @@
 
 // make a new xsltransformer for this plugin
-var xsltTrMusmp = new BowWeb.XsltTransformer("/plugin/mysqlwebmanagementplugin/open/xslt/cws-status-resp.xsl", postProcessHook);
+var xsltTrMusmp = new BowWeb.XsltTransformer("/plugin/mysqlwebmanagementplugin/open/xslt/cws-status-resp.xsl", postProcess);
 
-// hook the postprocess function for the regular xsltransformer so we can add stuff
-xsltTr.setPostFunc(postProcessHook);
+// add the postProcess function to cs-status.js
+pluginsPostProcess.push("mySQLWebManagementPluginPostProcess()");
+
+//add the logout function to cs-status.js
+pluginsLogout.push("mySQLWebManagementPluginLogout()");
 
 sections['mysqlusers'] = {
     label: 'MySQLUsers',
@@ -177,17 +180,20 @@ function executeMySQLCtrlCmd(cmd, elements, includeProfiles) {
   }
 }
 
-function postProcessHook() {
-	var isAdmin = getCookie('isAdmin');
-	if(isAdmin == 'true') {
+function mySQLWebManagementPluginPostProcess() {
+	if(getCookie('isAdmin') == 'true') {
 		var newLink = document.createElement('a'); // create a new link for this section in the menu
 		newLink.href = '#';
+		//newLink.href = 'javascript:clickSection("mysqlusers");';
 		newLink.id = 'mysqlusers';
 		newLink.appendChild(document.createTextNode('MySQL-Users'));
 		var adminLink = document.getElementById('admin');
 		adminLink.parentNode.insertBefore(newLink, adminLink);
 		adminLink.parentNode.insertBefore(document.createTextNode(' '), adminLink);
 	}
-
-  postProcess(); // call back to the regular handling
 }
+
+function mySQLWebManagementPluginLogout() {
+	hide(getById('mysqlusers'));
+}
+

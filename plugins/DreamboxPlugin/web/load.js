@@ -1,11 +1,15 @@
 
 // make a new xsltransformer for this plugin
-var xsltTrDbp = new BowWeb.XsltTransformer("/plugin/dreamboxplugin/open/xslt/cws-status-resp.xsl", postProcessHook);
+//var xsltTrDbp = new BowWeb.XsltTransformer("/plugin/dreamboxplugin/open/xslt/cws-status-resp.xsl", postProcessHook);
+var xsltTrDbp = new BowWeb.XsltTransformer("/plugin/dreamboxplugin/open/xslt/cws-status-resp.xsl", postProcess);
 var hideInactiveBoxes = true;
 var selectedScript, cmdlineText, paramsText;
 
-// hook the postprocess function for the regular xsltransformer so we can add stuff
-xsltTr.setPostFunc(postProcessHook);
+//add the postProcess function to cs-status.js
+pluginsPostProcess.push("dreamboxPluginPostProcess()");
+
+//add the logout function to cs-status.js
+pluginsLogout.push("dreamboxPluginLogout()");
 
 // add maintenance section
 sections['maintenance'] = {
@@ -109,7 +113,7 @@ sections['boxdetails'] = {
   }
 };
 
-function postProcessHook() {
+function dreamboxPluginPostProcess() {
   var newLink = document.createElement('a'); // create a new link for this section in the menu
   newLink.href = '#';
   newLink.id = 'maintenance';
@@ -117,8 +121,10 @@ function postProcessHook() {
   var adminLink = document.getElementById('admin');
   adminLink.parentNode.insertBefore(newLink, adminLink);
   adminLink.parentNode.insertBefore(document.createTextNode(' '), adminLink);
-  
-  postProcess(); // call back to the regular handling
+}
+
+function dreamboxPluginLogout() {
+  hide(getById('maintenance'));
 }
 
 function selectBox(id) {
