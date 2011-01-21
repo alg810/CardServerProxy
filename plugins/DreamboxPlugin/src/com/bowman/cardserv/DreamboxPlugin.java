@@ -188,6 +188,13 @@ public class DreamboxPlugin implements ProxyPlugin {
           fos.write(buf);
           fos.close();
         }
+        buf = getResource("setup_mgcamd.sh", false);
+        script = new File(scripts, "setup_mgcamd.sh");
+        if(!script.exists()) {
+          FileOutputStream fos = new FileOutputStream(script);
+          fos.write(buf);
+          fos.close();
+        }
         // script.setExecutable(true);
       } catch(IOException e) {
         logger.warning("Exception extracting helper scripts to 'dreamboxplugin/': " + e);
