@@ -20,7 +20,7 @@ TODO/SUGGESTIONS:
 
 Installation:
 ---------------
-- get the file "mysql-connector-java-5.1.XX-bin.jar" from "http://dev.mysql.com/downloads/connector/j/", rename it it "mysql-connector-java.jar" and put it in your csp folder lib/ .
+- get the file "mysql-connector-java-5.1.XX-bin.jar" from "http://dev.mysql.com/downloads/connector/j/" and put it in your csp folder lib/ .
 - compile csp with ant.
 - edit your proxy.xml by replacing the Simple/XMLUserManager with MySQLUserManager.
 

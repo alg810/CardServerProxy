@@ -1,194 +1,327 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 
-<project name="cardservproxy" default="tar-app" basedir=".">
+<project name="cardservproxy" default="build" basedir=".">
 
-  <target name="prepare-build">
-    <delete dir="classes" />
-    <mkdir dir="classes" />
-    <path id="classpath">
-      <fileset dir="lib">
-        <include name="**/*.jar"/>
-      </fileset>
-    </path>
-    <delete dir="build" />
-    <mkdir dir="build" />
-    <mkdir dir="build/lib" />
-    <mkdir dir="build/log" />
-    <mkdir dir="build/etc" />
-    <copy todir="build/etc">
-      <fileset dir="etc">
-        <include name="policy.all" />
-        <include name="protocol.txt" />
-      </fileset>
-    </copy>
-    <copy todir="build/lib">
-      <fileset dir="lib">
-        <include name="*.jar" />
-        <exclude name="bowbot.jar" />
-        <exclude name="orionembedded.jar" />
-        <exclude name="mail.jar" />
-      </fileset>
-    </copy>
-    <mkdir dir="build/config" />
-    <copy todir="build/config">
-      <fileset dir="config">
-        <include name="*.*" />
-        <exclude name="proxy.xml" />
-        <exclude name="proxy.xml.bak" />
-      </fileset>
-    </copy>
-    <mkdir dir="build/config/example "/>
-    <copy todir="build/config/example">
-      <fileset dir="config/example">
-        <include name="*.*" />
-      </fileset>
-    </copy>
-    <copy todir="build" file="cardproxy.sh" />
-    <copy todir="build" file="cardproxy.sh.ubuntu-autostart" />
-    <copy todir="build" file="changelog.txt" />
-    <copy todir="build" file="README.txt" />
-    <copy todir="build" file="README.ClusteredCache.txt" />
-    <copy todir="build" file="README.XmlUserManager.txt" />
-    <copy todir="build" file="README.HttpXmlApi.txt" />
-    <copy todir="build" file="README.Optimization.txt" />
-    <copy todir="build" file="README.Compiling.txt" />
-    <copy todir="build" file="README.Plugins.txt" />
-    <copy todir="build" file="README.0.9.0.txt" />    
-    <copy todir="build" file="jsw-win32.zip" />
-    <copy todir="classes">
-      <fileset dir="src">
-        <include name="**/*.properties"/>
-        <include name="**/*.xml"/>
-        <exclude name="**/filefetcher.properties"/>
-      </fileset>
-    </copy>
-    <property name="classpath" refid="classpath" />
-  </target>
+	<description>
+CSP (Cardservproxy) is a scalable open source proxy primarily for the newcamd protocol, 
+with load balancing and cluster handling built in developed by bowman.
+	</description>
 
-  <target name="build-app" depends="prepare-build">
-    <pathconvert property="mysql.lib.present" setonempty="false" pathsep=" ">
-	  <path>
-	    <fileset dir="lib" includes="mysql-connector-java.jar" />
-	  </path>
-    </pathconvert>
-    <javac sourcepath="" srcdir="src"
-      destdir="classes" classpath="${classpath}"
-      source="1.4" target="1.4"
-      debug="on">
-	  <include name="**/*.java"/>
-	  <!-- exclude all mysql stuff from compiling when the mysql lib is not available -->
-	  <exclude name="**/MySQLUserManager.java" unless="mysql.lib.present"/>
-	  <exclude name="**/mysql/*" unless="mysql.lib.present"/>
-    </javac>
-    <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.rmi.RemoteHandler" base="classes"/>
-    <rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.test.RemoteTestClient" base="classes"/>
-    <delete file="classes/com/bowman/cardserv/test/TestUtil.class"/>
-    <delete file="classes/com/bowman/cardserv/BowbotUserManager.class"/>    
-    <exec executable="svnversion" outputproperty="svn.revision" failifexecutionfails="false">
-      <arg value="src"/>
-    </exec>
-    <echo message="svn.revision=${svn.revision}" file="classes/com/bowman/cardserv/build.properties"/>
-    <jar jarfile="build/lib/cardservproxy.jar" manifest="src/META-INF/MANIFEST.MF">
-      <fileset dir="classes">
-        <include name="**/*" />
-      </fileset>
-    </jar>
-    <jar jarfile="build/lib/fishenc.jar" manifest="trtest/META-INF/MANIFEST.MF">
-      <fileset dir="classes">
-        <include name="**/*FileFetcher*" />
-      </fileset>
-    </jar>
-    <copy todir="dist" file="build/lib/cardservproxy.jar" />
-    <copy todir="dist" file="build/lib/fishenc.jar" />
-  </target>
+	<property name="dir.config" value="config"/>
+	<property name="dir.config.example" value="config/example"/>
+	<property name="dir.etc" value="etc"/>
+	<property name="dir.lib" value="lib"/>
+	<property name="dir.plugins" value="plugins"/>
+	<property name="dir.src" value="src"/>
+	<property name="dir.trtest" value="trtest"/>
+	<property name="dir.web" value="web"/>
+	
+	<!-- build-folder -->
+	<property name="dir.classes" value="classes"/>
+	<property name="dir.build" value="build"/>
+	<property name="dir.build.config" value="build/config"/>
+	<property name="dir.build.config.example" value="build/config/example"/>
+	<property name="dir.build.etc" value="build/etc"/>
+	<property name="dir.build.lib" value="build/lib"/>
+	<property name="dir.build.log" value="build/log"/>
+	<property name="dir.build.plugins" value="build/plugins"/>
+	<property name="dir.build.src" value="build/src"/>
+	<property name="dir.build.trtest" value="build/trtest"/>
+	<property name="dir.build.web" value="build/web"/>
+	<property name="dir.dist" value="dist"/>
+	
+	<property name="name.fishenc" value="fishenc"/>
+	<property name="name.cs-status" value="cs-status"/>
+	
+	<property name="proxy-reference" value="proxy-reference.html"/>
+	
+	<!-- config files -->
+	<path id="files.config">    
+	    <fileset dir="${dir.config}">
+	        <include name="*.*"/>
+	        <exclude name="proxy.xml"/>
+	        <exclude name="proxy.xml.bak"/>
+	    </fileset>
+	</path>
+		
+	<!-- config/example files -->
+	<path id="files.config.example">    
+	    <fileset dir="${dir.config.example}">
+	        <include name="*.*"/>
+	    </fileset>
+	</path>
+		
+	<!-- etc files -->
+	<path id="files.etc">
+		<fileset dir="${dir.etc}">
+			<include name="policy.all"/>
+			<include name="protocol.txt"/>
+		</fileset>
+	</path>
+		
+	<!-- lib files -->
+	<path id="files.lib">    
+	    <fileset dir="${dir.lib}">
+	        <include name="**/*.jar"/>
+	        <exclude name="bowbot.jar" />
+	        <exclude name="orionembedded.jar" />
+	        <exclude name="mail.jar" />
+	    </fileset>
+	</path>
+	
+	<!-- plugin files -->
+	<path id="files.plugins">    
+		<fileset dir="${dir.plugins}">
+			<include name="**/dist/*.jar"/>
+			<include name="**/README.*.txt"/>
+		</fileset>
+	</path>
 
-  <target name="build-web">
-    <copy todir="web" file="config/proxy-reference.html" />
-    <jar jarfile="build/lib/cs-status.war" basedir="web" />
-    <copy todir="dist" file="build/lib/cs-status.war" />
-    <copy todir="lib" file="build/lib/cs-status.war" />
-  </target>
+	<!-- misc files -->
+	<path id="files.misc">
+		<fileset dir=".">
+			<include name="cardproxy.sh"/>
+			<include name="cardproxy.sh.ubuntu-autostart"/>
+			<include name="changelog.txt"/>
+			<include name="README.txt"/>
+			<include name="README.ClusteredCache.txt"/>
+			<include name="README.MySQLUserManager.txt"/>
+			<include name="README.XmlUserManager.txt"/>
+			<include name="README.HttpXmlApi.txt"/>
+			<include name="README.Optimization.txt"/>
+			<include name="README.Compiling.txt"/>
+			<include name="README.Plugins.txt"/>
+			<include name="README.0.9.0.txt"/>
+			<include name="jsw-win32.zip"/>
+		</fileset>
+	</path>
+	
+	<!-- misc files for compiling -->
+	<path id="files.classes">    
+	    <fileset dir="${dir.src}">
+	        <include name="**/*.properties"/>
+	        <include name="**/*.xml"/>
+	        <exclude name="**/filefetcher.properties"/>
+	    </fileset>
+	</path>
 
-  <target name="build-plugins" unless="skip-plugins">    
-    <ant inheritAll="false" dir="plugins/MessagingPlugin"/>
-    <ant inheritAll="false" dir="plugins/EmmAnalyzerPlugin"/>
-    <ant inheritAll="false" dir="plugins/GeoipPlugin"/>
-    <ant inheritAll="false" dir="plugins/DcwFilterPlugin"/>
-    <ant inheritAll="false" dir="plugins/ProviderIdentPlugin"/>
-    <ant inheritAll="false" dir="plugins/IrdetoPlugin"/>
-    <ant inheritAll="false" dir="plugins/DreamboxPlugin"/>
-	<ant inheritAll="false" dir="plugins/SoftNdsPlugin"/>
-	<ant inheritAll="false" dir="plugins/BetacryptTunnelPlugin"/>
-    <ant inheritAll="false" dir="plugins/ConaxConnector"/>
-    <ant inheritAll="false" dir="plugins/MySQLWebManagementPlugin"/>
+	<!-- MACRO: copy fileset -->
+	<macrodef name="copy-fileset">
+		<attribute name="destination-dir"/>
+		<attribute name="path-id"/>
+		<attribute name="doFlatten" default="false"/>
+		<sequential>
+			<copy todir="@{destination-dir}" flatten="@{doFlatten}">
+				<path refid="@{path-id}"/>
+			</copy>
+		</sequential>
+	</macrodef>
+	
+	<target name="clean" description="delete all created files created through cardservproxy.">
+		<delete dir="${dir.classes}"/>
+		<delete dir="${dir.build}"/>
+		<delete dir="${dir.dist}"/>
+		<delete file="${dir.web}/${proxy-reference}"/>
+		<delete file="${dir.lib}/${name.cs-status}.war"/>
+	</target>
+	
+	<target name="clean.plugins" description="delete all created files created through plugins.">
+		<ant inheritAll="false" dir="${dir.plugins}/BetacryptTunnelPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/ConaxConnector" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/DcwFilterPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/DreamboxPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/EmmAnalyzerPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/GeoipPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/IrdetoPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/MessagingPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/MySQLWebManagementPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/ProviderIdentPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/SoftNdsPlugin" target="clean"/>
+	</target>
+	
+	<target name="clean.all" description="delete all previously created files and folders including plugins.">
+		<antcall target="clean"/>
+		<antcall target="clean.plugins"/>
+	</target>
+	
+	<target name="prepare" depends="clean">
+		<tstamp/>
+		<mkdir dir="${dir.classes}"/>
+	    <mkdir dir="${dir.build}"/>
+	    <mkdir dir="${dir.build.config}"/>
+	    <mkdir dir="${dir.build.config.example}"/>
+	    <mkdir dir="${dir.build.etc}"/>
+	    <mkdir dir="${dir.build.lib}"/>
+	    <mkdir dir="${dir.build.log}"/>
+	    <mkdir dir="${dir.build.plugins}"/>
+	    <mkdir dir="${dir.dist}"/>
+		
+		<copy-fileset destination-dir="${dir.build.config}" path-id="files.config"/>
+		<copy-fileset destination-dir="${dir.build.config.example}" path-id="files.config.example"/>
+		<copy-fileset destination-dir="${dir.build.etc}" path-id="files.etc"/>
+		<copy-fileset destination-dir="${dir.build.lib}" path-id="files.lib"/>
+		<copy-fileset destination-dir="${dir.build}" path-id="files.misc"/>
+		<copy-fileset destination-dir="${dir.classes}" path-id="files.classes"/>
+		
+		<!-- classpath -->
+	    <path id="classpath">
+	        <fileset dir="${dir.lib}">
+	          <include name="**/*.jar"/>
+	        </fileset>
+	    </path>
+	    <property name="classpath" refid="classpath" />
+		
+		<!-- check depencies -->
+	    <pathconvert property="mysql.lib.present" setonempty="false" pathsep=" ">
+		  <path>
+		    <fileset dir="${dir.lib}" includes="mysql-connector-java-5.1.*-bin.jar" />
+		  </path>
+	    </pathconvert>
+	</target>
 
-    <mkdir dir="build/plugins" />
-    <copy todir="build/plugins" flatten="true">
-      <fileset dir="plugins">
-        <include name="**/dist/*.jar"/>
-        <include name="**/README.*.txt"/>
-      </fileset>
-    </copy>    
-  </target>
+	<target name="compile" depends="prepare">
+		<javac sourcepath="" srcdir="${dir.src}" includeantruntime="false"
+			destdir="${dir.classes}" classpath="${classpath}"
+			source="1.4" target="1.4" debug="on">
+			<include name="**/*.java"/>
+			<!-- exclude all mysql stuff from compiling when the mysql lib is not available -->
+			<exclude name="**/MySQLUserManager.java" unless="mysql.lib.present"/>
+			<exclude name="**/mysql/*" unless="mysql.lib.present"/>
+		</javac>
+		<rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.rmi.RemoteHandler" base="${dir.classes}"/>
+		<rmic classpath="${classpath}" stubversion="1.2" classname="com.bowman.cardserv.test.RemoteTestClient" base="${dir.classes}"/>
+		<delete file="classes/com/bowman/cardserv/test/TestUtil.class"/>
+		<delete file="classes/com/bowman/cardserv/BowbotUserManager.class"/>    
+		<exec executable="svnversion" outputproperty="svn.revision" failifexecutionfails="false">
+			<arg value="${dir.src}"/>
+		</exec>
+		<echo message="svn.revision=${svn.revision}" file="classes/com/bowman/cardserv/build.properties"/>
+	</target>
+	
+	<target name="build-app" depends="compile" description="build cardservproxy.">
+		<!-- generate a list of available .jar for the dynamic manifest file -->
+		<pathconvert property="libs" pathsep=" ">
+			<mapper>
+				<chainedmapper>
+					<flattenmapper />
+				</chainedmapper>
+			</mapper>
+			<path>
+				<fileset dir="${dir.lib}">
+					<include name="**/*.jar" />
+				</fileset>
+			</path>
+		</pathconvert>
 
-  <target name="tar-app" depends="build-app, build-web, build-plugins">
-    <move todir="build/cardservproxy">
-      <fileset dir="build"/>
-    </move>
-    <tar tarfile="dist/cardservproxy.tar" basedir="build" excludes="cardservproxy/cardproxy.sh*">
-      <tarfileset dir="build/cardservproxy" mode="755" prefix="cardservproxy">
-        <include name="cardproxy.sh*"/>
-      </tarfileset>
-    </tar>
-    <gzip zipfile="dist/cardservproxy.tar.gz" src="dist/cardservproxy.tar"/>
-    <delete file="dist/cardservproxy.tar" />
-    <delete dir="build"/>
-  </target>
+		<!-- create cardservproxy.jar -->
+		<jar jarfile="${dir.build.lib}/${ant.project.name}.jar">
+            <manifest>
+                <attribute name="Manifest-Version" value="1.0"/>
+                <attribute name="Main-Class" value="com.bowman.cardserv.CardServProxy"/>
+                <attribute name="Class-Path" value="${libs}"/>
+            </manifest>
+			<fileset dir="${dir.classes}"/>
+		</jar>
+		
+		<!-- create fishenc.jar -->
+		<jar jarfile="${dir.build.lib}/${name.fishenc}.jar">
+            <manifest>
+                <attribute name="Manifest-Version" value="1.0"/>
+                <attribute name="Main-Class" value="com.bowman.cardserv.web.FileFetcher"/>
+                <attribute name="Class-Path" value="bowman.jar ${ant.project.name}.jar"/>
+            </manifest>
+			<fileset dir="${dir.classes}">
+				<include name="**/*FileFetcher*" />
+			</fileset>
+		</jar>
+		<copy todir="${dir.dist}" file="${dir.build.lib}/${ant.project.name}.jar" />
+		<copy todir="${dir.dist}" file="${dir.build.lib}/${name.fishenc}.jar" />
+	</target>
+	
+	<target name="build-web" description="build the web-interface.">
+		<copy todir="${dir.web}" file="${dir.config}/${proxy-reference}" />
+		<jar jarfile="${dir.build.lib}/${name.cs-status}.war" basedir="${dir.web}" />
+		<copy todir="${dir.dist}" file="${dir.build.lib}/${name.cs-status}.war" />
+		<copy todir="${dir.lib}" file="${dir.build.lib}/${name.cs-status}.war" />
+	</target>
+	
+	<target name="build-plugins" unless="skip-plugins" description="build all plugins in the plugins directory.">    
+		<ant inheritAll="false" dir="${dir.plugins}/BetacryptTunnelPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/ConaxConnector"/>
+		<ant inheritAll="false" dir="${dir.plugins}/DcwFilterPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/DreamboxPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/EmmAnalyzerPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/GeoipPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/IrdetoPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/MessagingPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/MySQLWebManagementPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/ProviderIdentPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/SoftNdsPlugin"/>
 
-  <target name="tar-src" depends="prepare-build">
-    <mkdir dir="build/src"/>
-    <copy todir="build/src">
-      <fileset dir="src">
-        <include name="**/*" />
-      </fileset>
-    </copy>
-    <copy todir="build/web">
-      <fileset dir="web">
-        <include name="**/*" />
-      </fileset>
-    </copy>
-    <copy todir="build/trtest">
-      <fileset dir="trtest">
-        <include name="**/*" />
-      </fileset>
-    </copy>
-    <copy todir="build">
-      <fileset dir=".">
-        <include name="CardServProxy.iml" />
-        <include name="CardServProxy.ipr" />
-      </fileset>
-    </copy>
-    <delete dir="build/plugins"/>
-    <copy todir="build/plugins">
-      <fileset dir="plugins">
-        <include name="**/*"/>
-        <exclude name="**/dist/*"/>
-        <exclude name="**/*.iws"/>
-        <exclude name="**/*.bak"/>
-        <exclude name="**/*.jar"/>
-      </fileset>
-    </copy>    
-    <delete file="build/src/com/bowman/cardserv/BowbotUserManager.java"/>
-    <delete file="build/src/com/bowman/cardserv/web/filefetcher.properties"/>
-    <delete file="build/src/com/bowman/cardserv/test/TestUtil.java"/>
-    <copy todir="build" file="build.xml"/>
-    <move todir="build/cardservproxy-src">
-      <fileset dir="build"/>
-    </move>
-    <tar tarfile="dist/cardservproxy-src.tar" basedir="build"/>
-    <gzip zipfile="dist/cardservproxy-src.tar.gz" src="dist/cardservproxy-src.tar"/>
-    <delete file="dist/cardservproxy-src.tar" />
-    <delete dir="build"/>
-  </target>
+		<copy-fileset destination-dir="${dir.build.plugins}" path-id="files.plugins" doFlatten="true"/>
+	</target>
 
+	<target name="build" depends="build-app, build-web, build-plugins" description="build everything (cardservproxy, web-interface and plugins)."/>
+	
+	<target name="tar-app" depends="build-app, build-web, build-plugins" description="build the complete cardservproxy and compress it to a tar.gz.">
+		<move todir="${dir.build}/${ant.project.name}">
+			<fileset dir="${dir.build}"/>
+		</move>
+		<tar tarfile="${dir.dist}/${ant.project.name}.tar" basedir="${dir.build}" excludes="${ant.project.name}/cardproxy.sh*">
+			<tarfileset dir="${dir.build}/${ant.project.name}" mode="755" prefix="${ant.project.name}">
+				<include name="cardproxy.sh*"/>
+			</tarfileset>
+		</tar>
+		<gzip zipfile="${dir.dist}/${ant.project.name}.tar.gz" src="${dir.dist}/${ant.project.name}.tar"/>
+		<delete file="${dir.dist}/${ant.project.name}.tar" />
+		<delete dir="${dir.build}"/>
+	</target>
+
+	<target name="tar-src" depends="prepare" description="compress the source files as .tar.gz.">
+		<mkdir dir="${dir.build.src}"/>
+		<copy todir="${dir.build.src}">
+			<fileset dir="${dir.src}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<mkdir dir="${dir.build.web}"/>
+		<copy todir="${dir.build.web}">
+			<fileset dir="${dir.web}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<copy todir="${dir.build.trtest}">
+			<fileset dir="${dir.trtest}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<copy todir="${dir.build}">
+			<fileset dir=".">
+				<include name="CardServProxy.iml" />
+				<include name="CardServProxy.ipr" />
+			</fileset>
+		</copy>
+		<delete dir="${dir.build.plugins}"/>
+		<copy todir="${dir.build.plugins}">
+			<fileset dir="${dir.plugins}">
+				<include name="**/*"/>
+				<exclude name="**/${dir.dist}/*"/>
+				<exclude name="**/*.iws"/>
+				<exclude name="**/*.bak"/>
+				<exclude name="**/*.jar"/>
+			</fileset>
+		</copy>    
+		<delete file="${dir.build.src}/com/bowman/cardserv/BowbotUserManager.java"/>
+		<delete file="${dir.build.src}/com/bowman/cardserv/web/filefetcher.properties"/>
+		<delete file="${dir.build.src}/com/bowman/cardserv/test/TestUtil.java"/>
+		<copy todir="${dir.build}" file="build.xml"/>
+		<move todir="${dir.build}/${ant.project.name}-src">
+			<fileset dir="${dir.build}"/>
+		</move>
+		<tar tarfile="${dir.dist}/${ant.project.name}-src.tar" basedir="${dir.build}"/>
+		<gzip zipfile="${dir.dist}/${ant.project.name}-src.tar.gz" src="${dir.dist}/${ant.project.name}-src.tar"/>
+		<delete file="${dir.dist}/${ant.project.name}-src.tar" />
+		<delete dir="${dir.build}"/>
+		<delete dir="${dir.classes}"/>
+	</target>
 </project>

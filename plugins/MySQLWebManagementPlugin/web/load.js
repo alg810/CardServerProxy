@@ -184,7 +184,6 @@ function mySQLWebManagementPluginPostProcess() {
 	if(getCookie('isAdmin') == 'true') {
 		var newLink = document.createElement('a'); // create a new link for this section in the menu
 		newLink.href = '#';
-		//newLink.href = 'javascript:clickSection("mysqlusers");';
 		newLink.id = 'mysqlusers';
 		newLink.appendChild(document.createTextNode('MySQL-Users'));
 		var adminLink = document.getElementById('admin');

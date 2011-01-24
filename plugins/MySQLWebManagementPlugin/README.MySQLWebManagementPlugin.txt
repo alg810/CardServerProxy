@@ -6,7 +6,6 @@ This plugin offers a web-ui to add/edit/delete/show users. Its related to the "M
 NOTE:
 -----
 - when more than around 90 users exist it will only show the first 90 ones. The maximum size of a status command seems to be limited. Needs to be fixed though
-- IMPORTANT: because of the current restrictions in the web-handling only one plugin can hook into the web-interface. So currently it doesn't work together with the DreamboxPlugin.
 
 TODO / suggestions:
 -------------------
