@@ -174,7 +174,7 @@ with load balancing and cluster handling built in developed by bowman.
 		<!-- check depencies -->
 		<pathconvert property="mysql.lib.present" setonempty="false" pathsep=" ">
 			<path>
-				<fileset dir="${dir.lib}" includes="mysql-connector-java-5.1.*-bin.jar" />
+				<fileset dir="${dir.lib}" includes="mysql-connector-java*.jar" />
 			</path>
 		</pathconvert>
 	</target>
@@ -218,7 +218,7 @@ with load balancing and cluster handling built in developed by bowman.
 			<manifest>
 				<attribute name="Manifest-Version" value="1.0"/>
 				<attribute name="Main-Class" value="com.bowman.cardserv.CardServProxy"/>
-				<attribute name="Class-Path" value="${libs}"/>
+				<attribute name="Class-Path" value="${libs} mail.jar mysql-connector-java.jar"/>
 			</manifest>
 			<fileset dir="${dir.classes}"/>
 		</jar>
