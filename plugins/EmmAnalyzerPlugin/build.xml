@@ -24,23 +24,23 @@
 		<fileset erroronmissingdir="false" dir="${dir.cardservproxy.dist}">
 			<include name="cardservproxy.jar"/>
 		</fileset>
-	    <fileset erroronmissingdir="false" dir="${dir.lib}">
-	        <include name="*.jar"/>
-	    </fileset>
+		<fileset erroronmissingdir="false" dir="${dir.lib}">
+			<include name="*.jar"/>
+		</fileset>
 	</path>
 	
 	<!-- misc files for compiling -->
 	<path id="files.classes">    
-	    <fileset dir="${dir.src}">
+		<fileset dir="${dir.src}">
 			<include name="**/*.properties"/>
 			<include name="**/*.xml"/>
-	    </fileset>
+		</fileset>
 	</path>
 
 	<path id="files.classes.web">    
-	    <fileset erroronmissingdir="false" dir="${dir.web}">
+		<fileset erroronmissingdir="false" dir="${dir.web}">
 			<include name="**/*.*"/>        
-	    </fileset>
+		</fileset>
 	</path>
 
 	<!-- MACRO: copy fileset -->
@@ -84,12 +84,12 @@
 		<copy-fileset destination-dir="${dir.classes.web}" path-id="files.classes.web"/>
 		
 		<!-- classpath -->
-	    <path id="classpath">
-	        <fileset dir="${dir.lib}">
-	          <include name="**/*.jar"/>
-	        </fileset>
-	    </path>
-	    <property name="classpath" refid="classpath" />
+		<path id="classpath">
+			<fileset dir="${dir.lib}">
+				<include name="**/*.jar"/>
+			</fileset>
+		</path>
+		<property name="classpath" refid="classpath" />
 		
 		<!-- check depencies -->
 		<condition property="depencies.present">

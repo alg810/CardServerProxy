@@ -37,18 +37,18 @@ with load balancing and cluster handling built in developed by bowman.
 	
 	<!-- config files -->
 	<path id="files.config">    
-	    <fileset dir="${dir.config}">
-	        <include name="*.*"/>
-	        <exclude name="proxy.xml"/>
-	        <exclude name="proxy.xml.bak"/>
-	    </fileset>
+		<fileset dir="${dir.config}">
+			<include name="*.*"/>
+			<exclude name="proxy.xml"/>
+			<exclude name="proxy.xml.bak"/>
+		</fileset>
 	</path>
 		
 	<!-- config/example files -->
 	<path id="files.config.example">    
-	    <fileset dir="${dir.config.example}">
-	        <include name="*.*"/>
-	    </fileset>
+		<fileset dir="${dir.config.example}">
+			<include name="*.*"/>
+		</fileset>
 	</path>
 		
 	<!-- etc files -->
@@ -61,12 +61,12 @@ with load balancing and cluster handling built in developed by bowman.
 		
 	<!-- lib files -->
 	<path id="files.lib">    
-	    <fileset dir="${dir.lib}">
-	        <include name="**/*.jar"/>
-	        <exclude name="bowbot.jar" />
-	        <exclude name="orionembedded.jar" />
-	        <exclude name="mail.jar" />
-	    </fileset>
+		<fileset dir="${dir.lib}">
+			<include name="**/*.jar"/>
+			<exclude name="bowbot.jar" />
+			<exclude name="orionembedded.jar" />
+			<exclude name="mail.jar" />
+		</fileset>
 	</path>
 	
 	<!-- plugin files -->
@@ -98,11 +98,11 @@ with load balancing and cluster handling built in developed by bowman.
 	
 	<!-- misc files for compiling -->
 	<path id="files.classes">    
-	    <fileset dir="${dir.src}">
-	        <include name="**/*.properties"/>
-	        <include name="**/*.xml"/>
-	        <exclude name="**/filefetcher.properties"/>
-	    </fileset>
+		<fileset dir="${dir.src}">
+			<include name="**/*.properties"/>
+			<include name="**/*.xml"/>
+			<exclude name="**/filefetcher.properties"/>
+		</fileset>
 	</path>
 
 	<!-- MACRO: copy fileset -->
@@ -147,14 +147,14 @@ with load balancing and cluster handling built in developed by bowman.
 	<target name="prepare" depends="clean">
 		<tstamp/>
 		<mkdir dir="${dir.classes}"/>
-	    <mkdir dir="${dir.build}"/>
-	    <mkdir dir="${dir.build.config}"/>
-	    <mkdir dir="${dir.build.config.example}"/>
-	    <mkdir dir="${dir.build.etc}"/>
-	    <mkdir dir="${dir.build.lib}"/>
-	    <mkdir dir="${dir.build.log}"/>
-	    <mkdir dir="${dir.build.plugins}"/>
-	    <mkdir dir="${dir.dist}"/>
+		<mkdir dir="${dir.build}"/>
+		<mkdir dir="${dir.build.config}"/>
+		<mkdir dir="${dir.build.config.example}"/>
+		<mkdir dir="${dir.build.etc}"/>
+		<mkdir dir="${dir.build.lib}"/>
+		<mkdir dir="${dir.build.log}"/>
+		<mkdir dir="${dir.build.plugins}"/>
+		<mkdir dir="${dir.dist}"/>
 		
 		<copy-fileset destination-dir="${dir.build.config}" path-id="files.config"/>
 		<copy-fileset destination-dir="${dir.build.config.example}" path-id="files.config.example"/>
@@ -164,19 +164,19 @@ with load balancing and cluster handling built in developed by bowman.
 		<copy-fileset destination-dir="${dir.classes}" path-id="files.classes"/>
 		
 		<!-- classpath -->
-	    <path id="classpath">
-	        <fileset dir="${dir.lib}">
-	          <include name="**/*.jar"/>
-	        </fileset>
-	    </path>
-	    <property name="classpath" refid="classpath" />
+		<path id="classpath">
+			<fileset dir="${dir.lib}">
+				<include name="**/*.jar"/>
+			</fileset>
+		</path>
+		<property name="classpath" refid="classpath" />
 		
 		<!-- check depencies -->
-	    <pathconvert property="mysql.lib.present" setonempty="false" pathsep=" ">
-		  <path>
-		    <fileset dir="${dir.lib}" includes="mysql-connector-java-5.1.*-bin.jar" />
-		  </path>
-	    </pathconvert>
+		<pathconvert property="mysql.lib.present" setonempty="false" pathsep=" ">
+			<path>
+				<fileset dir="${dir.lib}" includes="mysql-connector-java-5.1.*-bin.jar" />
+			</path>
+		</pathconvert>
 	</target>
 
 	<target name="compile" depends="prepare">
@@ -215,21 +215,21 @@ with load balancing and cluster handling built in developed by bowman.
 
 		<!-- create cardservproxy.jar -->
 		<jar jarfile="${dir.build.lib}/${ant.project.name}.jar">
-            <manifest>
-                <attribute name="Manifest-Version" value="1.0"/>
-                <attribute name="Main-Class" value="com.bowman.cardserv.CardServProxy"/>
-                <attribute name="Class-Path" value="${libs}"/>
-            </manifest>
+			<manifest>
+				<attribute name="Manifest-Version" value="1.0"/>
+				<attribute name="Main-Class" value="com.bowman.cardserv.CardServProxy"/>
+				<attribute name="Class-Path" value="${libs}"/>
+			</manifest>
 			<fileset dir="${dir.classes}"/>
 		</jar>
 		
 		<!-- create fishenc.jar -->
 		<jar jarfile="${dir.build.lib}/${name.fishenc}.jar">
-            <manifest>
-                <attribute name="Manifest-Version" value="1.0"/>
-                <attribute name="Main-Class" value="com.bowman.cardserv.web.FileFetcher"/>
-                <attribute name="Class-Path" value="bowman.jar ${ant.project.name}.jar"/>
-            </manifest>
+			<manifest>
+				<attribute name="Manifest-Version" value="1.0"/>
+				<attribute name="Main-Class" value="com.bowman.cardserv.web.FileFetcher"/>
+				<attribute name="Class-Path" value="bowman.jar ${ant.project.name}.jar"/>
+			</manifest>
 			<fileset dir="${dir.classes}">
 				<include name="**/*FileFetcher*" />
 			</fileset>
