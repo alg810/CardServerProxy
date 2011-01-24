@@ -116,7 +116,7 @@
 	<target name="compile" depends="prepare" description="compile plugin." if="depencies.present">
 		<javac failonerror="false" srcdir="${dir.src}" includes="**/*.java"
 			destdir="${dir.classes}" classpath="${classpath}"
-			debug="on" includeantruntime="false">
+			debug="on" includeantruntime="false" source="1.4" target="1.4">
 		</javac>
 	</target>
 	
