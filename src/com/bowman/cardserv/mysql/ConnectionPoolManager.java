@@ -1,7 +1,9 @@
 package com.bowman.cardserv.mysql;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.sql.SQLException;
 
 import com.bowman.cardserv.ConfigException;
@@ -26,7 +28,7 @@ public class ConnectionPoolManager extends Thread {
 	private long inactiveTime = 60000;
 	private long cleaningInterval = 15000;
 	private MysqlConnectionPoolDataSource dataSource = null;
-	private ArrayList connectionPool = new ArrayList();
+	private List connectionPool = Collections.synchronizedList(new ArrayList());
 	
 	/**
 	 * main constructor to initialize the connection pool manager
@@ -153,9 +155,9 @@ public class ConnectionPoolManager extends Thread {
 		}
 	}
 
-    public void run() {
-        try {
-        	while(!interrupted()) {
+	public void run() {
+		try {
+			while(!interrupted()) {
 				sleep(cleaningInterval);
 				cleanInactivePoolConnections();
 			}
@@ -163,7 +165,7 @@ public class ConnectionPoolManager extends Thread {
 			/* close all open database connection when threads gets interrupted */
 			closePoolConnections();
 			logger.info("ConnectionPoolManager interrupted!");
-        }
-    }
+		}
+	}
 
 }

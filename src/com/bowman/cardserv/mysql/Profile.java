@@ -3,21 +3,21 @@ package com.bowman.cardserv.mysql;
 /**
  * A simple profile object
  * 
- * @author Pascal Nijhof
+ * @author DonCarlo
  * @since 02.01.2011
  */
 public class Profile {
 
 	private int id;
-	private String name;
+	private String profileName;
 	
 	public Profile(String name) {
 		this(-1, name);
 	}
 	
-	public Profile(int id, String name) {
+	public Profile(int id, String profileName) {
 		this.id = id;
-		this.name = name;
+		this.profileName = profileName;
 	}
 	
 	/**
@@ -30,8 +30,7 @@ public class Profile {
 	/**
 	 * @return the name
 	 */
-	public String getName() {
-		return name;
+	public String getProfileName() {
+		return profileName;
 	}
-
 }

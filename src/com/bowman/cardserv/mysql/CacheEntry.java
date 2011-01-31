@@ -1,24 +1,24 @@
 package com.bowman.cardserv.mysql;
 
 /**
- * A simple user cache object which keeps the cached data as an User object and the 
+ * A simple profile cache object which keeps the cached data and the 
  * informations needed to refresh or dispose this cache entry.
  * 
  * @author DonCarlo
- * @since 14.12.2010
+ * @since 29.01.2011
  */
-public class CacheUser {
-	
+public class CacheEntry {
+
 	private final long expireTime = 60000;
 	private final double refreshAheadFactor = 0.75;
 	private final double refreshTime = expireTime * refreshAheadFactor;
 	private long lastUsedTimestamp = 0;
 	private long expireTimestamp = 0;
 	private double refreshTimestamp = 0;
-	private User user = null;
+	private Object data = null;
 	
-	public CacheUser(User user) {
-		setUser(user);
+	public CacheEntry(Object data) {
+		setData(data);
 	}
 	
 	public boolean isExpired() {
@@ -29,18 +29,14 @@ public class CacheUser {
 		return (lastUsedTimestamp > refreshTimestamp) && (lastUsedTimestamp < expireTimestamp);
 	}
 	
-	public User getUser() {
+	public Object getData() {
 		lastUsedTimestamp = System.currentTimeMillis();
-		return user;
+		return data;
 	}
 	
-	public void setUser(User user) {
+	public void setData(Object data) {
 		expireTimestamp = System.currentTimeMillis() + expireTime;
 		refreshTimestamp = expireTimestamp - refreshTime;
-		this.user = user;
-	}
-	
-	public String getIdentifier() {
-		return user.getUsername();
+		this.data = data;
 	}
 }

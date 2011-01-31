@@ -143,8 +143,8 @@ public class PoolConnection {
 				DBColumnType.DEBUG + ", " +
 				DBColumnType.ADMIN + ", " +
 				DBColumnType.MAIL + ", " +
-				DBColumnType.MAPEXCLUDE + ") VALUES(?,?,?,?,?,?,?,?,?,?)"
-				);
+				DBColumnType.MAPEXCLUDE + ") VALUES(?,?,?,?,?,?,?,?,?,?)",
+				Statement.RETURN_GENERATED_KEYS);
 		ps_editUser = connection.prepareStatement(
 				"UPDATE " + DB_USER_TABLE + " SET " + 
 					DBColumnType.PASSWORD + " = ?, " + 
@@ -162,8 +162,8 @@ public class PoolConnection {
 				"DELETE FROM " + DB_USER_TABLE + " WHERE " + DBColumnType.USERNAME + " = ?");
 		ps_addProfile = connection.prepareStatement(
 				"INSERT INTO " + DB_PROFILE_TABLE + " (" +
-					DBColumnType.PROFILENAME + ") VALUES(?)"
-				);
+					DBColumnType.PROFILENAME + ") VALUES(?)",
+					Statement.RETURN_GENERATED_KEYS);
 		ps_deleteProfile = connection.prepareStatement(
 				"DELETE FROM " + DB_PROFILE_TABLE + " WHERE " + DBColumnType.PROFILENAME + " = ?");
 		ps_getProfileInfo = connection.prepareStatement(
@@ -306,6 +306,22 @@ public class PoolConnection {
 		setInactivityTimestamp();
 	}
 	
+	/**
+	 * Returns the ID of the latest prepared statement execution.
+	 * For this to work the prepared statement must have been executed
+	 * with the parameter "Statement.RETURN_GENERATED_KEYS".
+	 * @param ps
+	 * @return ID of last query
+	 * @throws SQLException
+	 */
+	private int getIDOfLastQuery(PreparedStatement ps) throws SQLException {
+		ResultSet keys = ps.getGeneratedKeys();  
+		keys.next();
+		int id = keys.getInt(1);
+		keys.close();
+		return id;
+	}
+	
 	/* ############################################################################################ */
 	/* database                                                                       */
 	/* ############################################################################################ */
@@ -435,7 +451,7 @@ public class PoolConnection {
 	/**
 	 * add user to the MySQL database.
 	 */
-	public void addUser(String username, String password, String displayname, String ipmask,
+	public int addUser(String username, String password, String displayname, String ipmask,
 			int maxconnections, boolean enabled, boolean debug, boolean admin, 
 			String mail, boolean mapexcluded) throws SQLException {
 		ps_addUser.setString(1, username);
@@ -449,6 +465,7 @@ public class PoolConnection {
 		ps_addUser.setString(9, mail);
 		ps_addUser.setBoolean(10, mapexcluded);
 		executeUpdate(ps_addUser);
+		return getIDOfLastQuery(ps_addUser);  
 	}
 	
 	/**
@@ -498,8 +515,8 @@ public class PoolConnection {
 	 * @param debug enable/disable debug
 	 * @throws SQLException
 	 */
-	public void setUserDebug(String username, Boolean debug) throws SQLException {
-		ps_setUserDebug.setBoolean(1, debug.booleanValue());
+	public void setUserDebug(String username, boolean debug) throws SQLException {
+		ps_setUserDebug.setBoolean(1, debug);
 		ps_setUserDebug.setString(2, username);
 		executeUpdate(ps_setUserDebug);
 	}
@@ -513,9 +530,10 @@ public class PoolConnection {
 	 * @param profilename - profile to add
 	 * @throws SQLException
 	 */
-	public void addProfile(String profileName) throws SQLException {
+	public int addProfile(String profileName) throws SQLException {
 		ps_addProfile.setString(1, profileName);
 		executeUpdate(ps_addProfile);
+		return getIDOfLastQuery(ps_addProfile);  
 	}
 	
 	/**

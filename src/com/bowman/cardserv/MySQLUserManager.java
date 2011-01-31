@@ -7,6 +7,7 @@ import com.bowman.cardserv.util.ProxyXmlConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -236,7 +237,14 @@ public class MySQLUserManager extends XmlUserManager {
 	 * @param user - User object
 	 */
 	public void addUserToDB(User user) {
-		cacheManager.addUserToDB(user);
+		String profiles = "";
+		Iterator iterator = user.getAllowedProfiles().iterator();
+		while(iterator.hasNext()){
+			profiles += (String) iterator.next() + " ";
+		}
+		addUserToDB(user.getUsername(), user.getPassword(), user.getDisplayName(), user.getIpMask(),
+				user.getMaxConnections(), user.isEnabled(),  user.isDebug(), user.isAdmin(), 
+				user.getEmail(), user.isMapExcluded(), profiles);
 	}
 	
 	/**

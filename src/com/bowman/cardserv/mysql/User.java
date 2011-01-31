@@ -154,6 +154,5 @@ public class User {
 			"isDebug: " + isDebug + " " +
 			"mapExcluded: " + mapExcluded + " "
 			;
-	}
-	
+	}	
 }

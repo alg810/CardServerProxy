@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import com.bowman.cardserv.ConfigException;
@@ -26,17 +26,17 @@ import com.bowman.cardserv.util.ProxyLogger;
  */
 public class CacheManager extends Thread {
 
-	private HashMap userCache = new HashMap();
-	private HashMap profileCache = new HashMap();
-	
+	private Map userCache = Collections.synchronizedMap(new HashMap());
+	private Map profileCache = Collections.synchronizedMap(new HashMap());
+
 	private final long cleaningInterval = 5000;
 	private ProxyLogger logger = null;
 	private ConnectionPoolManager connectionPoolManager = null;
-	
-	
+
+
 	public CacheManager(String databaseHost, int databasePort, String databaseName,
 			String databaseUser, String databasePassword) throws ConfigException {
-	    this.logger = ProxyLogger.getLabeledLogger(getClass().getName());
+		this.logger = ProxyLogger.getLabeledLogger(getClass().getName());
 		this.connectionPoolManager = new ConnectionPoolManager(
 				databaseHost, databasePort, databaseName, databaseUser, databasePassword);
 
@@ -45,142 +45,136 @@ public class CacheManager extends Thread {
 			logger.info("creating new user table.");
 			createUserTable();
 		}
-		
+
 		if (!existsProfileTable()) {
 			logger.info("creating new profile table.");
 			createProfileTable();
 		}
-		
+
 		if (!existsUsersHasProfilesTable()) {
 			logger.info("creating new users_has_profiles table.");
 			createUsersHasProfilesTable();
 		}
-		
+
 		if (existsUserTable() && isUserTableEmpty()) {
-			logger.warning("MySQL database is empty. Adding default user 'admin' with the password 'secret'.");
+			logger.info("MySQL database is empty. Adding default user 'admin' with the password 'secret'.");
 			addDefaultUserToDB();
 		}
-		
+
 		this.setName("CacheManagerThread");
 		this.setPriority(MIN_PRIORITY);
 		this.start();
 	}
-	
-	
+
 	/* ############################################################################################ */
 	/* database prerequisites                                                                       */
 	/* ############################################################################################ */
-	
+
 	/**
 	 * create the "user" table in the mysql database.
 	 */
 	private void createUserTable() {
-		PoolConnection poolConnection = null;
-		
-		try {
-			poolConnection = connectionPoolManager.getPoolConnection();
-			poolConnection.createUserTable();
-		} catch (SQLException e) {
-			logger.warning("(createUserTable) Failed to create the user table : " + e);
-		} finally {
-			connectionPoolManager.returnPoolConnection(poolConnection);
-		}
+		createTable(0);
 	}
-	
+
 	/**
 	 * create the "profile" table in the mysql database.
 	 */
 	private void createProfileTable() {
-		PoolConnection poolConnection = null;
-		
-		try {
-			poolConnection = connectionPoolManager.getPoolConnection();
-			poolConnection.createProfileTable();
-		} catch (SQLException e) {
-			logger.warning("(createProfileTable) Failed to create the profile table : " + e);
-		} finally {
-			connectionPoolManager.returnPoolConnection(poolConnection);
-		}
+		createTable(1);
 	}
-	
+
 	/**
 	 * create the "users_has_profiles" table in the mysql datbase.
 	 */
 	private void createUsersHasProfilesTable() {
 		// the user and profile table must exist before this one can be created.
 		if (existsUserTable() && existsProfileTable()) {
-			PoolConnection poolConnection = null;
-		
-			try {
-				poolConnection = connectionPoolManager.getPoolConnection();
-				poolConnection.createUsersHasProfilesTable();
-			} catch (SQLException e) {
-				logger.warning("(createUsersHasProfilesTable) Failed to create the users_has_profiles table : " + e);
-			} finally {
-				connectionPoolManager.returnPoolConnection(poolConnection);
-			}
-		} else {
-			// TODO add exception
+			createTable(2);
 		}
 	}
-	
+
+	/**
+	 * create table
+	 * @param table - 0 = users; 1 = profiles; 2 = users_has_profiles
+	 */
+	private void createTable(int table) {
+		PoolConnection poolConnection = null;
+
+		try {
+			poolConnection = connectionPoolManager.getPoolConnection();
+			switch (table) {
+			case 0 :
+				poolConnection.createUserTable();
+				break;
+			case 1 :
+				poolConnection.createProfileTable();
+				break;
+			case 2 :
+				poolConnection.createUsersHasProfilesTable();
+				break;
+			}
+		} catch (SQLException e) {
+			logger.warning("(createTable) Failed to create the table : " + e);
+		} finally {
+			connectionPoolManager.returnPoolConnection(poolConnection);
+		}
+	}
+
 	/**
 	 * tests whether the "user" table exists in the mysql database.
 	 * @return TRUE, when user table exists.
 	 */
 	private boolean existsUserTable() {
-		boolean result = false;
-		PoolConnection poolConnection = null;
-		
-		try {
-			poolConnection = connectionPoolManager.getPoolConnection();
-			result = poolConnection.existsUserTable();
-		} catch (SQLException e) {
-			logger.warning("(existsUserTable) Failed to query the existance of user table : " + e);
-		} finally {
-			connectionPoolManager.returnPoolConnection(poolConnection);
-		}
-		return result;
+		return existsTable(0);
 	}
-	
+
 	/**
 	 * tests whether the "profile" table exists in the mysql database.
 	 * @return TRUE, when profile table exists.
 	 */
 	private boolean existsProfileTable() {
-		boolean result = false;
-		PoolConnection poolConnection = null;
-		
-		try {
-			poolConnection = connectionPoolManager.getPoolConnection();
-			result = poolConnection.existsProfileTable();
-		} catch (SQLException e) {
-			logger.warning("(existsProfileTable) Failed to query the existance of profile table : " + e);
-		} finally {
-			connectionPoolManager.returnPoolConnection(poolConnection);
-		}
-		return result;
+		return existsTable(1);
 	}
-	
+
 	/**
 	 * tests whether the "users_has_profiles" table exists in the mysql database.
 	 * @return TRUE, when users_has_profiles table exists.
 	 */
 	private boolean existsUsersHasProfilesTable() {
+		return existsTable(2);
+	}
+
+	/**
+	 * tests whether a table exists.
+	 * @param table - 0 = users; 1 = profiles; 2 = users_has_profiles
+	 * @return TRUE, when table exists.
+	 */
+	private boolean existsTable(int table) {
 		boolean result = false;
 		PoolConnection poolConnection = null;
-		
+
 		try {
 			poolConnection = connectionPoolManager.getPoolConnection();
-			result = poolConnection.existsUsersHasProfilesTable();
+			switch (table) {
+			case 0 :
+				result = poolConnection.existsUserTable();
+				break;
+			case 1 :
+				result = poolConnection.existsProfileTable();
+				break;
+			case 2 :
+				result = poolConnection.existsUsersHasProfilesTable();
+				break;
+			}
 		} catch (SQLException e) {
-			logger.warning("(existsUsersHasProfilesTable) Failed to query the existance of users_has_profiles table : " + e);
+			logger.warning("(existsTable) Failed to query the existance of table : " + e);
 		} finally {
 			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
 		return result;
 	}
-	
+
 	/**
 	 * tests whether the "user" table is empty.
 	 * @return TRUE, when "user" table is empty.
@@ -188,7 +182,7 @@ public class CacheManager extends Thread {
 	private boolean isUserTableEmpty() {
 		boolean result = false;
 		PoolConnection poolConnection = null;
-		
+
 		try {
 			poolConnection = connectionPoolManager.getPoolConnection();
 			result = poolConnection.isUserTableEmpty();
@@ -199,64 +193,7 @@ public class CacheManager extends Thread {
 		}
 		return result;
 	}
-	
-	/* ############################################################################################ */
-	/* some universal database operations                                                           */
-	/* ############################################################################################ */
-	
-	/**
-	 * universal function to send query to database.
-	 * @param pst - describes which PreparedStatement should be used for they query.
-	 * @param obj - result object
-	 * @param column - specifies which data is going to be returned
-	 * @param info - some additional info needed for the query. e.g. username
-	 * @return obj with the wanted database info
-	 */
-	private Object dbQueryHelper(PreparedStatementType pst, Object obj, DBColumnType column, String info) {
-		Object result = new String();
-		ResultSet resultSet = null;
-		PoolConnection poolConnection = null;
-		
-		try {
-			poolConnection = connectionPoolManager.getPoolConnection();
-			if (pst == PreparedStatementType.GET_USERNAMES) {
-				resultSet = poolConnection.getUserNames();
-			} else if (pst == PreparedStatementType.GET_PROFILENAMES) {
-				resultSet = poolConnection.getProfileNames();
-			}
-			if (resultSet.next() && resultSet.getObject(column.toString()) != null) {
-				result = resultSet.getObject(column.toString()).equals(new String()) ? obj : resultSet.getObject(column.toString());
-			}
-		} catch (SQLException e) {
-			logger.warning("(dbQueryHelper) column: " + column + " info: " + info + " Failed to query the database: " + e);
-		} finally {
-			closeResultSet(resultSet);
-        	connectionPoolManager.returnPoolConnection(poolConnection);
-		}
-		return result;
-	}
-	
-	/**
-	 * send changes to database.
-	 * @param pst - describes the type which prepared Statement is used to query the database 
-	 * @param user - describes which user gets updated
-	 * @param value - new value for the described user
-	 */
-	private void updateRowInDB(PreparedStatementType pst, String user, Object value) {
-		PoolConnection poolConnection = null;
-		
-		try {
-			poolConnection = connectionPoolManager.getPoolConnection();
-			if (pst == PreparedStatementType.SET_USER_DEBUG) { 
-				poolConnection.setUserDebug(user, (Boolean)value);
-			}
-		} catch (SQLException e) {
-			logger.warning("(updateRowInDB) Failed to update row in database for " + user + " : " + e);
-		} finally {
-			connectionPoolManager.returnPoolConnection(poolConnection);
-		}
-	}
-	
+
 	/**
 	 * close the specified ResultSet to free the ressources.
 	 * @param resultSet - ResultSet to close
@@ -271,11 +208,29 @@ public class CacheManager extends Thread {
 			logger.warning("(closeResultSet) error while closing resultSet: " + e);
 		}
 	}
-	
+
+	/**
+	 * converts a String separated with whitespaces to an sorted ArrayList
+	 * @param resultSet
+	 * @param column
+	 * @return
+	 * @throws SQLException
+	 */
+	private ArrayList stringToArrayList(ResultSet resultSet, String column) throws SQLException {
+		ArrayList al = new ArrayList();
+		if (resultSet.next() && resultSet.getString(column) != null) {
+			for(StringTokenizer st = new StringTokenizer(resultSet.getString(column)); st.hasMoreTokens(); ) {
+				al.add(st.nextToken());
+			}
+		}
+		Collections.sort(al);
+		return al;
+	}
+
 	/* ############################################################################################ */
 	/* users                                                                                        */
 	/* ############################################################################################ */
-	
+
 	/**
 	 * if the user information are not already in the cache, it must be fetched from the database.
 	 * This function gets all informations for the given user with only one database statement, parses
@@ -290,13 +245,12 @@ public class CacheManager extends Thread {
 		ResultSet resultSet = null;
 		PoolConnection poolConnection = null;
 		User result = null;
-		
+
 		try {
 			poolConnection = connectionPoolManager.getPoolConnection();
 			resultSet = poolConnection.getUserInfo(username);
 			if (resultSet.next()) {
 				logger.fine("(getUserFromDB) getting user: " + username + " from database.");
-				// create new user object with informations from database
 				result = new User(
 						resultSet.getInt(DBColumnType.ID.toString()),
 						resultSet.getString(DBColumnType.USERNAME.toString()),
@@ -312,33 +266,25 @@ public class CacheManager extends Thread {
 				);
 				closeResultSet(resultSet);
 				resultSet = poolConnection.getUserProfiles(result.getId());
-				Set allowedProfiles = new HashSet();
-				if (resultSet.next() && resultSet.getObject("GROUP_CONCAT(p.profilename SEPARATOR ' ')") != null) {
-					for(StringTokenizer st = new StringTokenizer(resultSet.getString("GROUP_CONCAT(p.profilename SEPARATOR ' ')")); st.hasMoreTokens(); ){
-						allowedProfiles.add(st.nextToken());
-					}
-				}
-				result.setAllowedProfiles(allowedProfiles);
-				
-				if (addToCache)
-					putUserIntoCache(result);
+				result.setAllowedProfiles(new HashSet(stringToArrayList(resultSet, "GROUP_CONCAT(p.profilename SEPARATOR ' ')")));
+				if (addToCache) putUserIntoCache(result);
 			}
 		} catch (SQLException e) {
 			logger.warning("(getUserFromDB) Failed to query the database for user: " + username + " - " + e);
 		} finally {
 			closeResultSet(resultSet);
-        	connectionPoolManager.returnPoolConnection(poolConnection);
+			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
 		return result;
 	}
-	
+
 	/**
 	 * add a default user with admin rights to the database.
 	 */
 	private void addDefaultUserToDB() {
 		addUserToDB("admin", "secret", "admin", "*", 1, true, false, true, "", false, "");
 	}
-	
+
 	/**
 	 * add an new user to the MySQL database.
 	 */
@@ -346,67 +292,24 @@ public class CacheManager extends Thread {
 			int maxconnections, boolean enabled, boolean debug, boolean admin, 
 			String mail, boolean mapexcluded, String allowedProfiles) {
 		PoolConnection poolConnection = null;
-		
+
 		try {
 			poolConnection = connectionPoolManager.getPoolConnection();
-			poolConnection.addUser(username, password, displayname, ipmask, maxconnections, 
+			int userID = poolConnection.addUser(username, password, displayname, ipmask, maxconnections, 
 					enabled, debug, admin, mail, mapexcluded);
-			// get the newly created user
-			int userID = getUserFromDB(username, false).getId();
+
 			for(StringTokenizer st = new StringTokenizer(allowedProfiles); st.hasMoreTokens(); ){
 				String currentProfile = st.nextToken();
-				// when profile does not exist, add it, mainly used for the xml import
-				if (getProfile(currentProfile) == null) {
-					poolConnection.addProfile(currentProfile);
-				}
-				if (getProfile(currentProfile) != null) {
-					int profileID = getProfile(currentProfile).getId();
-					// add to users_has_profiles table
-					poolConnection.addUserProfile(userID, profileID);
-				}
+				if (getProfile(currentProfile) == null) poolConnection.addProfile(currentProfile);
+				poolConnection.addUserProfile(userID, getProfile(currentProfile).getId());
 			}
-
 		} catch (SQLException e) {
 			logger.warning("(addUserToDB) Failed to add user '" + username + "' to database. " + e);
 		} finally {
 			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
-	}	
-	
-	/**
-	 * add an new user to the MySQL database.
-	 * @param user - User object
-	 */
-	public void addUserToDB(User user) {
-		PoolConnection poolConnection = null;
-		
-		try {
-			poolConnection = connectionPoolManager.getPoolConnection();
-			poolConnection.addUser(user.getUsername(), user.getPassword(), user.getDisplayName(), user.getIpMask(),
-					user.getMaxConnections(), user.isEnabled(), user.isDebug(), user.isAdmin(), user.getEmail(), user.isMapExcluded());
-			// get the newly created user
-			int userID = getUserFromDB(user.getUsername(), false).getId();
-			Iterator iterator = user.getAllowedProfiles().iterator();
-			while(iterator.hasNext()){
-				String currentProfile = (String) iterator.next();
-				// when profile does not exist, add it, mainly used for the xml import
-				if (getProfile(currentProfile) == null) {
-					poolConnection.addProfile(currentProfile);
-				}
-				if (getProfile(currentProfile) != null) {
-					int profileID = getProfile(currentProfile).getId();
-					// add to users_has_profiles table
-					poolConnection.addUserProfile(userID, profileID);
-				}
-			}
+	}
 
-		} catch (SQLException e) {
-			logger.warning("(addUserToDB) Failed to add user '" + user.getUsername() + "' to database. " + e);
-		} finally {
-			connectionPoolManager.returnPoolConnection(poolConnection);
-		}
-	}	
-	
 	/**
 	 * edit an existing MySQL database user.
 	 */
@@ -414,31 +317,24 @@ public class CacheManager extends Thread {
 			int maxconnections, boolean enabled, boolean debug, boolean admin, 
 			String mail, boolean mapexcluded, String allowedProfiles) {
 		PoolConnection poolConnection = null;
-		
+
 		try {
 			poolConnection = connectionPoolManager.getPoolConnection();
 			poolConnection.editUser(username, password, displayname, ipmask, maxconnections, 
 					enabled, debug, admin, mail, mapexcluded);
 
-			int userID = getUserFromDB(username, false).getId();
-			poolConnection.deleteAllUserProfiles(userID);
+			poolConnection.deleteAllUserProfiles(getUser(username).getId());
 			for(StringTokenizer st = new StringTokenizer(allowedProfiles); st.hasMoreTokens(); ){
-				String currentProfile = st.nextToken();
-				int profileID = getProfile(currentProfile).getId();
-				// add to users_has_profiles table
-				poolConnection.addUserProfile(userID, profileID);
+				poolConnection.addUserProfile(getUser(username).getId(), getProfile(st.nextToken()).getId());
 			}
-			synchronized(userCache) {
-				if (userCache.containsKey(username))
-					userCache.remove(username);
-			}
+			delUserFromCache(username);
 		} catch (SQLException e) {
 			logger.warning("(editUserInDB) Failed to edit user '" + username + "'. " + e);
 		} finally {
 			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
-	}	
-	
+	}
+
 	/**
 	 * delete specified user from the database and the local cache.
 	 * @param username - the user to delete.
@@ -449,44 +345,46 @@ public class CacheManager extends Thread {
 		try {
 			poolConnection = connectionPoolManager.getPoolConnection();
 			poolConnection.deleteUser(username);
-			synchronized(userCache) {
-				if (userCache.containsKey(username))
-					userCache.remove(username);
-			}
+			delUserFromCache(username);
 		} catch (SQLException e) {
 			logger.warning("(deleteUserFromDB) Failed to delete user '" + username + "' from database. " + e);
 		} finally {
 			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
 	}
-	
+
 	/**
 	 * delete all users from the database.
 	 * @param username - the user which should not be deleted.
 	 */
 	public void deleteAllUsersFromDB(String username) {
-		ArrayList userNames = getUserNames();
-		Iterator iterator = userNames.iterator();
-		while (iterator.hasNext()) {
+		Iterator iterator = getUserNames().iterator();
+		while (getUserNames().iterator().hasNext()) {
 			String currentUser = (String)iterator.next();
-			if (!currentUser.equals(username)) {
-				deleteUserFromDB(currentUser);
-			}
+			if (!currentUser.equals(username)) deleteUserFromDB(currentUser);
 		}
 	}
-	
+
 	/**
 	 * returns all usernames which are stored in the database as an sorted ArrayList.
 	 * @return all usersnames in the database
 	 */
 	public ArrayList getUserNames() {
-	    ArrayList userNames = new ArrayList();
-	    // get all database user
-		for(StringTokenizer st = new StringTokenizer((String) dbQueryHelper(PreparedStatementType.GET_USERNAMES, 
-				new String(), DBColumnType.USERS, null)); st.hasMoreTokens(); ) {
-			userNames.add(st.nextToken());
+		ArrayList userNames = new ArrayList();
+		ResultSet resultSet = null;
+		PoolConnection poolConnection = null;
+		
+		try {
+			poolConnection = connectionPoolManager.getPoolConnection();
+			resultSet = poolConnection.getUserNames();
+			userNames = stringToArrayList(resultSet, DBColumnType.USERS.toString());
+		} catch (SQLException e) {
+			logger.warning("(getUserNames) Failed to query the database: " + e);
+		} finally {
+			closeResultSet(resultSet);
+			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
-		Collections.sort(userNames);
+
 		return userNames;
 	}
 
@@ -496,13 +394,22 @@ public class CacheManager extends Thread {
 	 * @param debug - enable/disable debug
 	 */
 	public void setUserDebug(String username, boolean debug) {
-		updateRowInDB(PreparedStatementType.SET_USER_DEBUG , username, new Boolean(debug));
+		PoolConnection poolConnection = null;
+		
+		try {
+			poolConnection = connectionPoolManager.getPoolConnection();
+			poolConnection.setUserDebug(username, debug);
+		} catch (SQLException e) {
+			logger.warning("(setUserDebug) Failed to set debug for user " + username + " : " + e);
+		} finally {
+			connectionPoolManager.returnPoolConnection(poolConnection);
+		}
 	}
-	
+
 	/* ############################################################################################ */
 	/* database informations                                                                        */
 	/* ############################################################################################ */
-	
+
 	/**
 	 * the hostname or ip address the MySQL server is reached. 
 	 * @return host
@@ -510,7 +417,7 @@ public class CacheManager extends Thread {
 	public String getDatabaseHost() {
 		return connectionPoolManager.getDataSource().getServerName();
 	}
-	
+
 	/**
 	 * the database name which is used for the tables.
 	 * @return database name
@@ -518,7 +425,7 @@ public class CacheManager extends Thread {
 	public String getDatabaseName() {
 		return connectionPoolManager.getDataSource().getDatabaseName();
 	}
-	
+
 	/**
 	 * the port the MySQL database listens on.
 	 * @return port
@@ -526,7 +433,7 @@ public class CacheManager extends Thread {
 	public int getDatabasePort() {
 		return connectionPoolManager.getDataSource().getPort();
 	}
-	
+
 	/**
 	 * the username used to connect to the database.
 	 * @return username
@@ -534,11 +441,11 @@ public class CacheManager extends Thread {
 	public String getDatabaseUser() {
 		return connectionPoolManager.getDataSource().getUser();
 	}
-	
+
 	/* ############################################################################################ */
 	/* profiles                                                                                     */
 	/* ############################################################################################ */
-	
+
 	/**
 	 * if the profile information are not already in the cache, it must be fetched from the database.
 	 * This function gets all informations for the given profile with only one database statement, parses
@@ -553,29 +460,27 @@ public class CacheManager extends Thread {
 		ResultSet resultSet = null;
 		PoolConnection poolConnection = null;
 		Profile result = null;
-		
+
 		try {
 			poolConnection = connectionPoolManager.getPoolConnection();
 			resultSet = poolConnection.getProfileInfo(profileName);
 			if (resultSet.next()) {
 				logger.fine("(getProfileFromDB) getting profile: " + profileName + " from database.");
-				// create new profile object with informations from database
 				result = new Profile(
 						resultSet.getInt(DBColumnType.ID.toString()),
 						resultSet.getString(DBColumnType.PROFILENAME.toString())
 				);
-				if (addToCache)
-					putProfileIntoCache(result);
+				if (addToCache) putProfileIntoCache(result);
 			}
 		} catch (SQLException e) {
 			logger.warning("(getProfileFromDB) Failed to query the database for profile: " + profileName + " - " + e);
 		} finally {
 			closeResultSet(resultSet);
-        	connectionPoolManager.returnPoolConnection(poolConnection);
+			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
 		return result;
 	}
-	
+
 	/**
 	 * add a new profile to the MySQL database.
 	 * @param profileName - profile to add
@@ -592,18 +497,17 @@ public class CacheManager extends Thread {
 			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
 	}
-	
+
 	/**
 	 * delete all profiles from the MySQL database.
 	 */
 	public void deleteAllProfilesFromDB() {
-		ArrayList profileNames = getProfileNames();
-		Iterator iterator = profileNames.iterator();
+		Iterator iterator = getProfileNames().iterator();
 		while (iterator.hasNext()) {
 			deleteProfileFromDB((String)iterator.next());
 		}
 	}
-	
+
 	/**
 	 * delete specified profile from the MySQL database and the local cache.
 	 * @param profileName - profile to delete
@@ -623,26 +527,34 @@ public class CacheManager extends Thread {
 			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
 	}
-	
+
 	/**
 	 * returns all profile names as a sorted ArrayList.
 	 * @return profile names
 	 */
 	public ArrayList getProfileNames() {
-	    ArrayList profileNames = new ArrayList();
-	    // get all database profiles
-		for(StringTokenizer st = new StringTokenizer((String) dbQueryHelper(PreparedStatementType.GET_PROFILENAMES, 
-				new String(), DBColumnType.PROFILENAMES, null)); st.hasMoreTokens(); ) {
-			profileNames.add(st.nextToken());
+		ArrayList profileNames = new ArrayList();
+		ResultSet resultSet = null;
+		PoolConnection poolConnection = null;
+		
+		try {
+			poolConnection = connectionPoolManager.getPoolConnection();
+			resultSet = poolConnection.getProfileNames();
+			profileNames = stringToArrayList(resultSet, DBColumnType.PROFILENAMES.toString());
+		} catch (SQLException e) {
+			logger.warning("(getProfileNames) Failed to query the database: " + e);
+		} finally {
+			closeResultSet(resultSet);
+			connectionPoolManager.returnPoolConnection(poolConnection);
 		}
-		Collections.sort(profileNames);
+
 		return profileNames;
 	}
 
 	/* ############################################################################################ */
-	/* cache operations                                                                                     */
+	/* cache operations                                                                             */
 	/* ############################################################################################ */
-	
+
 	/**
 	 * returns the User object specified through the identifier username out of the local cache.
 	 * if the cache doesn't contain this object, get the user from the database and it it to the cache.
@@ -652,11 +564,11 @@ public class CacheManager extends Thread {
 	public User getUser(String username) {
 		synchronized(userCache) {
 			if (userCache.containsKey(username))
-				return ((CacheUser) userCache.get(username)).getUser();
+				return (User)((CacheEntry) userCache.get(username)).getData();
 		}
 		return getUserFromDB(username, true);
 	}
-	
+
 	/**
 	 * returns the Profile object specified through the identifier profileName out of the local cache.
 	 * if the cache doesn't contain this object, get the profile from the database and it it to the cache.
@@ -666,19 +578,19 @@ public class CacheManager extends Thread {
 	public Profile getProfile(String profileName) {
 		synchronized(profileCache) {
 			if (profileCache.containsKey(profileName))
-				return ((CacheProfile) profileCache.get(profileName)).getProfile();
+				return (Profile)((CacheEntry) profileCache.get(profileName)).getData();
 		}
 		return getProfileFromDB(profileName, true);
 	}
-	
+
 	/**
 	 * add the specified profile to the cache by makeing a cache object out of it.
 	 * @param profile - profile to add to the cache.
 	 */
 	private void putProfileIntoCache(Profile profile) {
-		CacheProfile cacheProfile = new CacheProfile(profile);
+		CacheEntry cacheProfile = new CacheEntry(profile);
 		synchronized(profileCache) {
-			profileCache.put(cacheProfile.getIdentifier(), cacheProfile);
+			profileCache.put(((Profile)cacheProfile.getData()).getProfileName(), cacheProfile);
 		}
 	}
 
@@ -687,9 +599,20 @@ public class CacheManager extends Thread {
 	 * @param user - user to add to the cache.
 	 */
 	private void putUserIntoCache(User user) {
-		CacheUser cacheUser = new CacheUser(user);
+		CacheEntry cacheUser = new CacheEntry(user);
 		synchronized(userCache) {
-			userCache.put(cacheUser.getIdentifier(), cacheUser);
+			userCache.put(((User)cacheUser.getData()).getUsername(), cacheUser);
+		}
+	}
+
+	/**
+	 * delete user identified through the user-name from the cache.
+	 * @param userName
+	 */
+	private void delUserFromCache(String userName) {
+		synchronized(userCache) {
+			if (userCache.containsKey(userName))
+				userCache.remove(userName);
 		}
 	}
 
@@ -702,13 +625,13 @@ public class CacheManager extends Thread {
 		synchronized (userCache) {
 			Iterator iterator = userCache.keySet().iterator();
 			while (iterator.hasNext()) {
-				CacheUser cacheUser = (CacheUser) userCache.get(iterator.next());
+				CacheEntry cacheUser = (CacheEntry) userCache.get(iterator.next());
 				if (cacheUser.needsRefresh()) {
-					cacheUser.setUser(getUserFromDB(cacheUser.getUser().getUsername(), false));
-					logger.fine("(updateCacheEntries) refreshed user: " + cacheUser.getUser().getUsername() + " from cache!");
+					cacheUser.setData(getUserFromDB(((User)cacheUser.getData()).getUsername(), false));
+					logger.fine("(updateCacheEntries) refreshed user: " + ((User)cacheUser.getData()).getUsername() + " from cache!");
 				} else if (cacheUser.isExpired()) {
 					iterator.remove();
-					logger.fine("(updateCacheEntries) removed user: " + cacheUser.getUser().getUsername() + " from cache!");
+					logger.fine("(updateCacheEntries) removed user: " + ((User)cacheUser.getData()).getUsername() + " from cache!");
 				}
 			}
 		}
@@ -716,18 +639,18 @@ public class CacheManager extends Thread {
 		synchronized (profileCache) {
 			Iterator iterator = profileCache.keySet().iterator();
 			while (iterator.hasNext()) {
-				CacheProfile cacheProfile = (CacheProfile) profileCache.get(iterator.next());
+				CacheEntry cacheProfile = (CacheEntry) profileCache.get(iterator.next());
 				if (cacheProfile.needsRefresh()) {
-					cacheProfile.setProfile(getProfileFromDB(cacheProfile.getProfile().getName(), false));
-					logger.fine("(updateCacheEntries) refreshed profile: " + cacheProfile.getProfile().getName() + " from cache!");
+					cacheProfile.setData(getProfileFromDB(((Profile)cacheProfile.getData()).getProfileName(), false));
+					logger.fine("(updateCacheEntries) refreshed profile: " + ((Profile)cacheProfile.getData()).getProfileName() + " from cache!");
 				} else if (cacheProfile.isExpired()) {
 					iterator.remove();
-					logger.fine("(updateCacheEntries) removed profile: " + cacheProfile.getProfile().getName() + " from cache!");
+					logger.fine("(updateCacheEntries) removed profile: " + ((Profile)cacheProfile.getData()).getProfileName() + " from cache!");
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * removes all CacheUser and CacheProfile objects from the local caches.
 	 */
@@ -741,7 +664,7 @@ public class CacheManager extends Thread {
 			logger.fine("(clearCache) removed all profiles from cache!");
 		}
 	}
-	
+
 	/**
 	 * deletes all cache entries and disposes the ConnectionPoolManager
 	 */
@@ -750,17 +673,16 @@ public class CacheManager extends Thread {
 		if (connectionPoolManager != null)
 			connectionPoolManager.interrupt();
 	}
-	
-    public void run() {
-        try {
-        	while(!interrupted()) {
+
+	public void run() {
+		try {
+			while(!interrupted()) {
 				sleep(cleaningInterval);
 				updateCacheEntries();
 			}
 		} catch (InterruptedException e) {
 			disposeCacheManager();
 			logger.info("CacheManager interrupted!");
-        }
-    }
-
+		}
+	}
 }
