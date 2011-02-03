@@ -36,83 +36,72 @@ with load balancing and cluster handling built in developed by bowman.
 	<property name="proxy-reference" value="proxy-reference.html"/>
 	
 	<!-- config files -->
-	<path id="files.config">    
-		<fileset dir="${dir.config}">
-			<include name="*.*"/>
-			<exclude name="proxy.xml"/>
-			<exclude name="proxy.xml.bak"/>
-		</fileset>
-	</path>
-		
+	<patternset id="files.config">  
+		<include name="*.*" />  
+		<exclude name="proxy.xml"/>
+		<exclude name="proxy.xml.bak"/>
+	</patternset>
+	
 	<!-- config/example files -->
-	<path id="files.config.example">    
-		<fileset dir="${dir.config.example}">
-			<include name="*.*"/>
-		</fileset>
-	</path>
+	<patternset id="files.config.example">  
+		<include name="*.*" />  
+	</patternset>
 		
 	<!-- etc files -->
-	<path id="files.etc">
-		<fileset dir="${dir.etc}">
-			<include name="policy.all"/>
-			<include name="protocol.txt"/>
-		</fileset>
-	</path>
+	<patternset id="files.etc">  
+		<include name="policy.all"/>
+		<include name="protocol.txt"/>
+	</patternset>
 		
 	<!-- lib files -->
-	<path id="files.lib">    
-		<fileset dir="${dir.lib}">
-			<include name="**/*.jar"/>
-			<exclude name="bowbot.jar" />
-			<exclude name="orionembedded.jar" />
-			<exclude name="mail.jar" />
-		</fileset>
-	</path>
+	<patternset id="files.lib">  
+		<include name="**/*.jar"/>
+		<exclude name="bowbot.jar" />
+		<exclude name="orionembedded.jar" />
+		<exclude name="mail.jar" />
+	</patternset>
 	
 	<!-- plugin files -->
-	<path id="files.plugins">    
-		<fileset dir="${dir.plugins}">
-			<include name="**/dist/*.jar"/>
-			<include name="**/README.*.txt"/>
-		</fileset>
-	</path>
+	<patternset id="files.plugins">  
+		<include name="**/dist/*.jar"/>
+		<include name="**/README.*.txt"/>
+	</patternset>
 
 	<!-- misc files -->
-	<path id="files.misc">
-		<fileset dir=".">
-			<include name="cardproxy.sh"/>
-			<include name="cardproxy.sh.ubuntu-autostart"/>
-			<include name="changelog.txt"/>
-			<include name="README.txt"/>
-			<include name="README.ClusteredCache.txt"/>
-			<include name="README.MySQLUserManager.txt"/>
-			<include name="README.XmlUserManager.txt"/>
-			<include name="README.HttpXmlApi.txt"/>
-			<include name="README.Optimization.txt"/>
-			<include name="README.Compiling.txt"/>
-			<include name="README.Plugins.txt"/>
-			<include name="README.0.9.0.txt"/>
-			<include name="jsw-win32.zip"/>
-		</fileset>
-	</path>
+	<patternset id="files.misc">  
+		<include name="cardproxy.sh"/>
+		<include name="cardproxy.sh.ubuntu-autostart"/>
+		<include name="changelog.txt"/>
+		<include name="README.txt"/>
+		<include name="README.ClusteredCache.txt"/>
+		<include name="README.MySQLUserManager.txt"/>
+		<include name="README.XmlUserManager.txt"/>
+		<include name="README.HttpXmlApi.txt"/>
+		<include name="README.Optimization.txt"/>
+		<include name="README.Compiling.txt"/>
+		<include name="README.Plugins.txt"/>
+		<include name="README.0.9.0.txt"/>
+		<include name="jsw-win32.zip"/>
+	</patternset>
 	
 	<!-- misc files for compiling -->
-	<path id="files.classes">    
-		<fileset dir="${dir.src}">
-			<include name="**/*.properties"/>
-			<include name="**/*.xml"/>
-			<exclude name="**/filefetcher.properties"/>
-		</fileset>
-	</path>
+	<patternset id="files.classes">  
+		<include name="**/*.properties"/>
+		<include name="**/*.xml"/>
+		<exclude name="**/filefetcher.properties"/>
+	</patternset>
 
 	<!-- MACRO: copy fileset -->
 	<macrodef name="copy-fileset">
 		<attribute name="destination-dir"/>
+		<attribute name="source-dir"/>
 		<attribute name="path-id"/>
 		<attribute name="doFlatten" default="false"/>
 		<sequential>
-			<copy todir="@{destination-dir}" flatten="@{doFlatten}">
-				<path refid="@{path-id}"/>
+			<copy failonerror="false" todir="@{destination-dir}" flatten="@{doFlatten}">
+				<fileset dir="@{source-dir}">  
+					<patternset refid="@{path-id}" />  
+				</fileset>  
 			</copy>
 		</sequential>
 	</macrodef>
@@ -156,12 +145,12 @@ with load balancing and cluster handling built in developed by bowman.
 		<mkdir dir="${dir.build.plugins}"/>
 		<mkdir dir="${dir.dist}"/>
 		
-		<copy-fileset destination-dir="${dir.build.config}" path-id="files.config"/>
-		<copy-fileset destination-dir="${dir.build.config.example}" path-id="files.config.example"/>
-		<copy-fileset destination-dir="${dir.build.etc}" path-id="files.etc"/>
-		<copy-fileset destination-dir="${dir.build.lib}" path-id="files.lib"/>
-		<copy-fileset destination-dir="${dir.build}" path-id="files.misc"/>
-		<copy-fileset destination-dir="${dir.classes}" path-id="files.classes"/>
+		<copy-fileset destination-dir="${dir.build.config}" source-dir="${dir.config}" path-id="files.config"/>
+		<copy-fileset destination-dir="${dir.build.config.example}" source-dir="${dir.config.example}" path-id="files.config.example"/>
+		<copy-fileset destination-dir="${dir.build.etc}" source-dir="${dir.etc}" path-id="files.etc"/>
+		<copy-fileset destination-dir="${dir.build.lib}" source-dir="${dir.lib}" path-id="files.lib"/>
+		<copy-fileset destination-dir="${dir.build}" source-dir="." path-id="files.misc"/>
+		<copy-fileset destination-dir="${dir.classes}" source-dir="${dir.src}" path-id="files.classes"/>
 		
 		<!-- classpath -->
 		<path id="classpath">
@@ -258,7 +247,7 @@ with load balancing and cluster handling built in developed by bowman.
 		<ant inheritAll="false" dir="${dir.plugins}/ProviderIdentPlugin"/>
 		<ant inheritAll="false" dir="${dir.plugins}/SoftNdsPlugin"/>
 
-		<copy-fileset destination-dir="${dir.build.plugins}" path-id="files.plugins" doFlatten="true"/>
+		<copy-fileset destination-dir="${dir.build.plugins}" source-dir="${dir.plugins}" path-id="files.plugins" doFlatten="true"/>
 	</target>
 
 	<target name="build" depends="build-app, build-web, build-plugins" description="build everything (cardservproxy, web-interface and plugins)."/>

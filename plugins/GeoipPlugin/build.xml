@@ -2,8 +2,6 @@
 
 <project name="geoipplugin" default="build" basedir=".">
 	
-	<!-- add your plugin depencies to line 114 -->
-	
 	<property name="dir.lib" value="lib"/>
 	<property name="dir.src" value="src"/>
 	<property name="dir.web" value="web"/>
@@ -20,37 +18,34 @@
 	<property name="dir.dist" value="dist"/>
 
 	<!-- lib files -->
-	<path id="files.lib">    
-		<fileset erroronmissingdir="false" dir="${dir.cardservproxy.dist}">
-			<include name="cardservproxy.jar"/>
-		</fileset>   
-		<fileset erroronmissingdir="false" dir="${dir.lib}">
-			<include name="*.jar"/>
-		</fileset>
-	</path>
+	<patternset id="files.csp.dist">  
+		<include name="cardservproxy.jar"/>
+	</patternset>
+	<patternset id="files.lib">  
+		<include name="*.jar"/>
+	</patternset>
 	
 	<!-- misc files for compiling -->
-	<path id="files.classes">    
-		<fileset dir="${dir.src}">
-			<include name="**/*.properties"/>
-			<include name="**/*.xml"/>
-		</fileset>
-	</path>
+	<patternset id="files.classes">  
+		<include name="**/*.properties"/>
+		<include name="**/*.xml"/>
+	</patternset>
 
-	<path id="files.classes.web">    
-		<fileset erroronmissingdir="false" dir="${dir.web}">
-			<include name="**/*.*"/>        
-		</fileset>
-	</path>
+	<patternset id="files.classes.web">  
+		<include name="**/*.*"/>        
+	</patternset>
 
 	<!-- MACRO: copy fileset -->
 	<macrodef name="copy-fileset">
 		<attribute name="destination-dir"/>
+		<attribute name="source-dir"/>
 		<attribute name="path-id"/>
 		<attribute name="doFlatten" default="false"/>
 		<sequential>
-			<copy todir="@{destination-dir}" flatten="@{doFlatten}">
-				<path refid="@{path-id}"/>
+			<copy failonerror="false" todir="@{destination-dir}" flatten="@{doFlatten}">
+				<fileset dir="@{source-dir}">  
+					<patternset refid="@{path-id}" />  
+				</fileset>  
 			</copy>
 		</sequential>
 	</macrodef>
@@ -79,9 +74,10 @@
 		<mkdir dir="${dir.classes.web}"/>
 		<mkdir dir="${dir.dist}"/>
 		
-		<copy-fileset destination-dir="${dir.lib}" path-id="files.lib"/>
-		<copy-fileset destination-dir="${dir.classes}" path-id="files.classes"/>
-		<copy-fileset destination-dir="${dir.classes.web}" path-id="files.classes.web"/>
+		<copy-fileset destination-dir="${dir.lib}" source-dir="${dir.cardservproxy.dist}" path-id="files.csp.dist"/>
+		<copy-fileset destination-dir="${dir.lib}" source-dir="${dir.lib}" path-id="files.lib"/>
+		<copy-fileset destination-dir="${dir.classes}" source-dir="${dir.src}" path-id="files.classes"/>
+		<copy-fileset destination-dir="${dir.classes.web}" source-dir="${dir.web}" path-id="files.classes.web"/>
 		
 		<!-- classpath -->
 		<path id="classpath">
@@ -124,7 +120,7 @@
 			</fileset>
 		</copy>
 		<copy todir="${dir.build.web}">
-			<fileset erroronmissingdir="false" dir="${dir.web}">
+			<fileset dir="${dir.web}">
 				<include name="**/*" />
 			</fileset>
 		</copy>
