@@ -1,7 +1,7 @@
 Cardservproxy changelog:
 ------------------------
 
-0.9.1 - RC0 (see README.0.9.0.txt for conceptual changes and tips)
+0.9.1 - RC1 (see README.0.9.0.txt for conceptual changes and tips)
 
 - Fixed: Handling for unknown sid (0 or a dummy sid listed in dummy-services) was broken in 0.9.0.
 - Fixed: Incoming requests for dummy sids should not retain the dummy when forwarded, now changed to 0.
@@ -28,7 +28,8 @@ Cardservproxy changelog:
 
 - Changes to the http/xml api:
   Added: Attribute 'filtered-by' to <ecm> (transaction logs). Contains the reason for a B flag, or the filtering plugin.
-  Added: New event type 9 - "found service" added to connector events output (error-log, yes - not really an error). 
+  Added: New event type 9 - "found service" added to connector events output (error-log, yes - not really an error).
+  Added: New ctrl command 'set-connector-metric', allows changing individual connector metrics without config reload.
 
 
 0.9.0 - 2010-08-15 (see README.0.9.0.txt for conceptual changes and tips)

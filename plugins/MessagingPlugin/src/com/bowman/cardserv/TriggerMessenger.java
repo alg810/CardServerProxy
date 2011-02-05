@@ -1,6 +1,7 @@
 package com.bowman.cardserv;
 
 import com.bowman.cardserv.rmi.*;
+import com.bowman.cardserv.tv.TvService;
 import com.bowman.cardserv.util.ProxyXmlConfig;
 import com.bowman.cardserv.interfaces.XmlConfigurable;
 import com.bowman.cardserv.web.FileFetcher;
@@ -32,6 +33,7 @@ public class TriggerMessenger implements RemoteListener, XmlConfigurable, CronTi
   private Set excludeUsers, excludeProfiles;
   private Set triggers = new HashSet();
   private Set externalTriggers = new HashSet();
+  private Map dynamicTriggers = new HashMap();
   private Set connecting = new HashSet();
   private Set invalid = new HashSet();
 
@@ -107,6 +109,19 @@ public class TriggerMessenger implements RemoteListener, XmlConfigurable, CronTi
         msgXml.getStringValue("target", "@trigger"));
 
     triggers.add(trigger);
+  }
+
+  protected void addDynamicServiceTrigger(String name, TvService ts, String message) throws ConfigException {
+    Set dt = (Set)dynamicTriggers.get(name);
+    if(dt == null) dt = new HashSet();
+    MsgTrigger tr = new MsgTrigger("Z", ts.getProfileName(), "", Integer.toHexString(ts.getId()), "", "", "", "");
+    tr.message = new TriggerMsg(false, false, message, "@trigger");
+    dt.add(tr);
+    dynamicTriggers.put(name, dt);
+  }
+
+  protected void clearDynamicServiceTrigger(String name) {
+    dynamicTriggers.remove(name);
   }
 
   // make the cws events behave like in the status web
@@ -223,6 +238,14 @@ public class TriggerMessenger implements RemoteListener, XmlConfigurable, CronTi
     for(Iterator iter = externalTriggers.iterator(); iter.hasNext();) {
       trigger = (MsgTrigger)iter.next();
       if(trigger.matchesTransaction(userName, profile, flags, warning, admin, sid)) result.add(trigger);
+    }
+    Set group;
+    for(Iterator iter = dynamicTriggers.values().iterator(); iter.hasNext();) {
+      group = (Set)iter.next();
+      for(Iterator i = group.iterator(); i.hasNext(); ) {
+        trigger = (MsgTrigger)i.next();
+        if(trigger.matchesTransaction(userName, profile, flags, warning, admin, sid)) result.add(trigger);
+      }
     }
     return result;
   }

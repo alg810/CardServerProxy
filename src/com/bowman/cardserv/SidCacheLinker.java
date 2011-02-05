@@ -1,13 +1,14 @@
 package com.bowman.cardserv;
 
+import com.bowman.cardserv.cws.*;
 import com.bowman.cardserv.interfaces.*;
 import com.bowman.cardserv.web.*;
 import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.crypto.DESUtil;
-import com.bowman.cardserv.cws.ServiceMapping;
 import com.bowman.cardserv.tv.TvService;
 import com.bowman.util.*;
 
+import java.lang.reflect.*;
 import java.util.*;
 import java.io.*;
 
@@ -31,7 +32,6 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   private Map replyMap = new MessageCacheMap(20000); // recently received replies that may satisfy late reqs before hold
 
   private ProxyLogger logger;
-  private boolean active;
   private SidEntry testService;
 
   private FileWatchdog fw;
@@ -47,8 +47,6 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
     config = ProxyConfig.getInstance();
     cache = config.getCacheHandler();
-    cache.setListener(this);
-    active = true;
     linksFile = new File("etc", "links.cfg");
 
     loadSidLinkMap();
@@ -191,6 +189,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   }
 
   public CtrlCommandResult runCtrlCmdToggleLinker() {
+    boolean active = (cache.getListener() == this);
     if(active) cache.setListener(null);
     else cache.setListener(this);
     active = !active;
@@ -227,17 +226,25 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   public CtrlCommandResult runCtrlCmdTestLink(Map params) {
     boolean result = false;
     String resultMsg;
-    String sid = params.get("sid") + ":" + params.get("profile");
+    String profile = (String)params.get("profile");
+    String sid = params.get("sid") + ":" + profile;
+    SidEntry oldTestService = testService;
     if(sid.indexOf("null") != -1) resultMsg = "Missing/invalid sid";
     else {
       result = true;
+      CwsServiceMapper mapper = null;
+      if(oldTestService != null) mapper = config.getConnManager().getServiceMapper(oldTestService.profileName);
       SidEntry se = new SidEntry(sid);
       if(se.equals(testService)) {
         testService = null;
         resultMsg = "Test mode disabled";
+        if(mapper != null) mapper.unblockService(oldTestService.serviceId);
       } else {
         testService = se;
         resultMsg = "Test link set: " + sid + " <> *";
+        if(mapper != null) mapper.unblockService(oldTestService.serviceId);
+        mapper = config.getConnManager().getServiceMapper(testService.profileName);
+        if(mapper != null) mapper.blockService(testService.serviceId);
       }
     }
     return new CtrlCommandResult(result, resultMsg);
@@ -446,9 +453,12 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     SidEntry se1 = new SidEntry(sid1);
     SidEntry se2 = new SidEntry(sid2);
     Set links = (Set)sidLinksMap.get(se1);
-    links.remove(se1);
     links.remove(se2);
-    boolean removed = (sidLinksMap.remove(se1) != null || sidLinksMap.remove(se2) != null);
+    boolean removed = (sidLinksMap.remove(se2) != null);
+    if(links.size() <= 1) {
+      links.remove(se1);
+      removed = removed || (sidLinksMap.remove(se1) != null);
+    }
     if(removed) {
       linksChanged = true;
       refreshAddedSet();
@@ -485,6 +495,11 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
       if(!sidLinksMap.containsKey(se)) iter.remove(); // service is no longer linked
       else retained.addAll((Set)requiredServices.get(ts));
     }
+    for(Iterator iter = retained.iterator(); iter.hasNext(); ) {
+      ts = (TvService)iter.next();
+      se = new SidEntry(ts.getId(), ts.getProfileName());
+      if(!sidLinksMap.containsKey(se)) iter.remove();
+    }
     Set added; String profileName; ServiceMapping sm;
     for(Iterator iter = addedServices.keySet().iterator(); iter.hasNext(); ) {
       profileName = (String)iter.next();
@@ -502,7 +517,52 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     }
   }
 
+  /*
+  private void setupMessaging() { // hack to unobtrusively make use of messaging plugin
+    ProxyPlugin plugin = (ProxyPlugin)ProxyConfig.getInstance().getProxyPlugins().get("messagingplugin");
+    if(plugin != null) {
+      try {
+        Method clear = plugin.getClass().getMethod("clearDynamicServiceTriggers", new Class[]{String.class});
+        if(clear == null) return;
+        clear.invoke(plugin, new Object[]{"SidCacheLinker"});
+      } catch(Exception e) {
+        e.printStackTrace();
+        return;
+      }
+      Map trMap = new HashMap(); TvService tsKey, tsAdded; Set unlockers;
+      for(Iterator iter = requiredServices.keySet().iterator(); iter.hasNext(); ) {
+        tsKey = (TvService)iter.next();
+        for(Iterator i = ((Set)requiredServices.get(tsKey)).iterator(); i.hasNext(); ) {
+          tsAdded = (TvService)i.next();
+          unlockers = (Set)trMap.get(tsAdded);
+          if(unlockers == null) unlockers = new HashSet();
+          unlockers.add(tsKey);
+          trMap.put(tsAdded, unlockers);
+        }
+      }
+      Method add;
+      try {
+        add = plugin.getClass().getMethod("addDynamicServiceTrigger", new Class[]{String.class, TvService.class, String.class});
+      } catch(NoSuchMethodException e) {
+        e.printStackTrace();
+        return;
+      }
+      TvService ts;
+      for(Iterator iter = trMap.keySet().iterator(); iter.hasNext(); ) {
+        ts = (TvService)iter.next();
+        try {
+          add.invoke(plugin, new Object[]{"SidCacheLinker", ts, "Possible links: " + trMap.get(ts).toString()});
+        } catch(Exception e) {
+          e.printStackTrace();
+        }
+      }
+    }
+
+  }
+  */
+
   public Set getServicesForProfile(String profileName) {
+    if(cache.getListener() == null) return Collections.EMPTY_SET;
     if(!addedServices.containsKey(profileName)) return Collections.EMPTY_SET;
     else return (Set)addedServices.get(profileName);
   }

@@ -1,6 +1,7 @@
 package com.bowman.cardserv;
 
 import com.bowman.cardserv.interfaces.*;
+import com.bowman.cardserv.tv.TvService;
 import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.rmi.*;
 import com.bowman.cardserv.web.*;
@@ -202,6 +203,14 @@ public class MessagingPlugin implements ProxyPlugin {
 
   public byte[] getResource(String path, byte[] inData, boolean admin) {
     return null;
+  }
+
+  public void addDynamicServiceTrigger(String name, TvService ts, String message) throws ConfigException {
+    if(osdMessenger != null) osdMessenger.addDynamicServiceTrigger(name, ts, message);
+  }
+
+  public void clearDynamicServiceTriggers(String name) {
+    if(osdMessenger != null) osdMessenger.clearDynamicServiceTrigger(name);
   }
 
   protected void triggeredMessage(TriggerMessenger tm, String target, String text) {

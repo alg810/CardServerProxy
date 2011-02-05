@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project relativePaths="false" version="4">
+<project version="4">
   <component name="AntConfiguration">
     <defaultAnt bundledAnt="true" />
     <buildFile url="file://$PROJECT_DIR$/build.xml">
@@ -18,13 +18,8 @@
     <option name="PROJECT_PROFILE" />
     <option name="USE_PROJECT_LEVEL_SETTINGS" value="false" />
   </component>
-  <component name="CodeStyleSettingsManager">
-    <option name="PER_PROJECT_SETTINGS" />
-    <option name="USE_PER_PROJECT_SETTINGS" value="false" />
-  </component>
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Javac" />
-    <option name="DEPLOY_AFTER_MAKE" value="0" />
     <resourceExtensions>
       <entry name=".+\.(properties|xml|html|dtd|tld)" />
       <entry name=".+\.(gif|png|jpeg|jpg)" />
@@ -40,6 +35,7 @@
       <entry name="?*.dtd" />
       <entry name="?*.tld" />
     </wildcardResourcePatterns>
+    <annotationProcessing enabled="false" useClasspath="true" />
   </component>
   <component name="CopyrightManager" default="">
     <module2copyright />
@@ -70,30 +66,35 @@
   </component>
   <component name="IdProvider" IDEtalkID="08710CBEF2955A44A9C2694C1AA2DC79" />
   <component name="InspectionProjectProfileManager">
-    <option name="PROJECT_PROFILE" value="Project Default" />
-    <option name="USE_PROJECT_LEVEL_SETTINGS" value="false" />
-    <scopes />
     <profiles>
       <profile version="1.0" is_locked="false">
         <option name="myName" value="Project Default" />
         <option name="myLocal" value="false" />
-        <inspection_tool class="EmptyCatchBlock" level="WARNING" enabled="false">
+        <inspection_tool class="CaughtExceptionImmediatelyRethrown" enabled="false" level="WARNING" enabled_by_default="false" />
+        <inspection_tool class="ConstantConditions" enabled="false" level="WARNING" enabled_by_default="false">
+          <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
+          <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
+        </inspection_tool>
+        <inspection_tool class="EmptyCatchBlock" enabled="false" level="WARNING" enabled_by_default="false">
           <option name="m_includeComments" value="true" />
           <option name="m_ignoreTestCases" value="true" />
           <option name="m_ignoreIgnoreParameter" value="true" />
         </inspection_tool>
-        <inspection_tool class="CaughtExceptionImmediatelyRethrown" level="WARNING" enabled="false" />
-        <inspection_tool class="UnnecessaryContinueJS" level="INFO" enabled="true" />
-        <inspection_tool class="ThrowableInstanceNeverThrown" level="WARNING" enabled="false" />
-        <inspection_tool class="ConstantConditions" level="WARNING" enabled="false">
-          <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
-          <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
+        <inspection_tool class="Fix shebang" enabled="true" level="WARNING" enabled_by_default="true">/bin/sh#/bin/bash</inspection_tool>
+        <inspection_tool class="SimplifiableIfStatement" enabled="false" level="WARNING" enabled_by_default="false" />
+        <inspection_tool class="SpellCheckingInspection" enabled="false" level="TYPO" enabled_by_default="false">
+          <option name="processCode" value="true" />
+          <option name="processLiterals" value="true" />
+          <option name="processComments" value="true" />
         </inspection_tool>
-        <inspection_tool class="TrivialIf" level="INFO" enabled="false" />
-        <inspection_tool class="SimplifiableIfStatement" level="WARNING" enabled="false" />
+        <inspection_tool class="ThrowableInstanceNeverThrown" enabled="false" level="WARNING" enabled_by_default="false" />
+        <inspection_tool class="TrivialIf" enabled="false" level="INFO" enabled_by_default="false" />
+        <inspection_tool class="UnnecessaryContinueJS" enabled="true" level="INFO" enabled_by_default="true" />
       </profile>
     </profiles>
-    <list size="0" />
+    <option name="PROJECT_PROFILE" value="Project Default" />
+    <option name="USE_PROJECT_PROFILE" value="true" />
+    <version value="1.0" />
   </component>
   <component name="JavacSettings">
     <option name="DEBUGGING_INFO" value="true" />
@@ -251,7 +252,6 @@
   <component name="ProjectDetails">
     <option name="projectName" value="MessagingPlugin" />
   </component>
-  <component name="ProjectFileVersion" converted="true" />
   <component name="ProjectKey">
     <option name="state" value="project://C:\IdeaProjects\CardServProxy\plugins\MessagingPlugin\MessagingPlugin.ipr" />
   </component>
@@ -259,6 +259,9 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/MessagingPlugin.iml" filepath="$PROJECT_DIR$/MessagingPlugin.iml" />
     </modules>
+  </component>
+  <component name="ProjectResources">
+    <default-html-doctype>http://www.w3.org/1999/xhtml</default-html-doctype>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_4" assert-keyword="true" jdk-15="false" project-jdk-name="1.4" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/classes" />

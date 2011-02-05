@@ -88,7 +88,7 @@ public class XmlHelper implements CommandManager {
     return all;
   }
 
- public String onQryStatusCommand(String cmd, Map params, String authUser) throws RemoteException {
+  public String onQryStatusCommand(String cmd, Map params, String authUser) throws RemoteException {
     XmlStringBuffer xb = new XmlStringBuffer();
     xb.appendElement("cws-status-resp", "ver", "1.0");
     String profile = (String)params.get("profile");
@@ -189,6 +189,26 @@ public class XmlHelper implements CommandManager {
       proxy.disableConnector(name);
       result = true;
       resultMsg = "Connector disabled.";
+    } else resultMsg = "Missing parameter: name";
+    return new CtrlCommandResult(result, resultMsg, null);
+  }
+
+  public CtrlCommandResult runCtrlCmdSetConnectorMetric(Map params) throws RemoteException {
+    boolean result = false;
+    String resultMsg;
+    String name = (String)params.get("name");
+    String metricStr = (String)params.get("metric");
+    if(metricStr == null) return new CtrlCommandResult(false, "Missing parameter: metric", null);
+    int metric = 1;
+    try {
+      metric = Integer.parseInt(metricStr);
+    } catch (NumberFormatException e) {
+      return new CtrlCommandResult(false, "Bad metric value: " + metricStr, null);
+    }
+    if(name != null) {
+      proxy.setConnectorMetric(name, metric);
+      result = true;
+      resultMsg = "Metric set for: " + name;
     } else resultMsg = "Missing parameter: name";
     return new CtrlCommandResult(result, resultMsg, null);
   }

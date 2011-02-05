@@ -415,6 +415,12 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
     conn.close();    
   }
 
+  public void setConnectorMetric(String cwsName, int metric) throws RemoteException {
+    CwsConnector conn = (CwsConnector)config.getConnManager().getConnectors().get(cwsName);
+
+    conn.setMetric(metric);
+  }
+
   public void setProfileDebug(boolean debug, String profileName) throws RemoteException {
     CaProfile profile;
     if(profileName != null) {

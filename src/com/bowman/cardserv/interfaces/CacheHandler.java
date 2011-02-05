@@ -20,5 +20,6 @@ public interface CacheHandler extends XmlConfigurable {
 
   Properties getUsageStats();
   void setListener(CacheListener listener);
+  CacheListener getListener();
 
 }

@@ -269,7 +269,32 @@
 
   <xsl:template match="watched-services">
     <xsl:call-template name="profile-filter"/>
-    <!-- xsl:for-each select="//watched-services" -->
+
+    <xsl:if test="count(//linked-services/link/service) &gt; 0">
+    <fieldset>
+      <legend><strong>Channel groups using same dcw (configured, not verified) (<xsl:value-of select="count(//linked-services/link)"/>)</strong></legend><br />
+      <xsl:for-each select="//linked-services/link">
+        <xsl:if test="count(service) &gt; 0">
+        <xsl:value-of select="@id"/>.
+        <xsl:for-each select="service">
+          <xsl:variable name="srvname" select="@name"/>
+          <xsl:variable name="srvprofile" select="@profile"/>
+          <xsl:choose>
+          <xsl:when test="//watched-services/service[@name=$srvname and @profile=$srvprofile]"> <!-- highlight linked services currently being watched -->
+            <font color="blue"><strong><xsl:value-of select="@name"/></strong> (<xsl:value-of select="@profile"/>:<xsl:value-of select="@cdata"/>) </font>
+          </xsl:when>
+          <xsl:otherwise>
+            <strong><xsl:value-of select="@name"/></strong> (<xsl:value-of select="@profile"/>:<xsl:value-of select="@cdata"/>)
+          </xsl:otherwise>
+          </xsl:choose>
+        </xsl:for-each>
+        <br />
+        </xsl:if>
+      </xsl:for-each>
+      <br />
+    </fieldset><br />
+    </xsl:if>
+
     <fieldset>
       <legend><strong>Currently watched channels (<xsl:value-of select="@count"/>)</strong></legend><br />
       <xsl:for-each select="service">
@@ -279,7 +304,6 @@
       <xsl:if test="count(service) = 0">No channels</xsl:if>
       <br />
     </fieldset><br />
-    <!-- /xsl:for-each -->
 
     <xsl:if test="count(//all-services) = 0">
       <br />
@@ -911,6 +935,8 @@
       <br />
     </xsl:if>
   </xsl:template>
+
+
 
 </xsl:stylesheet>
 

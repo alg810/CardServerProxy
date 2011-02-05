@@ -203,4 +203,7 @@ public class DefaultCache implements CacheHandler {
     this.listener = listener;
   }
 
+  public CacheListener getListener() {
+    return listener;
+  }
 }

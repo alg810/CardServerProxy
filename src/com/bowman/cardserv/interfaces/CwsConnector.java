@@ -19,6 +19,7 @@ public interface CwsConnector extends XmlConfigurable {
   String getProfileName();
 
   int getMetric();
+  void setMetric(int metric);
   String getUser();
   boolean isEnabled();
   void setEnabled(boolean enabled);

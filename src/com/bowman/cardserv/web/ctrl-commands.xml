@@ -34,6 +34,13 @@
     </command-param>
   </command>
 
+  <command name="set-connector-metric" label="Set connector metric" description="Temporarily change the metric for a connector (until next config load)">
+    <command-param name="name" label="" allow-arbitrary="false">
+      <option source="@connectors"/>
+    </command-param>
+    <command-param name="metric" label="metric" allow-arbitrary="true"/>
+  </command>
+
   <command name="set-profile-debug" label="Set profile debug" description="Temporarily sets debug flag for one or all profile (setting to false deletes user transaction logs).">
     <command-param name="value" label="" allow-arbitrary="false">
       <option value="TRUE"/>
@@ -91,7 +98,7 @@
 
   <command name="clear-events" label="Clear CWS events" description="Clear all CWS events."/>
 
-   <command name="clear-file-log" label="Clear file log events" description="Clear all intercepted file log events (doesn't affect the actual files)."/>
+  <command name="clear-file-log" label="Clear file log events" description="Clear all intercepted file log events (doesn't affect the actual files)."/>
 
   <command name="shutdown" label="Shutdown proxy" description="Stop this proxy node." confirm="true"/>
 

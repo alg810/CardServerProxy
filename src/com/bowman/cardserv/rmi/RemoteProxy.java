@@ -50,6 +50,7 @@ public interface RemoteProxy extends Remote {
   int sendOsdMessage(String userName, String message) throws RemoteException;
   void retryConnector(String cwsName) throws RemoteException;
   void disableConnector(String cwsName) throws RemoteException;
+  void setConnectorMetric(String name, int metric) throws RemoteException;
   void setProfileDebug(boolean debug, String profileName) throws RemoteException;
   boolean setUserDebug(boolean debug, String userName) throws RemoteException;
 

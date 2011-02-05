@@ -123,6 +123,10 @@ public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsC
     return metric;
   }
 
+  public void setMetric(int metric) {
+    this.metric = metric;
+  }
+
   public String getUser() {
     return null;
   }

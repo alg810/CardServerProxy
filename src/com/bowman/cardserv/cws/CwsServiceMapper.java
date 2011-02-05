@@ -103,7 +103,7 @@ public class CwsServiceMapper implements XmlConfigurable {
       blockedList = xml.getStringValue("block-services");
     } catch (ConfigException e) {}
     if(blockedList != null) blockedServices = ProxyConfig.getServiceTokens("block-services", blockedList, false);
-    else blockedServices = Collections.EMPTY_SET;
+    else blockedServices = new HashSet();
 
     String allowedList = null;
     try {
@@ -780,6 +780,20 @@ public class CwsServiceMapper implements XmlConfigurable {
 
   public File getCacheDir() {
     return cacheDir;
+  }
+
+  public void blockService(int sid) {
+    ServiceMapping sm = new ServiceMapping(sid, 0);
+    sm.setProviderIdent(ServiceMapping.NO_PROVIDER);
+    blockedServices.add(sm);
+    logger.fine("Blocked services: " + blockedServices);
+  }
+
+  public void unblockService(int sid) {
+    ServiceMapping sm = new ServiceMapping(sid, 0);
+    sm.setProviderIdent(ServiceMapping.NO_PROVIDER);
+    blockedServices.remove(sm);
+    logger.fine("Blocked services: " + blockedServices);
   }
 
   public void resetLostStatus() {

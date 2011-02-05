@@ -94,7 +94,7 @@ var sections = {
   },
   channels: {
     label: 'Channels',
-    queries: ['proxy-status', 'ca-profiles', 'watched-services', 'profile'],
+    queries: ['proxy-status', 'ca-profiles', 'watched-services', 'linked-services', 'profile'],
     repeat: false,
     handler: function(xml) {
       var services = getAllByTag('service', xml);

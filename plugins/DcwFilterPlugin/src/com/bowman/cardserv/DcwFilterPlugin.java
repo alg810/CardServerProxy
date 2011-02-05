@@ -1,10 +1,12 @@
 package com.bowman.cardserv;
 
 import com.bowman.cardserv.interfaces.*;
+import com.bowman.cardserv.tv.TvService;
 import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.crypto.DESUtil;
 import com.bowman.cardserv.cws.AbstractCwsConnector;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -24,14 +26,19 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
   // these MessageCacheMaps will delete the oldest entry on every insertion, if it is older than 20 secs
   private Map replyMap = Collections.synchronizedMap(new MessageCacheMap(20000));
   private Map connMap = Collections.synchronizedMap(new MessageCacheMap(20000)); // dcw -> connector that recevied it
-  private Map sidMap = Collections.synchronizedMap(new HashMap());
+  private Map sidLinksMap = Collections.synchronizedMap(new HashMap());
+  private Set removedLinks = new HashSet(), profiles;
+  private Map monitoredSidsMap = Collections.synchronizedMap(new MessageCacheMap(20000));
+  private Map invalidLinksMap = Collections.synchronizedMap(new HashMap());
 
   private boolean detectLinks = true, verifyReplies = false;
   private int verifiedCount = 0, badLengthCount = 0, filteredCount = 0, checksumFailCount = 0;
   private String badDcwStr;
+  private File mapFile;
 
   public DcwFilterPlugin() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
+    mapFile = new File("etc", "links.dat");
   }
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
@@ -39,40 +46,80 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
     byte[] bd;
     if(iter != null) while(iter.hasNext()) {
       bd = DESUtil.stringToBytes((String)iter.next());
-      if(bd.length != 16) throw new ConfigException(xml.getFullName(), "bad-dcw not 16 bytes: " + DESUtil.bytesToString(bd));
+      if(bd.length != 16)
+        throw new ConfigException(xml.getFullName(), "bad-dcw not 16 bytes: " + DESUtil.bytesToString(bd));
       else badDcws.add(bd);
     }
     badDcws.add(badDcw1);
     badDcws.add(badDcw2);
 
-    detectLinks = "true".equalsIgnoreCase(xml.getStringValue("detect-links", "true"));
+    detectLinks = "true".equalsIgnoreCase(xml.getStringValue("detect-links", "false"));
     verifyReplies = "true".equalsIgnoreCase(xml.getStringValue("verify-replies", "false"));
+
+    String profilesStr = xml.getStringValue("profiles", "");
+    if(profilesStr != null && profilesStr.length() > 0) {
+      profiles = new HashSet(Arrays.asList(profilesStr.toLowerCase().split(" ")));
+    } else profiles = Collections.EMPTY_SET;
   }
 
   public void start(CardServProxy proxy) {
     Set set = new HashSet();
-    for(Iterator iter = badDcws.iterator(); iter.hasNext(); ) {
+    for(Iterator iter = badDcws.iterator(); iter.hasNext();) {
       set.add(DESUtil.bytesToString((byte[])iter.next()));
     }
     badDcwStr = set.toString();
     logger.info("Filtering bad CWs: " + badDcwStr);
+    loadLinksMap();
   }
-  public void stop() {}
+
+  public void stop() {
+    saveLinksMap();
+  }
 
   public String getName() {
     return "DcwFilterPlugin";
   }
 
   public String getDescription() {
-    return "Change bad dcws into empty newcamd replies (cannot decode).";
+    return "Change bad dcws into empty newcamd replies (cannot decode) and do some basic analysis.";
   }
-  
+
   public Properties getProperties() {
     Properties p = new Properties();
     if(detectLinks) {
       Set links = new TreeSet();
-      for(Iterator iter = sidMap.values().iterator(); iter.hasNext(); ) links.add(iter.next().toString());
+      Set grp, strGrp;
+      String s, m;
+      String[] sa;
+      ProxyConfig config = ProxyConfig.getInstance();
+      long now = System.currentTimeMillis();
+      for(Iterator iter = sidLinksMap.values().iterator(); iter.hasNext();) {
+        grp = (Set)iter.next();
+        strGrp = new TreeSet();
+        for(Iterator i = grp.iterator(); i.hasNext();) {
+          s = (String)i.next();
+          sa = s.split(":");
+          m = (monitoredSidsMap.containsKey(s) && (now - ((CamdNetMessage)monitoredSidsMap.get(s)).getTimeStamp() < 20000)) ? "*" : "";
+          if(profiles.isEmpty() || profiles.contains(sa[1].toLowerCase()))
+            strGrp.add(config.getService(sa[1], Integer.parseInt(sa[0], 16)) + m);
+        }
+        if(strGrp.size() >= 2) links.add(strGrp.toString());
+      }
       p.setProperty("detected-service-links", links.toString());
+      p.setProperty("removed-service-links", removedLinks.toString());
+
+      /*
+      TvService ts; Set monitoredStr = new TreeSet();
+      for(Iterator iter = monitoredSidsMap.keySet().iterator(); iter.hasNext(); ) {
+        s = (String)iter.next();
+        sa = s.split(":");
+        ts = config.getService(sa[1], Integer.parseInt(sa[0], 16));
+        if((now - ((CamdNetMessage)(monitoredSidsMap.get(s))).getTimeStamp()) < 20000)
+          monitoredStr.add(ts.toString() + "=" + (now - ((CamdNetMessage)(monitoredSidsMap.get(s))).getTimeStamp()));
+      }
+      p.setProperty("monitored-service-links", monitoredStr.toString());
+      p.setProperty("service-link-keys", sidLinksMap.keySet().toString());
+      */
     }
     if(verifyReplies) {
       p.setProperty("verified-count", String.valueOf(verifiedCount));
@@ -90,7 +137,33 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
     else return p;
   }
 
-  public CamdNetMessage doFilter(ProxySession session, CamdNetMessage msg) {    
+  protected void loadLinksMap() {
+    if(mapFile.exists()) {
+      try {
+        ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(new FileInputStream(mapFile)));
+        sidLinksMap = (Map)ois.readObject();
+        logger.fine("Loaded links map, " + sidLinksMap.size() + " entries.");
+        ois.close();
+      } catch(Exception e) {
+        logger.throwing(e);
+        logger.warning("Failed to load links map ('" + mapFile.getPath() + "'): " + e);
+      }
+    }
+  }
+
+  protected void saveLinksMap() {
+    try {
+      ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(mapFile)));
+      oos.writeObject(sidLinksMap);
+      logger.fine("Saved links map, " + sidLinksMap.size() + " entries.");
+      oos.close();
+    } catch(IOException e) {
+      logger.throwing(e);
+      logger.warning("Failed to save links map ('" + mapFile.getPath() + "'): " + e);
+    }
+  }
+
+  public CamdNetMessage doFilter(ProxySession session, CamdNetMessage msg) {
     return msg; // do nothing with ecm requests from clients
   }
 
@@ -98,53 +171,56 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
     try {
       if(msg.isDcw() && msg.getDataLength() != 0) { // ignore other types of replies and cannot-decodes
 
-        if(msg.getDataLength() != 16) { // check for bad length
-          logger.warning("Bad DCW length (" + msg.getDataLength() + ") from '" + connector.getName() + "': " +
-              DESUtil.bytesToString(msg.getCustomData()));
-          msg.setCustomData(new byte[0]); // turn bad length dcws into cannot-decodes
-          badLengthCount++;
+        if(profiles.isEmpty() || profiles.contains(msg.getProfileName())) {
 
-        } else if(!checksumDcw(msg.getCustomData())) { // verify dcw checksums
-          logger.warning("Bad DCW checksum in reply from '" + connector.getName() + "': " +
-              DESUtil.bytesToString(msg.getCustomData()));
-          msg.setCustomData(new byte[0]); // turn bad checksum dcws into cannot-decodes
-          checksumFailCount++;
+          if(msg.getDataLength() != 16) { // check for bad length
+            logger.warning("Bad DCW length (" + msg.getDataLength() + ") from '" + connector.getName() + "': " +
+                DESUtil.bytesToString(msg.getCustomData()));
+            msg.setCustomData(new byte[0]); // turn bad length dcws into cannot-decodes
+            badLengthCount++;
 
-        } else if(isBadDcw(msg, badDcws)) { // verify against list of preconfigured bad replies
-          logger.warning("Bad DCW reply from '" + connector.getName() + "': " +
-              DESUtil.bytesToString(msg.getCustomData()));
-          msg.setCustomData(new byte[0]); // turn preconfigured bad dcws into cannot-decodes
-          filteredCount++;
+          } else if(!checksumDcw(msg.getCustomData())) { // verify dcw checksums
+            logger.warning("Bad DCW checksum in reply from '" + connector.getName() + "': " +
+                DESUtil.bytesToString(msg.getCustomData()));
+            msg.setCustomData(new byte[0]); // turn bad checksum dcws into cannot-decodes
+            checksumFailCount++;
 
-        } else {
+          } else if(isBadDcw(msg, badDcws)) { // verify against list of preconfigured bad replies
+            logger.warning("Bad DCW reply from '" + connector.getName() + "': " +
+                DESUtil.bytesToString(msg.getCustomData()));
+            msg.setCustomData(new byte[0]); // turn preconfigured bad dcws into cannot-decodes
+            filteredCount++;
 
-          // check for instances of the same dcw reply being used for other currently watched services
-          if(detectLinks) detectLink(msg);
+          } else {
 
-          boolean blockReply = false;
+            // check for instances of the same dcw reply being used for other currently watched services
+            if(detectLinks) detectLink(msg);
 
-          if(verifyReplies) {
-            // require each reply to be returned from 2 different connectors
-            // if it isn't, block it here and only release if the same reply is received from another connector
-            blockReply = !verifyReply(msg, connector);
+            boolean blockReply = false;
+
+            if(verifyReplies) {
+              // require each reply to be returned from 2 different connectors
+              // if it isn't, block it here and only release if the same reply is received from another connector
+              blockReply = !verifyReply(msg, connector);
+            }
+
+            if(detectLinks || verifyReplies) replyMap.put(msg, msg); // keep a 20 second backlog of all received dcws
+
+            if(blockReply) return null;
           }
-
-          if(detectLinks || verifyReplies) replyMap.put(msg, msg); // keep a 20 second backlog of all received dcws
-
-          if(blockReply) return null;
         }
       }
-    } catch (Throwable t) {
+    } catch(Throwable t) {
       t.printStackTrace(); // intentional catch-all while debugging this use case
     }
     return msg;
   }
 
-  private static boolean checksumDcw(byte[] data) {    
-    if(data[3] != (byte)((data[0] + data[1] + data[2])&0xFF) || data[7] != (byte)((data[4] + data[5] + data[6])&0xFF)) {
+  private static boolean checksumDcw(byte[] data) {
+    if(data[3] != (byte)((data[0] + data[1] + data[2]) & 0xFF) || data[7] != (byte)((data[4] + data[5] + data[6]) & 0xFF)) {
       return false;
     }
-    if(data[11] != (byte)((data[8] + data[9] + data[10])&0xFF) || data[15] != (byte)((data[12] + data[13] + data[14])&0xFF)) {
+    if(data[11] != (byte)((data[8] + data[9] + data[10]) & 0xFF) || data[15] != (byte)((data[12] + data[13] + data[14]) & 0xFF)) {
       return false;
     }
     return true;
@@ -152,7 +228,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
 
   private static boolean isBadDcw(CamdNetMessage msg, Set badDcws) {
     byte[] badDcw;
-    for(Iterator iter = badDcws.iterator(); iter.hasNext(); ) {
+    for(Iterator iter = badDcws.iterator(); iter.hasNext();) {
       badDcw = (byte[])iter.next();
       if(Arrays.equals(msg.getCustomData(), badDcw)) {
         return true;
@@ -163,18 +239,54 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
 
   private boolean detectLink(CamdNetMessage msg) {
     if(msg.getServiceId() != 0) { // dcw has sid, check for services sharing the same dcw sequence
+      String msgId = Integer.toHexString(msg.getServiceId()) + ":" + msg.getProfileName();
+      if(sidLinksMap.containsKey(msgId)) {
+        monitoredSidsMap.put(msgId, msg);
+        // check if previously detected links can be disproven with current traffic
+        String testId;
+        for(Iterator iter = (new ArrayList((Set)sidLinksMap.get(msgId))).iterator(); iter.hasNext();) {
+          testId = (String)iter.next();
+          if(testId.equals(msgId)) continue;
+          if(monitoredSidsMap.containsKey(testId)) {
+            CamdNetMessage prev = (CamdNetMessage)monitoredSidsMap.get(testId);
+            long now = System.currentTimeMillis();
+            if(now - prev.getTimeStamp() < 2000) { // zapping might cause false positives here?
+              if(!prev.equals(msg)) {
+                ProxyConfig config = ProxyConfig.getInstance();
+                String[] sa = testId.split(":");
+                TvService m = config.getService(msg.getProfileName(), msg.getServiceId());
+                TvService t = config.getService(sa[1], Integer.parseInt(sa[0], 16));
+                Set l = new TreeSet();
+                l.add(m.toString());
+                l.add(t.toString());
+                String link = l.toString();
+                Long timeStamp = (Long)invalidLinksMap.get(link);
+                if(timeStamp != null && (now - timeStamp.longValue() < 20000)) { // two mismatches in a row in under 20 sec = probable invalid link
+                  logger.warning("Link no longer seems valid, removing: " + m + " > " + t);
+                  removedLinks.add(link);
+                  Set s = (Set)sidLinksMap.get(msgId);
+                  s.remove(testId);
+                  if(s.size() <= 1) {
+                    sidLinksMap.remove(msgId);
+                    sidLinksMap.remove(testId);
+                  }
+                } else invalidLinksMap.put(link, new Long(now));
+              }
+            }
+          }
+        }
+      }
+
       if(replyMap.containsKey(msg)) {
         CamdNetMessage prev = (CamdNetMessage)replyMap.get(msg);
         if(prev.getServiceId() != msg.getServiceId()) {
           String prevId = Integer.toHexString(prev.getServiceId()) + ":" + prev.getProfileName();
-          String msgId = Integer.toHexString(msg.getServiceId()) + ":" + msg.getProfileName();
-          Set links = (Set)sidMap.get(prevId);
-          if(links == null) links = (Set)sidMap.get(msgId);
+          Set links = (Set)sidLinksMap.get(prevId);
+          if(links == null) links = (Set)sidLinksMap.get(msgId);
           if(links == null) links = new TreeSet();
-          ProxyConfig config = ProxyConfig.getInstance();
-          links.add(config.getService(prev.getProfileName(), prev.getServiceId()).toString());
-          links.add(config.getService(msg.getProfileName(), msg.getServiceId()).toString());
-          if(sidMap.put(prevId, links) == null || sidMap.put(msgId, links) == null) {
+          links.add(prevId);
+          links.add(msgId);
+          if(sidLinksMap.put(prevId, links) == null || sidLinksMap.put(msgId, links) == null) {
             logger.fine("Link found: " + links + "\n\t" + prev + "\n\t" + msg);
             return true;
           }
@@ -185,7 +297,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
   }
 
   private boolean verifyReply(CamdNetMessage msg, CwsConnector connector) {
-    CwsConnector prevConn = (CwsConnector)connMap.put(msg, connector); 
+    CwsConnector prevConn = (CwsConnector)connMap.put(msg, connector);
     if(prevConn != null) {
       if(prevConn != connector) { // same reply has previously been received from another connector
         verifiedCount++;
@@ -194,11 +306,11 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
       }
     }
     // no previous encounter with this reply
-    return false;        
+    return false;
   }
 
   public byte[] getResource(String path, boolean admin) {
-    return null; 
+    return null;
   }
 
   public byte[] getResource(String path, byte[] inData, boolean admin) {
