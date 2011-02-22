@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.0.0
+AGENTV=1.0.1
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 
@@ -105,7 +105,24 @@ get_boxtype()
 
 get_cputype()
 {
-  CPUTYPE=$(uname -m)
+  case $(uname -m) in
+    ppc)
+        CPUTYPE="ppc"
+    ;;
+
+    mips)
+        CPUTYPE="mips"
+    ;;
+
+    sh4)
+        CPUTYPE="sh4"
+    ;;
+
+    *)
+        # mips boxes reporting cpu id instead of architecture. e.g. dm800 returns 7401c0
+        CPUTYPE="mips"
+    ;;
+  esac
 }
 
 get_imginfo()
@@ -259,13 +276,13 @@ while [ 1 ]; do
     fi
     TIME=$(date +%s)
     KERNVERSION=$(cat /proc/version)
-    MACHINE=$(uname -m)
     FIRSTURL=http://$CSPHOST:$CSPPORT/login
 
+    get_cputype
     get_boxtype
     get_imginfo
     
-    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-kernel-version: $KERNVERSION" --header "csp-uname-m: $MACHINE" --header "csp-img-guess: $IMGGUESS" --header "csp-img-info: $IMGINFO" --header "csp-user: $CSPUSER" --header "csp-seed: $TIME" --header "csp-boxtype: $BOXTYPE" --header "csp-iv: $INTERVAL" --header "csp-enigma-version: $ENIGMAV" --header "csp-mac: $HWADDR" -O - $FIRSTURL > /var/etc/cspagent.id
+    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-kernel-version: $KERNVERSION" --header "csp-uname-m: $CPUTYPE" --header "csp-img-guess: $IMGGUESS" --header "csp-img-info: $IMGINFO" --header "csp-user: $CSPUSER" --header "csp-seed: $TIME" --header "csp-boxtype: $BOXTYPE" --header "csp-iv: $INTERVAL" --header "csp-enigma-version: $ENIGMAV" --header "csp-mac: $HWADDR" -O - $FIRSTURL > /var/etc/cspagent.id
     if [ $? != "0" ]; then
       echo "$(date): Unable to obtain a box id from csp at $FIRSTURL ... try to get new box id in next interval" >> /tmp/csperr
       rm /var/etc/cspagent.id
