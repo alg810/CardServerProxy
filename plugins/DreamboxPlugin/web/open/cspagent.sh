@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=0.9.9
+AGENTV=1.0.0
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 
@@ -95,6 +95,8 @@ get_boxtype()
   else
     if [ -d /proc/bus/tuxbox/dbox2 ]; then
       BOXTYPE="dbox2"
+    elif [ -e /etc/model ]; then
+      BOXTYPE=$(cat /etc/model)
     else
       BOXTYPE=$(hostname)
     fi
@@ -103,12 +105,7 @@ get_boxtype()
 
 get_cputype()
 {
-  if [ "$(uname -m)" = "ppc" ]
-  then
-    CPUTYPE="ppc"
-  else
-    CPUTYPE="mips"
-  fi
+  CPUTYPE=$(uname -m)
 }
 
 get_imginfo()
@@ -132,9 +129,12 @@ get_imginfo()
   elif [ $(ps | grep blackholesocker | grep -v grep | wc -l) -ge 1 ] || [ -e /usr/bin/blackholesocker ]
   then
     IMGGUESS="Dreamelite"
-  elif [ $(cat /proc/version | grep -i newnigma | wc -l) -ge 1 ]
+  elif [ $(grep -i newnigma /proc/version | wc -l) -ge 1 ]
   then       
     IMGGUESS="Newnigma2"
+  elif [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]
+  then
+    IMGGUESS="AAF"
   else
     IMGGUESS="Unknown"
   fi
