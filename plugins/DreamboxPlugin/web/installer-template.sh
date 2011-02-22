@@ -1,6 +1,6 @@
 #!/bin/ash
 #
-# CSP installer for Agent v0.9.x 
+# CSP installer for Agent v1.x.x
 #
 
 #Variables populated automatically on download by the DreamboxPlugin
@@ -123,17 +123,24 @@ exit 0' > /etc/init.d/cspagent
 		chmod +x /etc/init.d/cspagent
 		echo "output: Script generated."
 
-		RUNLEVELS="2 3 4"
-		echo "output: Linking start script to runlevel $RUNLEVELS"
+		if [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]
+		then
+            echo "output: AAF Image detected."
+            echo "output: Using AAF method..."
+            aaf_image
+		else
+		    RUNLEVELS="2 3 4"
+		    echo "output: Linking start script to runlevel $RUNLEVELS"
 
-		for i in $RUNLEVELS
-		do
-			if ! [ -e /etc/rc$i.d/S80cspagent ]; then
-				ln -s /etc/init.d/cspagent /etc/rc$i.d/S80cspagent
-			else
-				echo "output: Link to runlevel $i allready exists..."
-			fi
-		done
+		    for i in $RUNLEVELS
+		    do
+			    if ! [ -e /etc/rc$i.d/S80cspagent ]; then
+				    ln -s /etc/init.d/cspagent /etc/rc$i.d/S80cspagent
+			    else
+				    echo "output: Link to runlevel $i allready exists..."
+			    fi
+		    done
+		fi
 
 		echo "output: CSP Agent installed. Starting service..."
 		/etc/init.d/cspagent start
@@ -188,6 +195,24 @@ dbox2_sportster()
 	else
 		echo "output: Error: user.start_script not found. Skipping ..."
 	fi
+}
+
+aaf_image()
+{
+        if [ -e /etc/init.d/autostart/start.sh ]
+        then
+            if [ $(grep -i csp /etc/init.d/autostart/start.sh | wc -l) -le 0 ]
+            then
+                insert_line=$(grep -n startServer /etc/init.d/autostart/start.sh | sed 's/[^0-9]//g')
+                let insert_line++
+                sed -i "$insert_line i/etc/init.d/cspagent start" /etc/init.d/autostart/start.sh
+                echo "output: CSP Agent start script added to startServer() in start.sh ..."
+            else
+                echo "output: Error: CSP Agent allready installed. Skipping ..."
+            fi
+        else
+            echo "output: Error: /etc/init.d/autostart/start.sh not found. Skipping ..."
+        fi
 }
 
 evaluate_method()

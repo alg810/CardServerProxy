@@ -16,7 +16,7 @@ else
 fi
 
 # Telnet doesn't exist in busybox in some older images, but nc does and works with the same syntax
-if [ ! -x /bin/telnet ]; then
+if [ $(which telnet | wc -l) -le 0 ]; then
   TELNET="nc"
 else
   TELNET="telnet"
@@ -239,6 +239,7 @@ while [ 1 ]; do
 
       # Send all output from script to the proxy
       exec $OUTFILE 2>&1 | $TELNET $CSPHOST $CSPPORT 2> /tmp/csplog &
+      sleep 1
       
       # Remove script
       rm -f $OUTFILE

@@ -143,10 +143,7 @@ public class DreamboxPlugin implements ProxyPlugin {
 
   public static String getBoxCpuArch(BoxMetaData box) {
     if(box == null) return null;
-    else {
-      if("ppc".equalsIgnoreCase(box.getProperty("machine"))) return "ppc";
-      else return "mips";
-    }
+    else return box.getProperty("machine");
   }
 
   public void start(CardServProxy proxy) {
