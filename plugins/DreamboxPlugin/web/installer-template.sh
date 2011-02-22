@@ -125,9 +125,9 @@ exit 0' > /etc/init.d/cspagent
 
 		if [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]
 		then
-            echo "output: AAF Image detected."
-            echo "output: Using AAF method..."
-            aaf_image
+	            echo "output: AAF Image detected."
+        	    echo "output: Using AAF method..."
+	            aaf_image
 		else
 		    RUNLEVELS="2 3 4"
 		    echo "output: Linking start script to runlevel $RUNLEVELS"
