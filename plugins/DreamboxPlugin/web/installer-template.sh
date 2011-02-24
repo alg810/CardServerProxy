@@ -203,7 +203,7 @@ aaf_image()
         then
             if [ $(grep -i csp /etc/init.d/autostart/start.sh | wc -l) -le 0 ]
             then
-                insert_line=$(grep -n startEmu /etc/init.d/autostart/start.sh | sed 's/[^0-9]//g')
+                insert_line=$(grep -n startEmu\(\) /etc/init.d/autostart/start.sh | sed 's/[^0-9]//g')
                 let insert_line++
                 sed -i "$insert_line i/etc/init.d/cspagent start" /etc/init.d/autostart/start.sh
                 echo "output: CSP Agent start script added to startEmu() in start.sh ..."
