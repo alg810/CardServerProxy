@@ -99,6 +99,12 @@ if [ $(mount | grep /var | grep tmpfs | wc -l) -ge 1 ]; then
         fi
 fi
 
+# check for loopback interface configuration
+if [ $(ifconfig lo | grep UP | wc -l) -le 0 ] || \
+   [ $(ifconfig lo | grep 127.0.0.1 | wc -l) -le 0 ]; then
+                ifconfig lo 127.0.0.1
+fi
+
 # start/stop cspagent
 if ! [ -x /var/bin/cspagent.sh ]; then
 	exit 0
