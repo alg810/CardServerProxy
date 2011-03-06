@@ -16,7 +16,7 @@ else
 fi
 
 # Telnet doesn't exist in busybox in some older images, but nc does and works with the same syntax
-if [ $(which telnet | wc -l) -le 0 ]; then
+if [ $(busybox | grep -wc telnet) -le 0 ]; then
   TELNET="nc"
 else
   TELNET="telnet"
