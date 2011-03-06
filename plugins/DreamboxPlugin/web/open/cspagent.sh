@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.0.1
+AGENTV=1.0.2
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 
