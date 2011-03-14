@@ -1,8 +1,9 @@
 #!/bin/ash
 
-AGENTV=1.0.2
+AGENTV=1.0.5
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
+TIMEOUT=10
 
 # Source conf-file
 . /var/etc/cspagent.conf
@@ -128,7 +129,7 @@ get_cputype()
 get_imginfo()
 {
   # Try to gather additional image characterstics that can be used to figure out which one is installed
-  if [ $(grep iCVS /var/etc/image-version | wc -l) -ge 1 ]
+  if [ $(grep -i icvs /etc/image-version | wc -l) -ge 1 ]
   then                                                                                                                                    
     IMGGUESS="iCVS" 
   elif [ $(ps | grep gdaemon | grep -v grep | wc -l) -ge 1 ] || [ -e /etc/gemini_dissociation.txt ]
@@ -143,15 +144,21 @@ get_imginfo()
     if [ $? != "0" ]; then
       echo "$(date): cannot get image info from neutrino yweb webinterface" >> /tmp/csperr
     fi
-  elif [ $(ps | grep blackholesocker | grep -v grep | wc -l) -ge 1 ] || [ -e /usr/bin/blackholesocker ]
+  elif [ -e /usr/bin/blackholesocker ] || [ $(grep -i dream-elite /etc/image-version | wc -l) -ge 1 ]
   then
     IMGGUESS="Dreamelite"
-  elif [ $(grep -i newnigma /proc/version | wc -l) -ge 1 ]
+  elif [ $(grep -i newnigma /etc/image-version | wc -l) -ge 1 ]
   then       
     IMGGUESS="Newnigma2"
   elif [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]
   then
     IMGGUESS="AAF"
+  elif [ $(grep -i vti /etc/image-version | wc -l) -ge 1 ]
+  then
+    IMGGUESS="VTi"
+  elif [ -e /etc/image-version ]
+  then
+    IMGGUESS=$(grep comment /etc/image-version | sed 's/comment=//g')
   else
     IMGGUESS="Unknown"
   fi
@@ -186,6 +193,36 @@ get_imginfo()
   fi
 }
 
+get_ipinfo()
+{
+  # Get IP addresses from eth/wlan/tun interfaces
+  if [ $(ifconfig | grep tun | wc -l) -ge 1 ]; then
+    DEVICE=$(ifconfig | grep tun | awk {'print $1'})
+    IP=$(expr "$(ifconfig $DEVICE | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
+  elif [ $(ifconfig | grep wlan0 | wc -l) -ge 1 ]; then
+    IP=$(expr "$(ifconfig wlan0 | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
+  elif [ $(ifconfig | grep ath0 | wc -l) -ge 1 ]; then
+    IP=$(expr "$(ifconfig ath0 | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
+  else
+    IP=$(expr "$(ifconfig eth0 | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
+  fi
+}
+
+timeout()
+{
+  PID=$1
+
+  # Start timeout watchdog in a subshell
+  (sleep $TIMEOUT ; echo "$(date): Timeout ... Sending SIGTERM to process $PID ..." >> /tmp/csperr ; kill $PID 2> /dev/null) &
+  TPID=$!
+
+  # Wait for process to be finished
+  wait $PID
+
+  # Kill timeout watchdog
+  kill $TPID 2> /dev/null
+}
+
 # Configure Enigma version
 if [ -z $ENIGMAV ]
 then
@@ -212,25 +249,15 @@ while [ 1 ]; do
     # Set Box-ID
     BOXID=$(cat /var/etc/cspagent.id)
     UPTIME=$(uptime)
-    
-    # Return ip from tun/wlan interface if configured
-    if [ $(ifconfig | grep tun | wc -l) -ge 1 ]; then
-      DEVICE=$(ifconfig | grep tun | awk {'print $1'})
-      IP=$(expr "$(ifconfig $DEVICE | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
-    elif [ $(ifconfig | grep wlan0 | wc -l) -ge 1 ]; then
-      IP=$(expr "$(ifconfig wlan0 | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
-    else
-      IP=$(expr "$(ifconfig eth0 | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
-    fi
-    
-    SCRIPTURL=http://$CSPHOST:$CSPPORT/checkin
-    
+
+    # Get additional informations
     get_service
+    get_ipinfo
     
     # Get script to run from proxy
-    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-sid: $SID" --header "csp-onid: $ONID" --header "csp-uptime: $UPTIME" --header "csp-iv: $INTERVAL" --header "csp-boxid: $BOXID" -O - $SCRIPTURL > $OUTFILE 2> /tmp/csplog
-
-    sleep 1
+    SCRIPTURL=http://$CSPHOST:$CSPPORT/checkin
+    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-sid: $SID" --header "csp-onid: $ONID" --header "csp-uptime: $UPTIME" --header "csp-iv: $INTERVAL" --header "csp-boxid: $BOXID" -O - $SCRIPTURL > $OUTFILE 2> /tmp/csplog &
+    timeout $!
     
     # Update log file if needed
     if [ -s /tmp/csplog ]; then
@@ -260,32 +287,29 @@ while [ 1 ]; do
       
       # Remove script
       rm -f $OUTFILE
-
       sleep 1
+
       SKIPSLEEP=true
     fi
   else
     # Id-file doesn't exist, give the proxy enough unique info to create one...
     HWADDR=$(expr "$(ifconfig eth0 | grep HW)" : ".*HWaddr *\([0-9A-F:]*\)")
-    # Return ip from wlan interface if configured
-    # We generate unique id with this values, so we dont take care of tun devices
-    if [ $(ifconfig | grep wlan0 | wc -l) -ge 1 ]; then
-      IP=$(expr "$(ifconfig wlan0 | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
-    else
-      IP=$(expr "$(ifconfig eth0 | grep "inet addr:")" : ".*inet addr: *\([0-9.]*\)")
-    fi
     TIME=$(date +%s)
     KERNVERSION=$(cat /proc/version)
-    FIRSTURL=http://$CSPHOST:$CSPPORT/login
 
+    # Get additional informations
     get_cputype
     get_boxtype
     get_imginfo
+    get_ipinfo
     
-    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-kernel-version: $KERNVERSION" --header "csp-uname-m: $CPUTYPE" --header "csp-img-guess: $IMGGUESS" --header "csp-img-info: $IMGINFO" --header "csp-user: $CSPUSER" --header "csp-seed: $TIME" --header "csp-boxtype: $BOXTYPE" --header "csp-iv: $INTERVAL" --header "csp-enigma-version: $ENIGMAV" --header "csp-mac: $HWADDR" -O - $FIRSTURL > /var/etc/cspagent.id
+    # First connect to CSP - send infos in http headers and get Box-ID
+    FIRSTURL=http://$CSPHOST:$CSPPORT/login
+    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-kernel-version: $KERNVERSION" --header "csp-uname-m: $CPUTYPE" --header "csp-img-guess: $IMGGUESS" --header "csp-img-info: $IMGINFO" --header "csp-user: $CSPUSER" --header "csp-seed: $TIME" --header "csp-boxtype: $BOXTYPE" --header "csp-iv: $INTERVAL" --header "csp-enigma-version: $ENIGMAV" --header "csp-mac: $HWADDR" -O - $FIRSTURL > /var/etc/cspagent.id 2> /tmp/csplog &
+    timeout $!
+
     if [ $? != "0" ]; then
       echo "$(date): Unable to obtain a box id from csp at $FIRSTURL ... try to get new box id in next interval" >> /tmp/csperr
-      rm /var/etc/cspagent.id
     fi
   fi
 done
