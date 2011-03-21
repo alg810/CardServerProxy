@@ -346,8 +346,8 @@ public class CwsServiceMapper implements XmlConfigurable {
     if(isServiceUnknown(id.serviceId)) return result;
 
     if(result == null || result.isEmpty()) {
-      // don't count failures when customId is set
-      if(id.getCustomId() == 0) incFailures(id);
+      // don't count failures when customId is set or service is in reset list
+      if(id.getCustomId() == 0 && !resetServices.contains(id)) incFailures(id);
     }
     if(autoExcludeThreshold > 0) {
       if(getFailures(id) >= autoExcludeThreshold) {
