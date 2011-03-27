@@ -40,7 +40,7 @@ public class ProxyConfig implements FileChangeListener {
   private String logFile, logLevel, wtBadFlags;
   private int wtMaxDelay, etMinCount, maxThreads, sessionTimeout, newcamdMaxMsgSize, maxPending, maxConnectionsIP;
   private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs, blockCaidMismatch;
-  private boolean wtIncludeFile;
+  private boolean wtIncludeFile, userAllowDifferentIp;
 
   private boolean firstRead = true, started = false;
   private byte[] defaultProfileDesKey, defaultConnectorDesKey, defaultClientId;
@@ -145,6 +145,10 @@ public class ProxyConfig implements FileChangeListener {
 
   public boolean isUserAllowOnFailure() {
     return userAllowOnFailure;
+  }
+
+  public boolean isUserAllowDifferentIp() {
+    return userAllowDifferentIp;
   }
 
   public boolean isLogFailures() {
@@ -367,6 +371,7 @@ public class ProxyConfig implements FileChangeListener {
 
     ProxyXmlConfig umConfig = currentConfig.getSubConfig("user-manager");
     userAllowOnFailure = "true".equalsIgnoreCase(umConfig.getStringValue("allow-on-failure", "false"));
+    userAllowDifferentIp = "true".equalsIgnoreCase(umConfig.getStringValue("allow-different-ip", "false"));
     logFailures = "true".equalsIgnoreCase(umConfig.getStringValue("log-failures", "true"));
 
     ProxyXmlConfig profileConf = currentConfig.getSubConfig("ca-profiles");

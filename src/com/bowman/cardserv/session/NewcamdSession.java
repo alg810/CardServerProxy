@@ -105,7 +105,7 @@ public class NewcamdSession extends AbstractSession {
             loginFailure(user, "account disabled", msg);
           } else if(!Globber.match(ipMask, getRemoteAddress(), false)) {
             loginFailure(user, "ip check failed: " + ipMask, msg);
-          } else if(sm.checkSessionIP(user, getRemoteAddress())) {
+          } else if(!config.isUserAllowDifferentIp() && sm.checkSessionIP(user, getRemoteAddress())) {
             loginFailure(user, "session from different source ip exists, denying multiple", msg);
           } else if(!checkClientId(clientId)) {
             loginFailure(user, "client-id not allowed/supported: " + clientId, msg);

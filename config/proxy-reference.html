@@ -127,7 +127,7 @@ Contents (element paths in <strong>bold</strong> represent common changes, anyth
   </ul>
 </ul>
 <br />
-<li><a href="#user-manager">user-manager (attributes: *class, allow-on-failure, log-failures)</a></li>
+<li><a href="#user-manager">user-manager (attributes: *class, allow-on-failure, allow-different-ip, log-failures)</a></li>
   <ul>
     <li><a href="#user-manager/auth-config">user-manager/auth-config</a></li>
     <ul>
@@ -737,11 +737,12 @@ Example:  <em class='italic'>&lt;super-users>root admin&lt;/super-users></em><br
 </a>
 
 <a name="user-manager">
-<div class='indent'>user-manager (attributes: *class, allow-on-failure, log-failures, jar-file)</div><br />
+<div class='indent'>user-manager (attributes: *class, allow-on-failure, allow-different-ip, log-failures, jar-file)</div><br />
 Defines the user-manager for the proxy. This is used for authenticating all client access, via both the newcamd protocol and the http/xml interface.<br />
 - <strong class='bold'>class</strong>: The java class name of the user manager implementation. This allows the entire user handling to be easily replaced, for example to use an existing remote database or passwd file of an arbitrary format/type (see <strong>README.XmlUserManager.txt</strong> for one example). The default built-in user manager reads the user definitions directly from the proxy.xml config file.<br />
 A user manager class must implement com.bowman.cardserv.interfaces.UserManager (or extend the default SimpleUserManager).<br />
 - <strong class='bold'>allow-on-failure</strong>: true/false (default: false). If a user-manager is unable to verify the identify of a user or complete a request for info due to internal/temporary problems (such as network issues in a remote usermanager), this controls if  the manager automatically allows access for that user. I.e: disable security completely in case the user  database is down.<br />
+- <strong class='bold'>allow-different-ip</strong>: true/false (default: false). Allows duplicate Newcamd connections / sessions from different IP sources. The <a href="#user-manager/auth-config/user">max-connection</a> setting was still in effect when using this option.<br />
 - <strong class='bold'>log-failures</strong>: true/false (default: false). Log login failures.<br />
 - <strong class='bold'>jar-file</strong>: Allows loading the user-manager class via a separate classloader, from an external jar file in the "plugins" dir. This should make it easier to handle custom implementations. If jar-file is omitted, the system classloader is used (as in all versions before 0.8.10).<br />
 <br />
