@@ -18,7 +18,6 @@ import java.io.IOException;
 public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
 
   private Set allowedClients = new HashSet(); // todo
-  private Set mappedProfiles = new HashSet();
   private Map sentData = new HashMap();
 
   private CardData mainCard;
@@ -49,6 +48,7 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
         if(excluded.contains(profile.getName())) iter.remove();
       }
     }
+    if(user != null) setupLimits(ProxyConfig.getInstance().getUserManager());
   }
 
   protected Integer[] getProvidersForCaId(int caId) {

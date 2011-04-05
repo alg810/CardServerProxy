@@ -21,6 +21,7 @@ public class NewcamdSession extends AbstractSession {
   private static final int LOGIN_SO_TIMEOUT = 30 * 1000;
 
   private int emmCount, keepAliveCount;
+  private long lastKeepAliveTimeStamp;
 
   private byte[] cfgKey;
   protected NewcamdConnection conn;
@@ -135,11 +136,7 @@ public class NewcamdSession extends AbstractSession {
             }
 
             this.user = user;
-            this.allowedServices = um.getAllowedServices(user, getProfile().getName());
-            this.blockedServices = um.getBlockedServices(user, getProfile().getName());
-            this.allowedConnectors = um.getAllowedConnectors(user);
-            this.allowedRate = um.getAllowedEcmRate(user);
-            if(allowedRate != -1) allowedRate = allowedRate * 1000;
+            setupLimits(um);
 
             byte[] desKey = cfgKey;
             desKey = DESUtil.xorUserPass(desKey, cryptPw);
@@ -426,7 +423,10 @@ public class NewcamdSession extends AbstractSession {
           }
         }
       } else if(msg.isEmm()) emmCount++;
-      else if(msg.isKeepAlive()) keepAliveCount++;
+      else if(msg.isKeepAlive()) {
+        keepAliveCount++;
+        lastKeepAliveTimeStamp = System.currentTimeMillis();
+      }
       if(card != null) msg.setProviderContext(card.getProviders());
       msg.setCaId(listenPort.getProfile().getCaId());
       msg.setNetworkId(listenPort.getProfile().getNetworkId());
@@ -459,7 +459,8 @@ public class NewcamdSession extends AbstractSession {
   }
 
   public int getKeepAliveCount() {
-    return keepAliveCount;
+    if(System.currentTimeMillis() - lastKeepAliveTimeStamp > 305000) return 0;
+    else return keepAliveCount;
   }
 
   public long getIdleTime() {

@@ -24,7 +24,8 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
   String user, loginName, clientId;
   String remoteAddress;
 
-  Set allowedServices, blockedServices, allowedConnectors;
+  Set allowedConnectors, mappedProfiles;
+  Map allowedServices, blockedServices;
   int allowedRate;
 
   private long connectTimeStamp, lastZapTimeStamp;
@@ -89,12 +90,6 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
                 currentTransaction.setRequest(msg);
                 msg.setFilteredBy("Duplicate ECM");
               } else {
-                String profileName = getProfileName();
-                if(getProfile() == CaProfile.MULTIPLE) {
-                  CaProfile profile = ProxyConfig.getInstance().getProfileById(msg.getNetworkId(), msg.getCaId());
-                  if(profile != null) profileName = profile.getName();
-                }
-                msg.setProfileName(profileName);
                 currentTransaction = new EcmTransaction(msg);
                 transactions.put(msg, currentTransaction);
               }
@@ -124,8 +119,50 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
     }
   }
 
+  void setupLimits(UserManager um) {
+    allowedServices = null;
+    blockedServices = null;
+    if(getProfile() == CaProfile.MULTIPLE) {
+      CaProfile profile;
+      if(mappedProfiles != null) {
+        for(Iterator iter = mappedProfiles.iterator(); iter.hasNext(); ) {
+          profile = (CaProfile)iter.next();
+          addSidList(um, profile.getName(), true);
+          addSidList(um, profile.getName(), false);
+        }
+      }
+    } else {
+      addSidList(um, getProfile().getName(), true);
+      addSidList(um, getProfile().getName(), false);
+    }
+    this.allowedConnectors = um.getAllowedConnectors(user);
+    this.allowedRate = um.getAllowedEcmRate(user);
+    if(allowedRate != -1) allowedRate = allowedRate * 1000;
+  }
+
+  private void addSidList(UserManager um, String profileName, boolean allow) {
+    Set services = allow?um.getAllowedServices(user, profileName):um.getBlockedServices(user, profileName);
+    if(services != null) {
+      if(allow) {
+        if(allowedServices == null) allowedServices = new HashMap();
+        allowedServices.put(profileName, services);
+      } else {
+        if(blockedServices == null) blockedServices = new HashMap();
+        blockedServices.put(profileName, services);
+      }
+    }
+  }
+
   boolean checkLimits(CamdNetMessage msg) {
     if(msg.isEcm()) {
+
+      String profileName = getProfileName();
+      if(getProfile() == CaProfile.MULTIPLE) {
+        CaProfile profile = ProxyConfig.getInstance().getProfileById(msg.getNetworkId(), msg.getCaId());
+        if(profile != null) profileName = profile.getName();
+      }
+      msg.setProfileName(profileName);
+
       long now = System.currentTimeMillis();
       long interval = now - (lastTransaction==null?connectTimeStamp:lastTransaction.getReadTime());
 
@@ -146,17 +183,22 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
 
       if(interval < 60000) avgList.addRecord(now, (int)interval); // avoid extreme entries after standby/idletime
 
+      Set services;
       if(allowedServices != null) {
-        if(!allowedServices.contains(new Integer(msg.getServiceId()))) {
-          String name = ProxyConfig.getInstance().getServiceName(getProfile().getName(), msg.getServiceId());
-          logger.info(name + " blocked for: " + this);
-          msg.setFilteredBy("Service not in allow list: " + name);
-          return false;
+        services = (Set)allowedServices.get(msg.getProfileName());
+        if(services != null) {
+          if(!services.contains(new Integer(msg.getServiceId()))) {
+            String name = ProxyConfig.getInstance().getServiceName(msg);
+            logger.info(name + " blocked for: " + this);
+            msg.setFilteredBy("Service not in allow list: " + name);
+            return false;
+          }
         }
       }
       if(blockedServices != null) {
-	      if(blockedServices.contains(new Integer(msg.getServiceId()))) {
-          String name = ProxyConfig.getInstance().getServiceName(getProfile().getName(), msg.getServiceId());
+        services = (Set)blockedServices.get(msg.getProfileName());
+	      if(services.contains(new Integer(msg.getServiceId()))) {
+          String name = ProxyConfig.getInstance().getServiceName(msg);
           logger.info(name + " blocked for: " + this);
           msg.setFilteredBy("Service in block list: " + name);
           return false;

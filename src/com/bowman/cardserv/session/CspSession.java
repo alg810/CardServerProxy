@@ -105,11 +105,7 @@ public class CspSession extends AbstractSession implements CwsListener {
       oldSession.close();
     }
 
-    this.allowedServices = um.getAllowedServices(user, getProfile().getName());
-    this.blockedServices = um.getBlockedServices(user, getProfile().getName());
-    this.allowedConnectors = um.getAllowedConnectors(user);
-    this.allowedRate = um.getAllowedEcmRate(user);
-    if(allowedRate != -1) allowedRate = allowedRate * 1000;
+    setupLimits(config.getUserManager());
 
     if(!"0.0.0.0".equals(getRemoteAddress())) {
       sm.addSession(this);
@@ -373,6 +369,7 @@ public class CspSession extends AbstractSession implements CwsListener {
       }
     } else { // profile added or updated
       if(updateProfileState(profile)) {
+        if(user != null) setupLimits(ProxyConfig.getInstance().getUserManager());
         logger.fine("Profile '" + profile.getName() + "' updated, sent altered state information.");
       }
     }
