@@ -18,7 +18,7 @@ Example config:
 ---------------
   <plugin class="com.bowman.cardserv.BetacryptTunnelPlugin" enabled="true" jar-file="betacrypttunnelplugin.jar">
     <plugin-config>
-      <profiles>pseudo_nagra_profile</profiles>
+      <profiles>real_betacrypt_profile pseudo_nagra_profile</profiles>
       <target-network-id>0085</target-network-id>
       <ecm-header>C7 00 00 00 01 10 10 00 87</ecm-header>
     </plugin-config>
