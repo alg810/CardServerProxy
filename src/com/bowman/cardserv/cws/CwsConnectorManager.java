@@ -121,6 +121,35 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
     logger.fine("Configuration updated");
   }
 
+  public boolean setTempAuUser(String name, String user) {
+    if(!config.getUserManager().exists(user)) return false;
+    CwsConnector cws = this.getCwsConnectorByName(name);
+    if(cws != null) {
+      CardData card = cws.getRemoteCard();
+      if(card == null && card.isAnonymous()) return false;
+      CaProfile profile = cws.getProfile();
+      if(profile != CaProfile.MULTIPLE && profile != null && cws.isEnabled()) {
+        auUsers.put(user + ":" + profile.getName(), cws.getName());
+        SessionManager sm = SessionManager.getInstance();
+        List sessions = sm.getSessionsForUser(user);
+        ProxySession session;
+        if(sessions != null && !sessions.isEmpty()) {
+          for(Iterator iter = sessions.iterator(); iter.hasNext();) {
+            session = (ProxySession)iter.next();
+            if(profile.getName().equals(session.getProfileName()) || session.getProfile() == CaProfile.MULTIPLE)
+              if(session instanceof NewcamdSession && !session.getLastContext().equals(card.toString())) {
+                  logger.info("AU changed for '" + user + ":" + profile.getName() +
+                      "', kicking existing session to force reconnect and card-data update: " + session);
+                  session.close();
+              }
+          }
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
   protected void updateAuUsers() throws ConfigException {
     auUsers.clear();
     CwsConnector cws; String[] names; String name;
@@ -567,7 +596,7 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
     String conn = (String)auUsers.get(user + ":" + profile);
     if(conn == null) return null;
     CwsConnector cws = getCwsConnectorByName(conn);
-    if(cws != null && cws.isReady() && cws.isAuAllowed(user)) return cws;
+    if(cws != null && cws.isReady()) return cws;
     else return null;
   }
 

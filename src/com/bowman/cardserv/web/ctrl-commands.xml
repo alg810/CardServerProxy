@@ -41,6 +41,15 @@
     <command-param name="metric" label="metric" allow-arbitrary="true"/>
   </command>
 
+  <command name="set-au-user" label="Set au user" description="Temporarily toggle au status for a user and connector (until next config load, may kick the user sesions)">
+    <command-param name="user" label="" allow-arbitrary="false">
+      <option source="@connected-users"/>
+    </command-param>
+    <command-param name="name" label="for connector" allow-arbitrary="false">
+      <option source="@connectors"/>
+    </command-param>
+  </command>
+
   <command name="set-profile-debug" label="Set profile debug" description="Temporarily sets debug flag for one or all profile (setting to false deletes user transaction logs).">
     <command-param name="value" label="" allow-arbitrary="false">
       <option value="TRUE"/>

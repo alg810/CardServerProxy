@@ -213,6 +213,19 @@ public class XmlHelper implements CommandManager {
     return new CtrlCommandResult(result, resultMsg, null);
   }
 
+  public CtrlCommandResult runCtrlCmdSetAuUser(Map params) throws RemoteException {
+    boolean result = false;
+    String resultMsg;
+    String name = (String)params.get("name");
+    String user = (String)params.get("user");
+    if(user == null) return new CtrlCommandResult(false, "Missing parameter: user", null);
+    if(name != null) {
+      result = proxy.setAuUser(name, user);
+      resultMsg = result?"Temp au-user '" + user + "' toggled for: " + name:"Invalid connector/user";
+    } else resultMsg = "Missing parameter: name";
+    return new CtrlCommandResult(result, resultMsg, null);
+  }
+
   public CtrlCommandResult runCtrlCmdSetProfileDebug(Map params) throws RemoteException {
     boolean value = "true".equalsIgnoreCase((String)params.get("value"));
     String profile = (String)params.get("profile");

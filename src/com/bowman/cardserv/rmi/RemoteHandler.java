@@ -421,6 +421,10 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
     conn.setMetric(metric);
   }
 
+  public boolean setAuUser(String cwsName, String user) throws RemoteException {
+    return config.getConnManager().setTempAuUser(cwsName, user);
+  }
+
   public void setProfileDebug(boolean debug, String profileName) throws RemoteException {
     CaProfile profile;
     if(profileName != null) {
