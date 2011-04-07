@@ -16,7 +16,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
 
   private ProxyLogger logger;
   private Set profiles = new HashSet();
-  private int targetNetworkId, tunneledCount = 0;
+  private int targetNetworkId, tunneledCount = 0, fixedEcmCount = 0;
   private byte [] ecmHeader;
 
   public BetacryptTunnelPlugin() {
@@ -58,6 +58,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
   
   public Properties getProperties() {
     Properties p = new Properties();
+    if(fixedEcmCount > 0) p.setProperty("fixed-ecm-count", String.valueOf(fixedEcmCount));
     if(tunneledCount > 0) p.setProperty("tunneled-count", String.valueOf(tunneledCount));
     if(ecmHeader != null) p.setProperty("ecm-header", DESUtil.bytesToString(ecmHeader));
     if(p.isEmpty()) return null;
@@ -88,6 +89,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
                   break;
             }
             logger.fine("Looks like an Betacrypt ECM but smells like Nagra => Changing CaId: " + DESUtil.bytesToString(ecmOrg));
+            fixedEcmCount++;
           }
 
           if((msg.getCaId() == 0x1833 || msg.getCaId() == 0x1834) && ecmLen >= 134 && ecmLen < 144) {
