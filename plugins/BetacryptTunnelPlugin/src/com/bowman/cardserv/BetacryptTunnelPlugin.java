@@ -88,7 +88,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
                   msg.setCaId(0x1834);
                   break;
             }
-            logger.fine("Looks like a Betacrypt ECM but smells like Nagra => Changing CaId);
+            logger.fine("Looks like a Betacrypt ECM but smells like Nagra => Changing CaId");
             fixedEcmCount++;
           }
 
