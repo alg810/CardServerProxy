@@ -67,27 +67,45 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
   public CamdNetMessage doFilter(ProxySession session, CamdNetMessage msg) {
     try {
       if(msg.isEcm() && msg.getType() == CamdNetMessage.TYPE_RECEIVED && !msg.isFiltered()) {
-
         if(profiles.isEmpty() || profiles.contains(session.getProfileName().toLowerCase())) {
 
-          if((msg.getCaId() == 0x1833 || msg.getCaId() == 0x1834) &&
-              msg.getDataLength() >= 134 && msg.getDataLength() < 144) {
+          int ecmLen = msg.getDataLength();
+          byte[] ecmOrg = new byte[ecmLen];
+          ecmOrg = msg.getCustomData();
+
+          // nagra ecm with betacrypt caid => set correct nagra caid
+          if ((msg.getCaId() == 0x1702 || msg.getCaId() == 0x1722)
+               && ecmOrg[0] == (byte)(0x07&0xFF) && ecmOrg[1] == (byte)(0x84&0xFF)) {
+            switch (msg.getCaId()) {
+              case 0x1702:
+                  msg.setCaIdInHdr(0x1833);
+                  msg.setCaId(0x1833);
+                  break;
+
+              case 0x1722:
+                  msg.setCaIdInHdr(0x1834);
+                  msg.setCaId(0x1834);
+                  break;
+            }
+            logger.fine("Looks like an Betacrypt ECM but smells like Nagra => Changing CaId: " + DESUtil.bytesToString(ecmOrg));
+          }
+
+          if((msg.getCaId() == 0x1833 || msg.getCaId() == 0x1834) && ecmLen >= 134 && ecmLen < 144) {
+          	logger.fine("Processing ecm (length: " + ecmLen + "): " +
+                        DESUtil.bytesToString(ecmOrg));
           	
-          	logger.fine("Processing ecm (length: " + msg.getDataLength() + "): " +
-                        DESUtil.bytesToString(msg.getCustomData()));
-          	
-            byte[] ecmData = new byte[msg.getDataLength() + 10];
+            byte[] ecmNew = new byte[ecmLen + 10];
             boolean odd = ((msg.getCommandTag() & 1) > 0) ? true : false;
 
             // copy new header
-            System.arraycopy(ecmHeader, 0, ecmData, 0, 9);
+            System.arraycopy(ecmHeader, 0, ecmNew, 0, 9);
 
-            // copy old ecm behind the header
-            System.arraycopy(msg.getCustomData(), 0, ecmData, 10, msg.getDataLength());
+            // copy original ecm behind the header
+            System.arraycopy(ecmOrg, 0, ecmNew, 10, ecmLen);
 
             // set odd/even marker in new betacrypt header
-            if (odd) ecmData[9] = 0x13;
-            else ecmData[9] = 0x12;
+            if (odd) ecmNew[9] = 0x13;
+            else ecmNew[9] = 0x12;
            
 			// set new caid and network id
             switch (msg.getCaId()) {
@@ -104,7 +122,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
                     break;
             }
 
-            msg.setCustomData(ecmData);
+            msg.setCustomData(ecmNew);
             tunneledCount++;
             
             logger.fine("Resulting ecm (length: " + msg.getDataLength() + "): " +

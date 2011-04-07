@@ -2,6 +2,7 @@ BetacryptTunnelPlugin
 ---------------------
 
 Converts plain Nagra3 ECMs to Betacrypt tunneled ECMs. Needed to watch Sky Germany HD channels when using an Betacrypt emulating Nagra card.
+Fixes also Nagra ECMs with Betacrypt CaIds caused by wrong configured clients.
 
 NOTE:
 - Requires CSP 0.9.1 or newer.
@@ -10,6 +11,8 @@ TODO/SUGGESTIONS:
 - Make it more "generic" to use with other CA-Systems and rename this Plugin.
 - Network-Id for the "pseudo" Nagra Profile must be different from the Betacrypt Profile and should not be zero.
 - Only change the ECM header when you know what you are doing.
+- If you want to enable tunneling of wrong tunneled ECMs (Betacrypt CaId but Nagra ECM), include betacrypt AND nagra profile in plugin config,
+  or dont configure profile restriction for this plugin.
 
 Example config:
 ---------------
