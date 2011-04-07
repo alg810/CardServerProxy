@@ -75,7 +75,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
           ecmOrg = msg.getCustomData();
 
           // nagra ecm with betacrypt caid => set correct nagra caid
-          if ((msg.getCaId() == 0x1702 || msg.getCaId() == 0x1722)
+          if((msg.getCaId() == 0x1702 || msg.getCaId() == 0x1722)
                && ecmOrg[0] == (byte)(0x07&0xFF) && ecmOrg[1] == (byte)(0x84&0xFF)) {
             switch (msg.getCaId()) {
               case 0x1702:
@@ -88,7 +88,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
                   msg.setCaId(0x1834);
                   break;
             }
-            logger.fine("Looks like an Betacrypt ECM but smells like Nagra => Changing CaId: " + DESUtil.bytesToString(ecmOrg));
+            logger.fine("Looks like a Betacrypt ECM but smells like Nagra => Changing CaId);
             fixedEcmCount++;
           }
 
