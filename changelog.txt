@@ -26,6 +26,8 @@ Cardservproxy changelog:
 
 - Changes to proxy.xml:
   Added: Attribute 'enable-service-linking' to <cache-handler> (true/false, default: false). Enables sid cache linker.
+  Added: Attribute 'allow-different-ip' to <user-manager>, allows newcamd connections from different ip sources
+  for the same user.
 
 - Changes to the http/xml api:
   Added: Attribute 'filtered-by' to <ecm> (transaction logs). Contains the reason for a B flag, or the filtering plugin.
