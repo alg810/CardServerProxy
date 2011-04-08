@@ -8,14 +8,14 @@ NOTE:
 - Requires CSP 0.9.0 or newer.
 - As of 0.9.1 the plugin also verifies checksum and length of replies.
 
-The detect-links feature (enabled by default) will check for occurances of identical dcw sequences in use for other
+The detect-links feature (disabled by default) will check for occurances of identical dcw sequences in use for other
 currently watched services. Since the cache eliminates duplicates where the ecm requests were identical, this can only
 occur when multiple different ecms result in the same dcw. Sid-cache-linking can then be used to take advantage of this
 and reduce the load on the cards (i.e by telling the cache that if a dcw for service x already exists or is being
 processed, then this is valid for service y as well causing a hit even though the ecms were different).
 
-Verify-replies is untested and probably needs additional work, but the idea is to require independent corroboration of
-each dcw received from a server, by blocking it until the same dcw is received again from a different server.
+Verify-replies (disabled by default) is untested and probably needs additional work, but the idea is to require independent 
+corroboration of each dcw received from a server, by blocking it until the same dcw is received again from a different server.
 This could be used to trap bogus ecms used in certain ca-systems to leak unique card details into (fake) dcw replies.
 It requires at least 2 connectors and enough capacity to always use redundant-forwarding in the proxy, or every single
 reply will end up blocked.
