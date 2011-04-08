@@ -11,6 +11,7 @@ Cardservproxy changelog:
 - Fixed: Radegast support updated to make sense with 0.9.x.
 - Fixed: Emm handling for extended newcamd in systems with signifcant provider-idents.
 - Fixed: Now possible to move messages between profiles from plugins, changes to networkid/caid were previously ignored.
+- Fixed: Per user sid lists provided by custom usermanagers were ignored for multi-context sessions (Csp, ExtNewcamd).
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
   now considered identical by the proxy. Implications unknown.
 - Changed: ClusteredCache transport format now includes meta-data such as ca-id and network-id.
@@ -30,6 +31,7 @@ Cardservproxy changelog:
   Added: Attribute 'filtered-by' to <ecm> (transaction logs). Contains the reason for a B flag, or the filtering plugin.
   Added: New event type 9 - "found service" added to connector events output (error-log, yes - not really an error).
   Added: New ctrl command 'set-connector-metric', allows changing individual connector metrics without config reload.
+  Added: New ctrl command 'set-au-user', forces a specified user to au status for a connector (kicking existing sessions)
 
 
 0.9.0 - 2010-08-15 (see README.0.9.0.txt for conceptual changes and tips)

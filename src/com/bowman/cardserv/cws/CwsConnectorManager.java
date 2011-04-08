@@ -127,9 +127,16 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
     if(cws != null) {
       CardData card = cws.getRemoteCard();
       if(card == null && card.isAnonymous()) return false;
+      String cardStr = card.toString();
       CaProfile profile = cws.getProfile();
+
       if(profile != CaProfile.MULTIPLE && profile != null && cws.isEnabled()) {
-        auUsers.put(user + ":" + profile.getName(), cws.getName());
+        String key = user + ":" + profile.getName();
+        if(cws.getName().equals(auUsers.get(key))) {
+          auUsers.remove(key); // already set for this connector, toggle
+          cardStr = ""; // force kick
+        } else auUsers.put(key, cws.getName());
+
         SessionManager sm = SessionManager.getInstance();
         List sessions = sm.getSessionsForUser(user);
         ProxySession session;
@@ -137,10 +144,10 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
           for(Iterator iter = sessions.iterator(); iter.hasNext();) {
             session = (ProxySession)iter.next();
             if(profile.getName().equals(session.getProfileName()) || session.getProfile() == CaProfile.MULTIPLE)
-              if(session instanceof NewcamdSession && !session.getLastContext().equals(card.toString())) {
-                  logger.info("AU changed for '" + user + ":" + profile.getName() +
-                      "', kicking existing session to force reconnect and card-data update: " + session);
-                  session.close();
+              if(session instanceof NewcamdSession && !session.getLastContext().equals(cardStr)) {
+                logger.info("AU changed for '" + key +
+                    "', kicking existing session to force reconnect and card-data update: " + session);
+                session.close();
               }
           }
         }
