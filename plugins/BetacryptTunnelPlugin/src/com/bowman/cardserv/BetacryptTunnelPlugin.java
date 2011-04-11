@@ -90,7 +90,7 @@ public class BetacryptTunnelPlugin implements ProxyPlugin {
                                 msg.setCaId(0x1834);
                                 break;
                         }
-                        logger.warning("Wrong CaId in Betacrypt ecm from " + msg.getOriginAddress() +
+                        logger.warning("Wrong CaId in Betacrypt ecm from " + msg.getRemoteAddress() +
                                 ". Changing CaId to Nagra. Check Betacrypt mapping in client config.");
                         fixedEcmCount++;
                     }
