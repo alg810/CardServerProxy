@@ -12,8 +12,8 @@ else
   MSG=$(echo "$MSG" | sed 's/[ ]/%20/g')
 fi
 
-if [ $ENIGMAV -eq 1 ]; then
-  wget -q -O - "http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/cgi-bin/xmessage?caption=message&body=$MSG&timeout=10" 
+if [ $OSDVER -eq 1 ]; then
+  wget -q -O - "http://$OSDUSER:$OSDPASS@127.0.0.1/cgi-bin/xmessage?caption=message&body=$MSG&timeout=10"
 else
-  wget -q -O - "http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/web/message?text=$MSG&type=1&timeout=10"
+  wget -q -O - "http://$OSDUSER:$OSDPASS@127.0.0.1/web/message?text=$MSG&type=1&timeout=10"
 fi

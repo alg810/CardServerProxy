@@ -5,7 +5,7 @@ import java.io.IOException;
 
 /**
  * Created by IntelliJ IDEA.
- * User: johan
+ * User: bowman
  * Date: Feb 14, 2010
  * Time: 2:06:00 AM
  */

@@ -10,12 +10,12 @@ if [ -z "$SERVICE" ]; then
 fi
 
 # Request the "all services" root reference and grep for selected sid, lowercase for E1 and uppercase for E2
-if [ $ENIGMAV -eq 1 ]; then
+if [ $OSDVER -eq 1 ]; then
   SERVICE=$(echo $SERVICE | tr '[A-Z]' '[a-z]')
-  LINE=$(wget -q -O - http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/cgi-bin/getServices?ref=1:15:fffffffe:12:ffffffff:0:0:0:0:0: | grep $SERVICE)
+  LINE=$(wget -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/cgi-bin/getServices?ref=1:15:fffffffe:12:ffffffff:0:0:0:0:0: | grep $SERVICE)
 else
   SERVICE=$(echo $SERVICE | tr '[a-z]' '[A-Z]')
-  XMLLINE=$(wget -q -O - http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/web/getservices?sRef=1:0:1:0:0:0:0:0:0:0: | grep $SERVICE)
+  XMLLINE=$(wget -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/web/getservices?sRef=1:0:1:0:0:0:0:0:0:0: | grep $SERVICE)
   if [ $(echo "$XMLLINE" | wc -l) -eq 1 ]; then
     LINE=$(expr "$XMLLINE" : ".*<e2servicereference> *\([0-9A-H\:]*\)")
   else
@@ -35,11 +35,11 @@ if [ -z "$LINE" ]; then
 fi
 
 echo "Zapping to service reference: $LINE"
-if [ $ENIGMAV -eq 1 ]; then
+if [ $OSDVER -eq 1 ]; then
   # Need to strip ; and trailing comment, match everything up to the last :
   LINE=$(expr "$LINE" : '\(.*:\)')
-  wget -q -O - "http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/cgi-bin/zapTo?path=$LINE"
+  wget -q -O - "http://$OSDUSER:$OSDPASS@127.0.0.1/cgi-bin/zapTo?path=$LINE"
 else
-  wget -q -O - "http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/web/zap?sRef=$LINE"
+  wget -q -O - "http://$OSDUSER:$OSDPASS@127.0.0.1/web/zap?sRef=$LINE"
 fi
 

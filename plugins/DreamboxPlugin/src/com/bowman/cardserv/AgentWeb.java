@@ -166,6 +166,8 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     box.setProperty("kernel-version", req.getHeader("csp-kernel-version"));
     box.setProperty("image-guess", req.getHeader("csp-img-guess"));
     box.setProperty("image-info", req.getHeader("csp-img-info"));
+    box.setProperty("osd-type", req.getHeader("csp-osd-type"));
+    box.setProperty("osd-version", req.getHeader("csp-osd-version"));
     if(req.getHeader("csp-uname-m") != null) box.setProperty("machine", req.getHeader("csp-uname-m"));
 
     box.setProperty("external-ip", req.getRemoteAddress());

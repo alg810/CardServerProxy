@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.0.5
+AGENTV=1.0.6
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 TIMEOUT=10
@@ -23,59 +23,67 @@ else
   TELNET="telnet"
 fi
 
-# Get Enigma version, set the env variable to correct version and echo variable to conf-file
-# if system is dbox2 set ENIGMAV to 3
-get_enigma()
+# Get OSD manager version and type, set the env variable to correct version and echo variable to conf-file
+get_osd_manager()
 {
   if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
   then
-    ENIGMAV=3
-    echo "ENIGMAV=3" >> /var/etc/cspagent.conf
+    OSDTYPE=neutrino
+    OSDVER=1
+    echo "OSDTYPE=neutrino" >> /var/etc/cspagent.conf
+    echo "OSDVER=1" >> /var/etc/cspagent.conf
   elif [ $(which enigma2 | wc -l) -ge 1 ]
   then
-    ENIGMAV=2
-    echo "ENIGMAV=2" >> /var/etc/cspagent.conf
+    OSDTYPE=enigma
+    OSDVER=2
+    echo "OSDTYPE=enigma" >> /var/etc/cspagent.conf
+    echo "OSDVER=2" >> /var/etc/cspagent.conf
   elif [ $(which enigma | wc -l) -ge 1 ]
   then
-    ENIGMAV=1
-    echo "ENIGMAV=1" >> /var/etc/cspagent.conf
+    OSDTYPE=enigma
+    OSDVER=2
+    echo "OSDTYPE=enigma" >> /var/etc/cspagent.conf
+    echo "OSDVER=2" >> /var/etc/cspagent.conf
   fi
 }
 
 get_service()
 {
-  # Are there any better ways to get the current sid, besides the enigma web?
-  if [ $ENIGMAV -eq 1 ]
-  then
-    # Enigma1 values in hex
-    XML="$($WGET -q -O - http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/xml/streaminfo)"
-    if [ $? != "0" ]; then
-      echo "$(date): cannot get information from enigma1 webinterface" >> /tmp/csperr
-    fi
-    SID=$(expr "$XML" : ".*<sid> *\([0-9a-h]*\)")
-    ONID=$(expr "$XML" : ".*<onid> *\([0-9a-h]*\)")
-  elif [ $ENIGMAV -eq 2 ]
-  then
-    # Enigma2 values in decimal
-    XML="$($WGET -q -O - http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/web/about)"
-    if [ $? != "0" ]; then
-      echo "$(date): cannot get information from enigma2 webinterface" >> /tmp/csperr
-    fi
-    SID=$(expr "$XML" : ".*<e2sid> *\([0-9a-h]*\)")
-    ONID=$(expr "$XML" : ".*<e2onid> *\([0-9a-h]*\)")
-  elif [ $ENIGMAV -eq 3 ]
-  then
-    # Enigma v3 equals to neutrino
-    SIDONID="$($WGET -q -O - http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/control/getonidsid)"
-    if [ $? != "0" ]; then
-      echo "$(date): cannot get information from neutrino yweb webinterface" >> /tmp/csperr
-    fi
-    SID=$(echo $SIDONID | cut -c 8-11)
-    ONID=$(echo $SIDONID | cut -c 4-7)
-    # Neutrino returns hex values - csp needs enigma like dec values
-    SID=$(printf "%d" 0x$SID)
-    ONID=$(printf "%d" 0x$ONID)
-  fi
+  case $OSDTYPE in
+    enigma)
+      # Are there any better ways to get the current sid, besides the enigma web?
+      if [ $OSDVER -eq 1 ]; then
+        # Enigma1 values in hex
+        XML="$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/xml/streaminfo)"
+        if [ $? != "0" ]; then
+          echo "$(date): cannot get information from enigma1 webinterface" >> /tmp/csperr
+        fi
+        SID=$(expr "$XML" : ".*<sid> *\([0-9a-h]*\)")
+        ONID=$(expr "$XML" : ".*<onid> *\([0-9a-h]*\)")
+      elif [ $OSDVER -eq 2 ]; then
+        # Enigma2 values in decimal
+        XML="$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/web/about)"
+        if [ $? != "0" ]; then
+          echo "$(date): cannot get information from enigma2 webinterface" >> /tmp/csperr
+        fi
+        SID=$(expr "$XML" : ".*<e2sid> *\([0-9a-h]*\)")
+        ONID=$(expr "$XML" : ".*<e2onid> *\([0-9a-h]*\)")
+      fi
+      ;;
+    neutrino)
+      if [ $OSDVER -eq 1 ]; then
+        SIDONID="$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/getonidsid)"
+        if [ $? != "0" ]; then
+          echo "$(date): cannot get information from neutrino yweb webinterface" >> /tmp/csperr
+        fi
+        SID=$(echo $SIDONID | cut -c 8-11)
+        ONID=$(echo $SIDONID | cut -c 4-7)
+        # Neutrino returns hex values - csp needs enigma like dec values
+        SID=$(printf "%d" 0x$SID)
+        ONID=$(printf "%d" 0x$ONID)
+      fi
+      ;;
+  esac
 
   if [ -z "$SID" ]
   then
@@ -128,68 +136,63 @@ get_cputype()
 
 get_imginfo()
 {
-  # Try to gather additional image characterstics that can be used to figure out which one is installed
-  if [ $(grep -i icvs /etc/image-version | wc -l) -ge 1 ]
-  then                                                                                                                                    
-    IMGGUESS="iCVS" 
-  elif [ $(ps | grep gdaemon | grep -v grep | wc -l) -ge 1 ] || [ -e /etc/gemini_dissociation.txt ]
-  then
-    IMGGUESS="Gemini"
-  elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ]
-  then
-    IMGGUESS="PLi"
-  elif [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
-  then
-    IMGGUESS=$($WGET -q -O - http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/control/version | grep imagename | cut -c 11-)
-    if [ $? != "0" ]; then
-      echo "$(date): cannot get image info from neutrino yweb webinterface" >> /tmp/csperr
-    fi
-  elif [ -e /usr/bin/blackholesocker ] || [ $(grep -i dream-elite /etc/image-version | wc -l) -ge 1 ]
-  then
-    IMGGUESS="Dreamelite"
-  elif [ $(grep -i newnigma /etc/image-version | wc -l) -ge 1 ]
-  then       
-    IMGGUESS="Newnigma2"
-  elif [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]
-  then
-    IMGGUESS="AAF"
-  elif [ $(grep -i vti /etc/image-version | wc -l) -ge 1 ]
-  then
-    IMGGUESS="VTi"
-  elif [ -e /etc/image-version ]
-  then
-    IMGGUESS=$(grep comment /etc/image-version | sed 's/comment=//g')
-  else
-    IMGGUESS="Unknown"
-  fi
+  case $OSDTYPE in
+    neutrino)
+      if [ $OSDVER -eq 1 ]; then
+        YWEBOUT=$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/version)
+        if [ $? != "0" ]; then
+          echo "$(date): cannot get informations from neutrino yweb webinterface" >> /tmp/csperr
+        fi
 
-  # Check if GP3 Plugin exists and add marker to Image Guess
-  if [ -e /etc/enigma2/gemini_plugin.conf ]
-  then
-    IMGGUESS=$IMGGUESS"+GP3"
-  fi
+        OIFS=$IFS
+        IFS=" "
+        IMGGUESS=$(echo $YWEBOUT | grep imagename | sed 's/imagename=//g')
+        IMGINFO=$(echo $YWEBOUT | grep version | sed 's/version=//g')
+        IFS=$OIFS
+      fi
+      ;;
 
-  if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
-  then
-    IMGINFO=$($WGET -q -O - http://$ENIGMAUSER:$ENIGMAPASS@127.0.0.1/control/version | grep version | cut -c 9-)
-    if [ $? != "0" ]; then
-      echo "$(date): cannot get image info from neutrino yweb webinterface" >> /tmp/csperr
-    fi
-  else
-    if [ -e /etc/issue.net ]
-    then
-      IMGINFO=$(sed 'q' /etc/issue.net | sed 's/\*//g')
-    fi
+    enigma)
+      # Try to gather additional image characterstics that can be used to figure out which one is installed
+      if [ $(grep -i icvs /etc/image-version | wc -l) -ge 1 ]; then
+        IMGGUESS="iCVS"
+      elif [ $(ps | grep gdaemon | grep -v grep | wc -l) -ge 1 ] || [ -e /etc/gemini_dissociation.txt ]; then
+        IMGGUESS="Gemini"
+      elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ]; then
+        IMGGUESS="PLi"
+      elif [ -e /usr/bin/blackholesocker ] || [ $(grep -i dream-elite /etc/image-version | wc -l) -ge 1 ]; then
+        IMGGUESS="Dreamelite"
+      elif [ $(grep -i newnigma /etc/image-version | wc -l) -ge 1 ]; then
+        IMGGUESS="Newnigma2"
+      elif [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]; then
+        IMGGUESS="AAF"
+      elif [ $(grep -i vti /etc/image-version | wc -l) -ge 1 ]; then
+        IMGGUESS="VTi"
+      elif [ -e /etc/image-version ]; then
+        IMGGUESS=$(grep comment /etc/image-version | sed 's/comment=//g')
+      fi
 
-    if [ -e /etc/image-version ]
-    then
-      IMGINFO=$(echo $IMGINFO $(cat /etc/image-version))
-    fi
-  fi
+      # Check if GP3 Plugin exists and add marker to Image Guess
+      if [ -e /etc/enigma2/gemini_plugin.conf ]; then
+        IMGGUESS=$IMGGUESS"+GP3"
+      fi
 
-  if [ -z "$IMGINFO" ]
-  then
+      if [ -e /etc/issue.net ]; then
+        IMGINFO=$(sed 'q' /etc/issue.net | sed 's/\*//g')
+      fi
+
+      if [ -e /etc/image-version ]; then
+        IMGINFO=$(echo $IMGINFO $(cat /etc/image-version))
+      fi
+      ;;
+  esac
+
+  if [ -z "$IMGINFO" ]; then
     IMGINFO="Unknown"
+  fi
+
+  if [ -z "$IMGGUESS" ]; then
+    IMGGUESS="Unknown"
   fi
 }
 
@@ -223,10 +226,10 @@ timeout()
   kill $TPID 2> /dev/null
 }
 
-# Configure Enigma version
-if [ -z $ENIGMAV ]
-then
-  get_enigma
+# Configure OSD manager version
+if [ -z "$OSDTYPE" ] || [ -z "$OSDVER" ]; then
+  get_osd_manager
+  sleep 1
 fi
 
 # Save csp agent pid
@@ -305,7 +308,7 @@ while [ 1 ]; do
     
     # First connect to CSP - send infos in http headers and get Box-ID
     FIRSTURL=http://$CSPHOST:$CSPPORT/login
-    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-kernel-version: $KERNVERSION" --header "csp-uname-m: $CPUTYPE" --header "csp-img-guess: $IMGGUESS" --header "csp-img-info: $IMGINFO" --header "csp-user: $CSPUSER" --header "csp-seed: $TIME" --header "csp-boxtype: $BOXTYPE" --header "csp-iv: $INTERVAL" --header "csp-enigma-version: $ENIGMAV" --header "csp-mac: $HWADDR" -O - $FIRSTURL > /var/etc/cspagent.id 2> /tmp/csplog &
+    $WGET --header "csp-agent-version: $AGENTV" --header "csp-local-ip: $IP" --header "csp-kernel-version: $KERNVERSION" --header "csp-uname-m: $CPUTYPE" --header "csp-img-guess: $IMGGUESS" --header "csp-img-info: $IMGINFO" --header "csp-user: $CSPUSER" --header "csp-seed: $TIME" --header "csp-boxtype: $BOXTYPE" --header "csp-iv: $INTERVAL" --header "csp-osd-type: $OSDTYPE" --header "csp-osd-version: $OSDVER" --header "csp-mac: $HWADDR" -O - $FIRSTURL > /var/etc/cspagent.id 2> /tmp/csplog &
     timeout $!
 
     if [ $? != "0" ]; then

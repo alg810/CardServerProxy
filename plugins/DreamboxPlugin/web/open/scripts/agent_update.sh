@@ -2,9 +2,12 @@
 
 . /var/etc/cspagent.conf
 
-wget -q http://$CSPHOST:$CSPPORT/open/cspagent.sh -O /var/bin/cspagent.sh
+USERNAME={USERNAME}
+PASSWORD={PASSWORD}
 
-killall cspagent.sh
-killall telnet
-killall nc
-/var/bin/cspagent.sh &
+wget -q http://$USERNAME:$PASSWORD@$CSPHOST:$CSPPORT/installer.sh -O /tmp/installer.sh
+
+echo "------ installer start ------"
+sh /tmp/installer.sh
+echo "------ installer end ------"
+exit 0

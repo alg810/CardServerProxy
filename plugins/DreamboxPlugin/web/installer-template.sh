@@ -28,8 +28,7 @@ fi
 check_running_agent()
 {
 
-	if [ $(ps | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ]
-	then
+	if [ $(ps | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ]; then
 		echo "output: CSP Agent allready running. Skipping ..."
 	else
 		echo "output: CSP Agent not running. Trying to start ..."
@@ -41,8 +40,7 @@ check_running_agent()
 
 generate_conf()
 {
-	if [ -e /var/etc/cspagent.conf ]
-	then
+	if [ -e /var/etc/cspagent.conf ]; then
 		echo "output: Config file /var/etc/cspagent.conf already exists. Skipping..."
 	else
 		echo "
@@ -56,18 +54,18 @@ CSPPORT=$CSPPORT
 #Proxy username
 CSPUSER=$CSPUSER
 
-#Enigma httpauth user
-ENIGMAUSER=root
+#Osd httpauth user
+OSDUSER=root
 
-#Enigma httpauth password" >> /var/etc/cspagent.conf
+#Osd httpauth password" >> /var/etc/cspagent.conf
 
 if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]; then
-  echo "ENIGMAPASS=dbox2" >> /var/etc/cspagent.conf
+  echo "OSDPASS=dbox2" >> /var/etc/cspagent.conf
 else
-  echo "ENIGMAPASS=dreambox" >> /var/etc/cspagent.conf
+  echo "OSDPASS=dreambox" >> /var/etc/cspagent.conf
 fi
 
-echo " 
+echo "
 #Interval between script downloads/runs (in seconds)
 INTERVAL=$INTERVAL
 
@@ -79,10 +77,9 @@ TMPFILE=/tmp/runme.out
 	fi
 }
 
-initd()
+evaluate_method()
 {
-	if [ -d /etc/init.d ] && [ -w /etc/init.d ] && [ $(mount|grep /dev/root|grep squash|wc -c) -eq 0 ]
-	then
+	if [ -d /etc/init.d ] && [ -w /etc/init.d ] && [ $(mount|grep /dev/root|grep squash|wc -c) -eq 0 ]; then
 		echo "output: Generating start script in /etc/init.d/..."
 
 		#Generate script for /etc/init.d
@@ -129,8 +126,7 @@ exit 0' > /etc/init.d/cspagent
 		chmod +x /etc/init.d/cspagent
 		echo "output: Script generated."
 
-		if [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]
-		then
+		if [ -e /etc/imageinfo ] && [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]; then
 	            echo "output: AAF Image detected."
         	    echo "output: Using AAF method..."
 	            aaf_image
@@ -151,8 +147,7 @@ exit 0' > /etc/init.d/cspagent
 		echo "output: CSP Agent installed. Starting service..."
 		/etc/init.d/cspagent start
 
-	elif [ $(grep "Sportster Pro" /etc/issue.net | wc -l) -ge 1 ]
-	then
+	elif [ $(grep "Sportster Pro" /etc/issue.net | wc -l) -ge 1 ]; then
 		echo "output: Sportster Image detected."
 		echo "output: Using sportster method..."
 		dbox2_sportster
@@ -165,14 +160,11 @@ exit 0' > /etc/init.d/cspagent
 
 rcs()
 {
-	if [ -e /etc/init.d/rcS ]
-	then
-		if [ $(cat /etc/init.d/rcS | grep /var/etc/init | wc -c) -eq 0 ]
-		then
+	if [ -e /etc/init.d/rcS ]; then
+		if [ $(cat /etc/init.d/rcS | grep /var/etc/init | wc -c) -eq 0 ]; then
 			echo "output: Error: rcS method failed (no reference to /var/etc/init found)."
 		else
-			if [ $(grep cspagent /var/etc/init | wc -l) -le 0 ]
-			then
+			if [ $(grep cspagent /var/etc/init | wc -l) -le 0 ]; then
 				chmod +x /var/bin/cspagent.sh
 				echo "/var/bin/cspagent.sh &" >> /var/etc/init
 				chmod +x /var/etc/init
@@ -188,10 +180,8 @@ rcs()
 
 dbox2_sportster()
 {
-	if [ -e /var/etc/init.d/user.start_script ]
-	then
-		if [ $(grep cspagent /var/etc/init.d/user.start_script | wc -l) -le 0 ]
-		then
+	if [ -e /var/etc/init.d/user.start_script ]; then
+		if [ $(grep cspagent /var/etc/init.d/user.start_script | wc -l) -le 0 ]; then
 			echo -e "# short sleep until neutrino and nhttpd are alive\nsleep 60\n/var/bin/cspagent.sh &" >> /var/etc/init.d/user.start_script
 			echo "output: CSP Agent installed ..."
 		else
@@ -205,67 +195,51 @@ dbox2_sportster()
 
 aaf_image()
 {
-        if [ -e /etc/init.d/autostart/start.sh ]
-        then
-            if [ $(grep -i csp /etc/init.d/autostart/start.sh | wc -l) -le 0 ]
-            then
+        if [ -e /etc/init.d/autostart/start.sh ]; then
+            if [ $(grep -i csp /etc/init.d/autostart/start.sh | wc -l) -le 0 ]; then
                 insert_line=$(grep -n startEmu\(\) /etc/init.d/autostart/start.sh | sed 's/[^0-9]//g')
                 let insert_line++
                 sed -i "$insert_line i/etc/init.d/cspagent start" /etc/init.d/autostart/start.sh
                 echo "output: CSP Agent start script added to startEmu() in start.sh ..."
             else
-                echo "output: Error: CSP Agent allready installed. Skipping ..."
+                echo "output: CSP Agent allready installed. Skipping ..."
             fi
         else
             echo "output: Error: /etc/init.d/autostart/start.sh not found. Skipping ..."
         fi
 }
 
-evaluate_method()
-{
-	initd
-}
-
 echo "output: CSP Agent v$AGENTV installation"
-test=1
-while [ $test = "1" ]
-do
-	test=0
-	if [ -e /var/bin/cspagent.sh ]
-	then
-		echo "output: Agent already installed. Delete old files."
-		killall cspagent.sh
-		rm -Rf /var/bin/cspagent.sh
-		rm -Rf /var/etc/cspagent.id
-		rm -Rf /var/etc/cspagent.conf
-	fi
+if [ -e /var/bin/cspagent.sh ]; then
+	echo "output: Agent already installed. Delete old files."
+	killall cspagent.sh
+	rm -Rf /var/bin/cspagent.sh
+	rm -Rf /var/etc/cspagent.id
+	rm -Rf /var/etc/cspagent.conf
+fi
 
-	if [ -e /tmp/cspagent.sh ]
-	then
-		echo "output: Agent already downloaded. Trying installation."
-	else
-		echo "output: Downloading agent..."
-		wget -q -O - $AGENTURL/cspagent.sh > /tmp/cspagent.sh
-		if [ $? != "0" ]; then
-			rm cspagent.sh
-			echo "Failed to get cspagent.sh from $AGENTURL" >> /tmp/csperr
-			echo "Will exit now (`date`)" >> /tmp/csperr
-			exit
-		else
-			chmod +x cspagent.sh
-		fi
-	fi
-
-	if [ -w /var/bin ]
-	then
-		echo "output: Installing CSP Agent in /var/bin/..."
-		mv /tmp/cspagent.sh /var/bin
-		echo "output: Done."
-	else
-		echo "output: Unable to install CSP Agent (/var/bin not writable). Exiting..."
+if [ -e /tmp/cspagent.sh ]; then
+	echo "output: Agent already downloaded. Trying installation."
+else
+	echo "output: Downloading agent..."
+	wget -q -O - $AGENTURL/cspagent.sh > /tmp/cspagent.sh
+	if [ $? != "0" ]; then
+		rm cspagent.sh
+		echo "Failed to get cspagent.sh from $AGENTURL" >> /tmp/csperr
+		echo "Will exit now (`date`)" >> /tmp/csperr
 		exit
 	fi
+fi
 
-	generate_conf
-	evaluate_method
-done
+if [ -w /var/bin ]; then
+	echo "output: Installing CSP Agent in /var/bin/..."
+	mv /tmp/cspagent.sh /var/bin
+	chmod +x /var/bin/cspagent.sh
+	echo "output: Done."
+else
+	echo "output: Unable to install CSP Agent (/var/bin not writable). Exiting..."
+	exit
+fi
+
+generate_conf
+evaluate_method
