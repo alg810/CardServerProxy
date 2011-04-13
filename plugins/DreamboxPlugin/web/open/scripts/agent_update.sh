@@ -9,5 +9,5 @@ wget -q http://$USERNAME:$PASSWORD@$CSPHOST:$CSPPORT/installer.sh -O /tmp/instal
 
 echo "------ installer start ------"
 sh /tmp/installer.sh
-echo "------ installer end ------"
+echo "------- installer end -------"
 exit 0

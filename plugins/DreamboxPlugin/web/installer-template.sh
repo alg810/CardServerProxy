@@ -79,7 +79,7 @@ TMPFILE=/tmp/runme.out
 
 evaluate_method()
 {
-	if [ -d /etc/init.d ] && [ -w /etc/init.d ] && [ $(mount|grep /dev/root|grep squash|wc -c) -eq 0 ]; then
+	if [ -d /etc/init.d ] && [ -w /etc/init.d ] && [ $(mount | grep /dev/root | grep squash | wc -c) -eq 0 ]; then
 		echo "output: Generating start script in /etc/init.d/..."
 
 		#Generate script for /etc/init.d

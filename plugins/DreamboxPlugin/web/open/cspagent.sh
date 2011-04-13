@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.0.6
+AGENTV=1.0.7
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 TIMEOUT=10
@@ -28,29 +28,29 @@ get_osd_manager()
 {
   if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
   then
-    OSDTYPE=neutrino
+    OSDTYPE="neutrino"
     OSDVER=1
     echo "OSDTYPE=neutrino" >> /var/etc/cspagent.conf
     echo "OSDVER=1" >> /var/etc/cspagent.conf
   elif [ $(which enigma2 | wc -l) -ge 1 ]
   then
-    OSDTYPE=enigma
+    OSDTYPE="enigma"
     OSDVER=2
     echo "OSDTYPE=enigma" >> /var/etc/cspagent.conf
     echo "OSDVER=2" >> /var/etc/cspagent.conf
   elif [ $(which enigma | wc -l) -ge 1 ]
   then
-    OSDTYPE=enigma
-    OSDVER=2
+    OSDTYPE="enigma"
+    OSDVER=1
     echo "OSDTYPE=enigma" >> /var/etc/cspagent.conf
-    echo "OSDVER=2" >> /var/etc/cspagent.conf
+    echo "OSDVER=1" >> /var/etc/cspagent.conf
   fi
 }
 
 get_service()
 {
   case $OSDTYPE in
-    enigma)
+    "enigma")
       # Are there any better ways to get the current sid, besides the enigma web?
       if [ $OSDVER -eq 1 ]; then
         # Enigma1 values in hex
@@ -70,11 +70,12 @@ get_service()
         ONID=$(expr "$XML" : ".*<e2onid> *\([0-9a-h]*\)")
       fi
       ;;
-    neutrino)
+
+    "neutrino")
       if [ $OSDVER -eq 1 ]; then
         SIDONID="$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/getonidsid)"
         if [ $? != "0" ]; then
-          echo "$(date): cannot get information from neutrino yweb webinterface" >> /tmp/csperr
+          echo "$(date): cannot get current sid from neutrino yweb webinterface" >> /tmp/csperr
         fi
         SID=$(echo $SIDONID | cut -c 8-11)
         ONID=$(echo $SIDONID | cut -c 4-7)
@@ -115,15 +116,15 @@ get_boxtype()
 get_cputype()
 {
   case $(uname -m) in
-    ppc)
+    "ppc")
         CPUTYPE="ppc"
     ;;
 
-    mips)
+    "mips")
         CPUTYPE="mips"
     ;;
 
-    sh4)
+    "sh4")
         CPUTYPE="sh4"
     ;;
 
@@ -137,11 +138,11 @@ get_cputype()
 get_imginfo()
 {
   case $OSDTYPE in
-    neutrino)
+    "neutrino")
       if [ $OSDVER -eq 1 ]; then
         YWEBOUT=$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/version)
         if [ $? != "0" ]; then
-          echo "$(date): cannot get informations from neutrino yweb webinterface" >> /tmp/csperr
+          echo "$(date): cannot get image infos from neutrino yweb webinterface" >> /tmp/csperr
         fi
 
         OIFS=$IFS
@@ -152,7 +153,7 @@ get_imginfo()
       fi
       ;;
 
-    enigma)
+    "enigma")
       # Try to gather additional image characterstics that can be used to figure out which one is installed
       if [ $(grep -i icvs /etc/image-version | wc -l) -ge 1 ]; then
         IMGGUESS="iCVS"

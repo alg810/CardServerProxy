@@ -328,13 +328,13 @@ Q: { 120 }
 P: { 00 }" >> $NCDCFG
 
 case $OSDTYPE in
-        neutrino)
+        "neutrino")
                 if [ $OSDVER -eq 1 ]; then
                         echo "O: { 01 } root dbox2" >> $NCDCFG
                 fi
                 ;;
 
-        enigma)
+        "enigma")
                 if [ $OSDVER -eq 1 ]; then
                         echo "O: { 02 } root dreambox" >> $NCDCFG
                 else
@@ -355,7 +355,7 @@ R: { 04 }
 D: { 00 }" >> $NCDCFG
 
 case $BOXTYPE in
-	ufs912)
+	"ufs912")
 		if [ "$IMAGE" = "AAF" ]; then
 			echo "B: { 11 }" >> $NCDCFG
 		else
