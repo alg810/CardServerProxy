@@ -184,7 +184,7 @@ exit 0' > /usr/script/mgcamd_1.35a_cam.sh
 					sed -i "s/int=currCamd=.*/int=currCamd=4096/" /etc/enigma2/gemini_plugin.conf
 					echo "Mgcamd installed successfully on dreambox with installed GP3 Plugin ..."
 				else
-					case $ENIGMAV in
+					case $OSDVER in
 						1)
 							sed -i "s/act_cam=.*/act_cam=4096/" /var/tuxbox/config/Gemini.conf
 							echo "Mgcamd installed successfully on dreambox with Gemini (E1) image ..."
@@ -327,18 +327,24 @@ K: { 07 }
 Q: { 120 }
 P: { 00 }" >> $NCDCFG
 
-case $ENIGMAV in
-	1)
-		echo "O: { 02 } root dreambox" >> $NCDCFG
-		;;
+case $OSDTYPE in
+        neutrino)
+                if [ $OSDVER -eq 1 ]; then
+                        echo "O: { 01 } root dbox2" >> $NCDCFG
+                fi
+                ;;
 
-	3)
-		echo "O: { 01 } root dbox2" >> $NCDCFG
-		;;
-		
-	*)
-		echo "O: { 00 } root password" >> $NCDCFG
-		;;
+        enigma)
+                if [ $OSDVER -eq 1 ]; then
+                        echo "O: { 02 } root dreambox" >> $NCDCFG
+                else
+                        echo "O: { 00 } root password" >> $NCDCFG
+                fi
+                ;;
+
+        *)
+                echo "O: { 00 } root password" >> $NCDCFG
+                ;;
 esac
 
 echo "S: { 00 } 80
