@@ -22,5 +22,8 @@ case $OSDTYPE in
     ;;
 
   "neutrino")
+    if [ $OSDVER -eq 1 ]; then
+      wget -q -O - "http://$OSDUSER:$OSDPASS@127.0.0.1/control/message?nmsg=$MSG"
+    fi
     ;;
 esac

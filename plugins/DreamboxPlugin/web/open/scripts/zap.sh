@@ -47,7 +47,19 @@ enigma_zap() {
 }
 
 neutrino_zap() {
-  #TODO
+
+  if [ -z "$SERVICE" ]; then
+    echo "No service specified (use sid - hex-value, 64bit, no 0x-prefix)"
+    exit
+  fi
+
+  if [ $OSDVER -eq 1 ]; then
+    SRVCOUT=$(wget -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/zapto?$SERVICE)
+    if [ "$SRVCOUT" != "ok" ] || [ $? != "0" ]; then
+      echo "Switching to service $SERVICE failed, output: $SRVCOUT"
+      exit
+    fi
+  fi
 }
 
 case $OSDTYPE in

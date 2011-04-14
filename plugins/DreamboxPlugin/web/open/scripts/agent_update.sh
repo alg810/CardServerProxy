@@ -10,4 +10,5 @@ wget -q http://$USERNAME:$PASSWORD@$CSPHOST:$CSPPORT/installer.sh -O /tmp/instal
 echo "------ installer start ------"
 sh /tmp/installer.sh
 echo "------- installer end -------"
-exit 0
+killall telnet 2> /dev/null
+killall nc 2> /dev/null

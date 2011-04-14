@@ -212,7 +212,7 @@ aaf_image()
 echo "output: CSP Agent v$AGENTV installation"
 if [ -e /var/bin/cspagent.sh ]; then
 	echo "output: Agent already installed. Delete old files."
-	killall cspagent.sh
+	killall cspagent.sh 2> /dev/null
 	rm -Rf /var/bin/cspagent.sh
 	rm -Rf /var/etc/cspagent.id
 	rm -Rf /var/etc/cspagent.conf
