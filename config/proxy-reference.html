@@ -1259,7 +1259,7 @@ Example: <br /><br />
 
 <a name="connection-manager/cws-connectors/chameleon-connector/profiles">
 <div class='indent'>connection-manager/cws-connectors/chameleon-connector/profiles</div><br />
-Optional list of profile names that should not be mapped for this connector (use this to avoid ambigious situations when there are multiple profiles using the same ca-id/ident pairs).<br />
+Optional list of profile names that should be mapped for this connector (use this to avoid ambigious situations when there are multiple profiles using the same ca-id/ident pairs). If nothing is listed then all defined profiles are mapped.<br />
 <br /><strong>NOTE: </strong>If you DO have profiles that share one or more ca-id/ident pairs then this list is mandatory, or the connector will accept no traffic (and remember that provider idents are associated with profiles not only from manual config but also automatically - based on card-data received from servers that are part of the profile - unless this is manually overridden). <br />
 <br />
 Example: <em class='italic'>&lt;profiles>satprofile1 satprofile2&lt;/profiles></em>  <br />
