@@ -457,14 +457,24 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
       if(authUser == null) return HttpResponse.getAuthReqResponse("Cardservproxy");
       else {
         // no ip check for regular web logins but these should have one
+        String ip = connectRequest.getRemoteAddress();
+        ListenPort listenPort = (ListenPort)CaProfile.MULTIPLE.getListenPorts().get(0);
+
+        if(listenPort.isDenied(ip)) {
+          logger.fine("Rejected connection for [" + listenPort.getProfile().getName() + ":" +
+              listenPort + "]: " + com.bowman.cardserv.util.CustomFormatter.formatAddress(ip) + " not allowed.");
+          SessionManager.getInstance().fireUserLoginFailed("?@" + ip, listenPort + "/" + CaProfile.MULTIPLE.getName(),
+              ip, "rejected by [" + listenPort + "] ip deny list.");
+          return HttpResponse.getErrorResponse(403, "Ip denied");
+        }
+
         String ipMask = config.getUserManager().getIpMask(authUser);
-        if(!Globber.match(ipMask, connectRequest.getRemoteAddress(), false)) {
+        if(!Globber.match(ipMask, ip, false)) {
           if(config.isLogFailures())
-            logger.warning("User '" + authUser + "' (" +
-                com.bowman.cardserv.util.CustomFormatter.formatAddress(connectRequest.getRemoteAddress()) +
+            logger.warning("User '" + authUser + "' (" + com.bowman.cardserv.util.CustomFormatter.formatAddress(ip) +
                 ") login denied, ip check failed: " + ipMask);
-          SessionManager.getInstance().fireUserLoginFailed(authUser, CaProfile.MULTIPLE.getListenPorts().get(0) +
-              "/" + CaProfile.MULTIPLE.getName(), connectRequest.getRemoteAddress(), "ip check failed: " + ipMask);
+          SessionManager.getInstance().fireUserLoginFailed(authUser, listenPort + "/" + CaProfile.MULTIPLE.getName(),
+              ip, "ip check failed: " + ipMask);
           return HttpResponse.getErrorResponse(403, "Ip check failed");
         }
 
