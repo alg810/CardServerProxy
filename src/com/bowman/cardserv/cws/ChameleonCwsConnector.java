@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class ChameleonCwsConnector extends NewcamdCwsConnector implements MultiCwsConnector, CwsListener {
 
-  private Set selectedProfiles = new HashSet();
+  private Set selectedProfiles;
   private Set receivedData = new HashSet(); 
   private Set unmappedData = Collections.synchronizedSet(new HashSet());
   private Map profileMap = new HashMap();
@@ -36,7 +36,7 @@ public class ChameleonCwsConnector extends NewcamdCwsConnector implements MultiC
 
     String profiles = xml.getStringValue("profiles", "");
     if(profiles.length() > 0) {
-      selectedProfiles.clear();
+      selectedProfiles = new HashSet();
       String[] names = profiles.split(" "); CaProfile profile;
       ProxyConfig config = ProxyConfig.getInstance();
       for(int i = 0; i < names.length; i++) {
