@@ -184,6 +184,9 @@ public class CwsServiceMapper implements XmlConfigurable {
       } catch (IOException e) {
         logger.severe("Failed to save service map cache: " + e);
         logger.throwing(e);
+      } catch (Exception e) {
+        logger.warning("Failed to save service map cache: " + e);
+        logger.throwing(e);
       }
 
     } else logger.fine("Cache not changed, skipping...");
