@@ -31,8 +31,10 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
   private Map monitoredSidsMap = Collections.synchronizedMap(new MessageCacheMap(20000));
   private Map invalidLinksMap = Collections.synchronizedMap(new HashMap());
 
-  private boolean detectLinks = true, verifyReplies = false;
-  private int verifiedCount = 0, badLengthCount = 0, filteredCount = 0, checksumFailCount = 0;
+  private Map zeroedReplyMap = Collections.synchronizedMap(new MessageCacheMap(20000));
+
+  private boolean detectLinks = true, verifyReplies = false, forceContinuity = false;
+  private int verifiedCount = 0, badLengthCount = 0, filteredCount = 0, checksumFailCount = 0, mergeCount = 0;
   private String badDcwStr;
   private File mapFile;
 
@@ -55,6 +57,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
 
     detectLinks = "true".equalsIgnoreCase(xml.getStringValue("detect-links", "false"));
     verifyReplies = "true".equalsIgnoreCase(xml.getStringValue("verify-replies", "false"));
+    forceContinuity = "true".equalsIgnoreCase(xml.getStringValue("force-continuity", "false"));
 
     String profilesStr = xml.getStringValue("profiles", "");
     if(profilesStr != null && profilesStr.length() > 0) {
@@ -93,6 +96,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
       String[] sa;
       ProxyConfig config = ProxyConfig.getInstance();
       long now = System.currentTimeMillis();
+      TvService srv;
       for(Iterator iter = sidLinksMap.values().iterator(); iter.hasNext();) {
         grp = (Set)iter.next();
         strGrp = new TreeSet();
@@ -100,8 +104,10 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
           s = (String)i.next();
           sa = s.split(":");
           m = (monitoredSidsMap.containsKey(s) && (now - ((CamdNetMessage)monitoredSidsMap.get(s)).getTimeStamp() < 20000)) ? "*" : "";
-          if(profiles.isEmpty() || profiles.contains(sa[1].toLowerCase()))
-            strGrp.add(config.getService(sa[1], Integer.parseInt(sa[0], 16)) + m);
+          if(profiles.isEmpty() || profiles.contains(sa[1].toLowerCase())) {
+            srv = config.getService(sa[1], Integer.parseInt(sa[0], 16));
+            if(srv.isTv()) strGrp.add(srv + m);
+          }
         }
         if(strGrp.size() >= 2) links.add(strGrp.toString());
       }
@@ -132,6 +138,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
     if(filteredCount > 0) p.setProperty("filtered-count", String.valueOf(filteredCount));
     if(badLengthCount > 0) p.setProperty("bad-length-count", String.valueOf(badLengthCount));
     if(checksumFailCount > 0) p.setProperty("checksum-fail-count", String.valueOf(checksumFailCount));
+    if(mergeCount > 0) p.setProperty("merged-reply-count", String.valueOf(mergeCount));
 
     if(p.isEmpty()) return null;
     else return p;
@@ -196,6 +203,9 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
             // check for instances of the same dcw reply being used for other currently watched services
             if(detectLinks) detectLink(msg);
 
+            // check for zeroed out dcws and attempt to reinsert the previous one (if availble) to help certain clients
+            if(forceContinuity) forceContinuity(msg);
+
             boolean blockReply = false;
 
             if(verifyReplies) {
@@ -207,6 +217,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
             if(detectLinks || verifyReplies) replyMap.put(msg, msg); // keep a 20 second backlog of all received dcws
 
             if(blockReply) return null;
+
           }
         }
       }
@@ -214,6 +225,15 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
       t.printStackTrace(); // intentional catch-all while debugging this use case
     }
     return msg;
+  }
+
+  private static boolean hasZeroDcw(byte[] data) {
+    return data[0] + data[1] + data[3] == 0 || data[9] + data[10] + data[11] == 0;
+  }
+
+  private static void mergeZeroedReplies(CamdNetMessage currMsg, CamdNetMessage prevMsg) {
+    byte[] curr = currMsg.getCustomData(), prev = prevMsg.getCustomData();
+    for(int i = 0; i < curr.length; i++) curr[i] |= prev[i];
   }
 
   private static boolean checksumDcw(byte[] data) {
@@ -232,6 +252,31 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
       badDcw = (byte[])iter.next();
       if(Arrays.equals(msg.getCustomData(), badDcw)) {
         return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean forceContinuity(CamdNetMessage msg) {
+    if(msg.getServiceId() != 0) {
+      // System.out.println("Checking for 00 dcw...");
+      if(hasZeroDcw(msg.getCustomData())) {
+        String context = msg.getServiceId() + ":" + msg.getProfileName();
+        String key = (msg.getCommandTag() == 0x81?"81":"80") + ":" + context;
+        // System.out.println("00 dcw received: \t" + key + " - " + DESUtil.bytesToString(msg.getCustomData()));
+        zeroedReplyMap.put(key, new CamdNetMessage(msg));
+        String prevKey = (msg.getCommandTag() == 0x81?"80":"81") + ":" + context;
+        CamdNetMessage prev = (CamdNetMessage)zeroedReplyMap.get(prevKey);
+        if(prev != null) {
+          long age = System.currentTimeMillis() - prev.getTimeStamp();
+          if(age < 12000) {
+            // System.out.println("Prev dcw found: \t" + prevKey + " - " + DESUtil.bytesToString(prev.getCustomData()) + " (age: " + age);
+            mergeZeroedReplies(msg, prev);
+            mergeCount++;
+            // System.out.println("Resulting reply: \t" + key + " - " + DESUtil.bytesToString(msg.getCustomData()));
+            return true;
+          }
+        }
       }
     }
     return false;
@@ -262,7 +307,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
                 String link = l.toString();
                 Long timeStamp = (Long)invalidLinksMap.get(link);
                 if(timeStamp != null && (now - timeStamp.longValue() < 20000)) { // two mismatches in a row in under 20 sec = probable invalid link
-                  logger.warning("Link no longer seems valid, removing: " + m + " > " + t);
+                  logger.info("Link no longer seems valid, removing: " + m + " > " + t);
                   removedLinks.add(link);
                   Set s = (Set)sidLinksMap.get(msgId);
                   s.remove(testId);

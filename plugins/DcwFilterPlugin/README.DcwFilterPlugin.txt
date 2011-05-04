@@ -20,6 +20,11 @@ This could be used to trap bogus ecms used in certain ca-systems to leak unique 
 It requires at least 2 connectors and enough capacity to always use redundant-forwarding in the proxy, or every single
 reply will end up blocked.
 
+Force-continuity will intercept replies that have one of the two dcws zeroed out, and attempt to reinsert the non-zero
+dcw from the previous reply in the sequence (when available) to help clients that don't deal gracefully with this issue.
+Hopefully, an all zero dcw should only be seen in the first reply after zap to a new service that wasn't previously
+cached.
+
 TODO/SUGGESTIONS:
 - Optional DCW checksum zeroing.
 
@@ -31,7 +36,8 @@ Example config:
       <bad-dcw>01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16</bad-dcw>
 
       <detect-links>true</detect-links> <!-- keep a 20 sec backlog of all received replies and check for services that share the same dcw sequence -->
-      <verify-replies>false</verify-replies> <!-- block and hold all replies until they've been received from at least 2 different connectors (experimental)
+      <verify-replies>false</verify-replies> <!-- block and hold all replies until they've been received from at least 2 different connectors (experimental) -->
+      <force-continuity>false</force-continuity> <!-- detect and attempt to reassemble replies where one of the two dcws have been zeroed out (experimental) -->
     </plugin-config>
   </plugin>
   
