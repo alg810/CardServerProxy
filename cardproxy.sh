@@ -1,9 +1,13 @@
 #!/bin/bash
 
 ## uncomment this for large csp installations
-#JVM_PRAMS="-Xmx512m -Dsun.net.inetaddr.ttl=0"
+#JVM_PARAMS="-Xmx512m -Dsun.net.inetaddr.ttl=0"
+
 ## otherwise use this
 JVM_PARAMS="-Dsun.net.inetaddr.ttl=0"
+
+## to enable running under other jvms besides sun:
+#JVM_PARAMS="-Dcom.bowman.cardserv.allowanyjvm=true -Dnetworkaddress.cache.ttl=0"
 
 case "`uname -s`" in
 
