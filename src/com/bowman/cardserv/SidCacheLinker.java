@@ -43,22 +43,24 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   private Map addedServices = Collections.synchronizedMap(new HashMap()); // extra services decodable through linking
   private Map requiredServices = Collections.synchronizedMap(new HashMap()); // services that must be in cache for links
 
-  public SidCacheLinker() {
-    logger = ProxyLogger.getLabeledLogger(getClass().getName());
-    config = ProxyConfig.getInstance();
-    cache = config.getCacheHandler();
-    linksFile = new File("etc", "links.cfg");
+  public void init() {
+    if(logger == null) {
+      logger = ProxyLogger.getLabeledLogger(getClass().getName());
+      config = ProxyConfig.getInstance();
+      cache = config.getCacheHandler();
+      linksFile = new File("etc", "links.cfg");
 
-    loadSidLinkMap();
-    registerCommands();
+      loadSidLinkMap();
+      registerCommands();
 
-    fw = new FileWatchdog(linksFile.getPath(), ProxyConfig.DEFAULT_INTERVAL);
-    fw.addFileChangeListener(this);
-    fw.start();
+      fw = new FileWatchdog(linksFile.getPath(), ProxyConfig.DEFAULT_INTERVAL);
+      fw.addFileChangeListener(this);
+      fw.start();
 
-    CronTimer saveTimer = new CronTimer("* * * * *");
-    saveTimer.addTimerListener(this);
-    saveTimer.start();
+      CronTimer saveTimer = new CronTimer("* * * * *");
+      saveTimer.addTimerListener(this);
+      saveTimer.start();
+    }
   }
 
   public void fileChanged(String s) {
