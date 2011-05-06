@@ -1,7 +1,7 @@
 Cardservproxy changelog:
 ------------------------
 
-0.9.1 - RC1 (see README.0.9.0.txt for conceptual changes and tips)
+0.9.1 - RC2 (see README.0.9.0.txt for conceptual changes and tips)
 
 - Fixed: Handling for unknown sid (0 or a dummy sid listed in dummy-services) was broken in 0.9.0.
 - Fixed: Incoming requests for dummy sids should not retain the dummy when forwarded, now changed to 0.
@@ -13,6 +13,7 @@ Cardservproxy changelog:
 - Fixed: Now possible to move messages between profiles from plugins, changes to networkid/caid were previously ignored.
 - Fixed: Per user sid lists provided by custom usermanagers were ignored for multi-context sessions (Csp, ExtNewcamd).
 - Fixed: The default-deny-list wasn't checked for CspConnect connection attempts.
+- Fixed: Closing of old sessions (on new login) wasn't working for ExtNewcamd.
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
   now considered identical by the proxy. Implications unknown.
 - Changed: ClusteredCache transport format now includes meta-data such as ca-id and network-id.
@@ -35,6 +36,8 @@ Cardservproxy changelog:
   Added: New event type 9 - "found service" added to connector events output (error-log, yes - not really an error).
   Added: New ctrl command 'set-connector-metric', allows changing individual connector metrics without config reload.
   Added: New ctrl command 'set-au-user', forces a specified user to au status for a connector (kicking existing sessions)
+  Added: Attributes 'reset-services', 'blocked-services', 'allowed-services' to <profile> (ca-profiles output). Shows
+  the currently configured lists resolved with service names (but only if they're shorter than 25 entries).
 
 
 0.9.0 - 2010-08-15 (see README.0.9.0.txt for conceptual changes and tips)

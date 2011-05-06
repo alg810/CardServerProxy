@@ -772,6 +772,10 @@
               </strong><xsl:value-of select="@mapped-services"/>
               <xsl:if test="@parsed-services"> (<xsl:value-of select="@parsed-services"/> parsed from services file, with <xsl:value-of select="@parsed-conflicts"/> conflicts)</xsl:if>
               <br />
+              <xsl:if test="@reset-services"><strong>Reset services: </strong><xsl:value-of select="@reset-services"/><br /></xsl:if>
+              <xsl:if test="@blocked-services"><strong>Blocked services: </strong><xsl:value-of select="@blocked-services"/><br /></xsl:if>
+              <xsl:if test="@allowed-services"><strong>Allowed services: </strong><xsl:value-of select="@allowed-services"/><br /></xsl:if>
+
               <strong>Max-cw-wait: </strong> <xsl:value-of select="@max-cw-wait"/> ms
               <xsl:if test="@congestion-limit"> (congestion-limit at <xsl:value-of select="@congestion-limit"/> ms)</xsl:if>
               <br />

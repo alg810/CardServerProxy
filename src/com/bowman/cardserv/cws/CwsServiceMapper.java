@@ -1,5 +1,6 @@
 package com.bowman.cardserv.cws;
 
+import com.bowman.cardserv.crypto.DESUtil;
 import com.bowman.cardserv.interfaces.*;
 import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.tv.TvService;
@@ -48,6 +49,7 @@ public class CwsServiceMapper implements XmlConfigurable {
   private Set blockedServices = new HashSet();
   private Set allowedServices = new HashSet();
   private Set unknownServices = new LinkedHashSet();
+  private String resetSrvStr, blockedSrvStr, allowedSrvStr;
 
   private CaProfile profile;
   private CwsConnectorManager cm;
@@ -97,6 +99,7 @@ public class CwsServiceMapper implements XmlConfigurable {
     } catch (ConfigException e) {}
     if(resetList != null) resetServices = ProxyConfig.getServiceTokens("reset-services", resetList, false);
     else resetServices = Collections.EMPTY_SET;
+    resetSrvStr = null;
 
     String blockedList = null;
     try {
@@ -104,6 +107,7 @@ public class CwsServiceMapper implements XmlConfigurable {
     } catch (ConfigException e) {}
     if(blockedList != null) blockedServices = ProxyConfig.getServiceTokens("block-services", blockedList, false);
     else blockedServices = new HashSet();
+    blockedSrvStr = null;
 
     String allowedList = null;
     try {
@@ -111,6 +115,7 @@ public class CwsServiceMapper implements XmlConfigurable {
     } catch (ConfigException e) {}
     if(allowedList != null) allowedServices = ProxyConfig.getServiceTokens("allow-services", allowedList, true);
     else allowedServices = Collections.EMPTY_SET;
+    allowedSrvStr = null;
 
     autoExcludeThreshold = xml.getIntValue("auto-reset-threshold", -1);
     retryLostServices = "true".equalsIgnoreCase(xml.getStringValue("retry-lost-services", "true"));
@@ -119,6 +124,46 @@ public class CwsServiceMapper implements XmlConfigurable {
 
     overrideCanDecodeMap.clear();
     overrideCannotDecodeMap.clear();
+  }
+
+  public String getResetServicesStr() {
+    if(resetSrvStr != null) return resetSrvStr;
+    else {
+      if(!resetServices.isEmpty()) resetSrvStr = serviceTokensToStr(resetServices);
+      return resetSrvStr;
+    }
+  }
+
+  public String getBlockedServicesStr() {
+    if(blockedSrvStr != null) return blockedSrvStr;
+    else {
+      if(!blockedServices.isEmpty()) blockedSrvStr = serviceTokensToStr(blockedServices);
+      return blockedSrvStr;
+    }
+  }
+
+  public String getAllowedServicesStr() {
+    if(allowedSrvStr != null) return allowedSrvStr;
+    else {
+      if(!allowedServices.isEmpty()) allowedSrvStr = serviceTokensToStr(allowedServices);
+      return allowedSrvStr;
+    }
+  }
+
+  private String serviceTokensToStr(Set set) {
+    if(set.size() > 25) return "[ ... " + set.size() + " ... ]";
+    ServiceMapping sm; TvService ts;
+    StringBuffer sb = new StringBuffer("[");
+    ProxyConfig config = ProxyConfig.getInstance();
+    for(Iterator iter = set.iterator(); iter.hasNext(); ) {
+      sm = (ServiceMapping)iter.next();
+      ts = config.getService(profile.getName(), sm);
+      sb.append(ts.getName());
+      if(!ts.isUnknown()) sb.append(" (").append(Integer.toHexString(ts.getId())).append(')');
+      if(iter.hasNext()) sb.append(", ");
+    }
+    sb.append(']');
+    return sb.toString();
   }
 
   synchronized void loadServiceMaps() {
@@ -790,6 +835,7 @@ public class CwsServiceMapper implements XmlConfigurable {
     sm.setProviderIdent(ServiceMapping.NO_PROVIDER);
     blockedServices.add(sm);
     logger.fine("Blocked services: " + blockedServices);
+    blockedSrvStr = serviceTokensToStr(blockedServices);
   }
 
   public void unblockService(int sid) {
@@ -797,6 +843,8 @@ public class CwsServiceMapper implements XmlConfigurable {
     sm.setProviderIdent(ServiceMapping.NO_PROVIDER);
     blockedServices.remove(sm);
     logger.fine("Blocked services: " + blockedServices);
+    if(blockedServices.isEmpty()) blockedSrvStr = null;
+    else blockedSrvStr = serviceTokensToStr(blockedServices);
   }
 
   public void resetLostStatus() {

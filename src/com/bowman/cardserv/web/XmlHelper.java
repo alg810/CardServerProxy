@@ -751,6 +751,12 @@ public class XmlHelper implements CommandManager {
           xb.appendAttr("provider-match", profiles[i].isRequiresProviderMatch());
           xb.appendAttr("parsed-services", profiles[i].getServices());
           xb.appendAttr("parsed-conflicts", profiles[i].getConflicts());
+          if(profiles[i].getResetStr() != null)
+            xb.appendAttr("reset-services", profiles[i].getResetStr());
+          if(profiles[i].getBlockedStr() != null)
+            xb.appendAttr("blocked-services", profiles[i].getBlockedStr());
+          if(profiles[i].getAllowedStr() != null)
+            xb.appendAttr("allowed-services", profiles[i].getAllowedStr());
         }
         xb.appendAttr("mapped-services", mappedServices);
         xb.appendAttr("debug", profiles[i].isDebug());

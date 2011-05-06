@@ -1,7 +1,7 @@
 package com.bowman.cardserv.rmi;
 
 import com.bowman.cardserv.*;
-import com.bowman.cardserv.cws.CwsConnectorManager;
+import com.bowman.cardserv.cws.*;
 
 import java.io.Serializable;
 import java.util.*;
@@ -19,6 +19,7 @@ public class ProfileStatus extends AbstractStatus implements Serializable {
   private final long maxCwWait, congestionLimit, maxCacheWait;
   private final List listenPorts = new ArrayList();
   private final boolean enabled, cacheOnly, debug, mismatchedCards, requiresProviderMatch;
+  private final String resetStr, blockedStr, allowedStr;
 
   public ProfileStatus(CaProfile profile) {
     name = profile.getName();
@@ -40,6 +41,10 @@ public class ProfileStatus extends AbstractStatus implements Serializable {
     maxCwWait = cm.getMaxCwWait(profile);
     congestionLimit = cm.getCongestionLimit(profile);
     maxCacheWait = ProxyConfig.getInstance().getCacheHandler().getMaxCacheWait(maxCwWait);
+    CwsServiceMapper csm = cm.getServiceMapper(name);
+    resetStr = csm.getResetServicesStr();
+    blockedStr = csm.getBlockedServicesStr();
+    allowedStr = csm.getAllowedServicesStr();
   }
 
   public String getName() {
@@ -105,5 +110,17 @@ public class ProfileStatus extends AbstractStatus implements Serializable {
 
   public long getMaxCacheWait() {
     return maxCacheWait;
+  }
+
+  public String getResetStr() {
+    return resetStr;
+  }
+
+  public String getBlockedStr() {
+    return blockedStr;
+  }
+
+  public String getAllowedStr() {
+    return allowedStr;
   }
 }
