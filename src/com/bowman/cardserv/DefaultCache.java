@@ -183,6 +183,7 @@ public class DefaultCache implements CacheHandler {
   protected synchronized void addReply(CamdNetMessage request, CamdNetMessage reply) {
     if(reply.isEmpty()) return; // bad reply = unable to decode
     if(reply.getProfileName() == null) reply.setProfileName(request.getProfileName());
+    if(reply.getNetworkId() == 0) reply.setNetworkId(request.getNetworkId());
     CamdNetMessage oldReply = (CamdNetMessage)ecmMap.put(request, reply);
     if(oldReply != null) {
       logger.finer("Overwrote existing cached reply with: " + reply.hashCodeStr());

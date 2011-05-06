@@ -61,10 +61,11 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     }
 
     debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "false"));
+    if(debug) logger.warning("Cache debug mode enabled (will fail sooner or later under any significant traffic).");
+
     hideNames = "true".equalsIgnoreCase(xml.getStringValue("hide-names", "false"));
 
     syncPeriod = xml.getTimeValue("sync-period", 0, "ms");
-
     if(syncPeriod > 0) logger.info("Strict cache-synchronization is enabled (sync-period is: " + syncPeriod + " ms).");
 
     useMulticast = false;
@@ -393,8 +394,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
       // 4 scenarios (type + tag + sid + onid + caid + hash + maybe arbiternr)
       // - request with arbiternumber:    1 + 1 + 2 + 2 + 2 + 4 + 8 (type request) negotiation for lock
       // - request without arbiternumber: 1 + 1 + 2 + 2 + 2 + 4     (type request) lock
-      // - request and reply:             1 + 1 + 2 + 2 + 2 + 4    1 + 2 + 4 + 16 + connectorNameLen (type reply)
-      // - request and empty reply:       1 + 1 + 2 + 2 + 2 + 4    1                                 (type reply)
+      // - request and reply:             1 + 1 + 2 + 2 + 2 + 4            1 + 16 + connectorNameLen (type reply)
+      // - request and empty reply:       1 + 1 + 2 + 2 + 2 + 4            1                         (type reply)
 
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(bos);
@@ -433,8 +434,6 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private static void writeCacheRpl(DataOutputStream dos, CamdNetMessage msg) throws IOException {
     dos.writeByte(msg.getCommandTag());
     if(!msg.isEmpty()) {
-      dos.writeShort(msg.getServiceId());
-      dos.writeInt(msg.getCaId());
       dos.write(msg.getCustomData());
       if(msg.getConnectorName() != null) dos.writeUTF(msg.getConnectorName());
     }
@@ -533,7 +532,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
             incrementReceived(packet.getAddress());
             request = CamdNetMessage.parseCacheReq(dis);
             request.setOriginAddress(packet.getAddress().getHostAddress());            
-            CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis);
+            CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request);
             reply.setOriginAddress(packet.getAddress().getHostAddress());
             if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());
             if(!this.contains(request)) super.processReply(request, reply);

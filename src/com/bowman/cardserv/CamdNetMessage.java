@@ -139,14 +139,15 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return msg;
   }
 
-  public static CamdNetMessage parseCacheRpl(DataInputStream dais) throws IOException {
+  public static CamdNetMessage parseCacheRpl(DataInputStream dais, CamdNetMessage request) throws IOException {
     CamdNetMessage msg = new CamdNetMessage(dais.readUnsignedByte());
     msg.type = TYPE_RECEIVED;
     msg.protocol = "Dummy";
+    msg.setServiceId(request.getServiceId());
+    msg.networkId = request.networkId;
+    msg.caId = request.caId;
 
     if(dais.available() > 0) { // this is a cw reply
-      msg.setServiceId(dais.readUnsignedShort());
-      msg.caId = dais.readInt();
       msg.customData = new byte[16];
       dais.readFully(msg.customData);
       msg.refreshDataHash(); // just in case
