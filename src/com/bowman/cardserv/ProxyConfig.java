@@ -557,6 +557,8 @@ public class ProxyConfig implements FileChangeListener {
     if(port != null && "true".equals(port.getStringValue("enabled", "true"))) {
       Properties newPortCfg = port.toProperties();
 
+      CaProfile.MULTIPLE.setDebug("true".equals(port.getStringValue("debug", "true")));
+
       if(newPortCfg.equals(previousPortCfg)) return; // no changes, avoid closing and reopening port
       else previousPortCfg = newPortCfg;
 

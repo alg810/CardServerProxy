@@ -60,7 +60,7 @@ Contents (element paths in <strong>bold</strong> represent common changes, anyth
 <li><a href="#ca-profiles/newcamd-maxmsgsize">ca-profiles/newcamd-maxmsgsize</a></li>
 <li><a href="#ca-profiles/block-caid-mismatch">ca-profiles/block-caid-mismatch</a></li>
 <br />
-<li><a href="#ca-profiles/extended-newcamd"><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled)</strong></a></li>
+<li><a href="#ca-profiles/extended-newcamd"><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled, debug)</strong></a></li>
 <ul>
   <li><a href="#ca-profiles/extended-newcamd/des-key">extended-newcamd/des-key</a></li>
   <li><a href="#ca-profiles/extended-newcamd/exclude-profiles"><strong>extended-newcamd/exclude-profiles</strong></a></li>
@@ -322,13 +322,14 @@ true/false (default: true) Block all replies where the request had a different c
 </a>
 
 <a name="ca-profiles/extended-newcamd">
-<div class='indent'><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled)</strong></div><br />
+<div class='indent'><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled, debug)</strong></div><br />
 Defines a listener for the extended version of the newcamd protocol used between mgcamd and newcs, allowing multiple systems to be accessed over one session. This will behave like newcs does when chameleon is used, and mgcamd clients (or any other that implement these protocol extensions) will receive a list of multiple cards when connecting.<br />
 The proxy will compile the list of available cards (or rather ca-id/provider-ident pairs) when a new session is created, based on which connectors and profiles are available at the time. If new connectors/profiles are added or removed after the client has connected, the extended protocol allows them to receive real-time updates without having to reconnect.<br />
 <br /><strong>NOTE: </strong>AU will work over this port, but only if the au-user in question is configured to only update a single card (across all profiles). If there are more, dummy data will be returned instead.<br /><br />
 - <strong class='bold'>listen-port</strong>: TCP port number.<br />
 - <strong class='bold'>bind-ip</strong>: Optional local IP to bind the listener to (default: all - 0.0.0.0).<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true).<br />
+- <strong class='bold'>debug</strong>: true/false (default: true).<br />
 <br />
 Example:  <em class='italic'>&lt;extended-newcamd listen-port="5556"/></em> <br />
 <br />
@@ -696,7 +697,7 @@ Allows disabling of csp-connections (csp-connectors from other proxies).<br />
 Csp-connections are always asynchronous and allow users access to all profiles (that they have access to according to the user-manager) over a single tcp connection. As the httpd is used to receive connections initially, enabling ssl is recommended (without https the credentials are sent in the clear).<br />
 <br />
 - <strong class='bold'>enabled</strong>: true/false (default: true)<br />
-- <strong class='bold'>debug</strong>: true/false (default: false). Corresponds to the debug attribute for regular ca-profiles and determines whether to keep the transaction backlog for troubleshooting.<br />
+- <strong class='bold'>debug</strong>: true/false (default: true). Corresponds to the debug attribute for regular ca-profiles and determines whether to keep the transaction backlog for troubleshooting.<br />
 - <strong class='bold'>ignore-cache-requests</strong>: true/false (default: false). Set to true to ignore clients requests for udp cache updates (even when ClusteredCache is in use locally).<br />
 <br />
 </a>

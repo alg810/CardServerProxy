@@ -3,7 +3,7 @@
   <ca-profiles>
     <default-des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14</default-des-key>
 
-    <extended-newcamd listen-port="15112"/>
+    <extended-newcamd listen-port="15112" debug="true"/>
 
     <profile name="myprofile" ca-id="0000" network-id="0000" provider-idents="00 00 00" enabled="true" debug="true">
       <newcamd listen-port="11112">
