@@ -163,6 +163,7 @@ public class SessionManager implements CronTimerListener {
     if(existingSessions == null) return -1;
     else {
       existingSessions = new ArrayList(existingSessions);
+      if("*".equals(profileName)) profileName = null;
       if(profileName != null) { // exclude sessions from other profiles if one is specified
         for(Iterator iter = existingSessions.iterator(); iter.hasNext(); ) {
           session = (ProxySession)iter.next();
