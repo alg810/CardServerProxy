@@ -43,6 +43,10 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   private Map addedServices = Collections.synchronizedMap(new HashMap()); // extra services decodable through linking
   private Map requiredServices = Collections.synchronizedMap(new HashMap()); // services that must be in cache for links
 
+  public SidCacheLinker() {
+    registerStatusCommands();
+  }
+
   public void init() {
     if(logger == null) {
       logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -51,7 +55,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
       linksFile = new File("etc", "links.cfg");
 
       loadSidLinkMap();
-      registerCommands();
+      registerCtrlCommands();
 
       fw = new FileWatchdog(linksFile.getPath(), ProxyConfig.DEFAULT_INTERVAL);
       fw.addFileChangeListener(this);
@@ -149,7 +153,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     fw.addFile(linksFile.getPath());
   }
 
-  protected void registerCommands() {
+  protected void registerCtrlCommands() {
     CtrlCommand cmd;
     try {
       new CtrlCommand("toggle-linker", "Toggle sid linker", "Activate/deactivate sid linking.").register(this);
@@ -178,6 +182,9 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     } catch (NoSuchMethodException e) {
       e.printStackTrace();
     }
+  }
+
+  protected void registerStatusCommands() {
     StatusCommand sCmd;
     try {
       sCmd = new StatusCommand("required-services", "List required services", "List services that need to be permanently in cache for the sid linker to work", false);
