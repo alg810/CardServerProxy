@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class TvService implements Serializable, Comparable {
 
-  public static final int TYPE_TV = 1, TYPE_RADIO = 2, TYPE_HDTV_MPEG2 = 17, TYPE_HDTV_MPEG4 = 25;
+  public static final int TYPE_TV = 1, TYPE_RADIO = 2, TYPE_HDTV_MPEG2 = 17, TYPE_HDTV_MPEG4 = 25, TYPE_TV_SUB = 211;
 
   private final boolean unknown;
   private final int id, number, type;
@@ -108,6 +108,7 @@ public class TvService implements Serializable, Comparable {
   public boolean isTv() {
     switch(type) {
       case TYPE_TV:
+      case TYPE_TV_SUB:
       case TYPE_RADIO:
       case TYPE_HDTV_MPEG2:
       case TYPE_HDTV_MPEG4:
@@ -123,9 +124,17 @@ public class TvService implements Serializable, Comparable {
   }
 
   public String getDisplayName() {
-    if(type == TYPE_RADIO) return "[R]" + name;
-    else if(type == TYPE_HDTV_MPEG2 || type == TYPE_HDTV_MPEG4) return "[HD]" + name;
-    else return name;
+    switch(type) {
+      case TYPE_TV_SUB:
+        return "[SUB]" + name;
+      case TYPE_RADIO:
+        return "[R]" + name;
+      case TYPE_HDTV_MPEG2:
+      case TYPE_HDTV_MPEG4:
+        return "[HD]" + name;
+      default:
+        return name;
+    } 
   }
 
   public void setName(String name) {
