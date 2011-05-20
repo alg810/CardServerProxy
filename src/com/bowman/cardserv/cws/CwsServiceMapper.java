@@ -325,7 +325,7 @@ public class CwsServiceMapper implements XmlConfigurable {
           service = config.getService(profile.getName(), id); // todo?
           if(service == null) {
             if(!hideUnknownServices) services.add(TvService.getUnknownService(profile.getName(), id.serviceId));
-          } else if(service.isTv() && service.getType() != TvService.TYPE_RADIO)
+          } else if(service.isTv())
             services.add(service);
           }
       }
