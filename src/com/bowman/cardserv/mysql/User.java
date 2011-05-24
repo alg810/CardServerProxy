@@ -13,7 +13,7 @@ public class User {
 
 	/* user informations */
 	private int id;
-	private String username;
+	private String userName;
 	private String password;
 	private String displayName;
 	private int maxConnections;
@@ -25,20 +25,20 @@ public class User {
 	private boolean isDebug;
 	private boolean mapExcluded;
 	
-	public User(String username, String password, String displayName, int maxConnections, String ipMask, 
+	public User(String userName, String password, String displayName, int maxConnections, String ipMask, 
 			String email, Set allowedProfiles, boolean isEnabled, boolean isAdmin, boolean isDebug, boolean mapExcluded) {
-		this(-1, username, password, displayName, maxConnections, ipMask, email, allowedProfiles, isEnabled, isAdmin, isDebug, mapExcluded);
+		this(-1, userName, password, displayName, maxConnections, ipMask, email, allowedProfiles, isEnabled, isAdmin, isDebug, mapExcluded);
 	}
 	
-	public User(int id, String username, String password, String displayName, int maxConnections, String ipMask, 
+	public User(int id, String userName, String password, String displayName, int maxConnections, String ipMask, 
 			String email, boolean isEnabled, boolean isAdmin, boolean isDebug, boolean mapExcluded) {
-		this(id, username, password, displayName, maxConnections, ipMask, email, null, isEnabled, isAdmin, isDebug, mapExcluded);
+		this(id, userName, password, displayName, maxConnections, ipMask, email, null, isEnabled, isAdmin, isDebug, mapExcluded);
 	}
 	
-	public User(int id, String username, String password, String displayName, int maxConnections, String ipMask, 
+	public User(int id, String userName, String password, String displayName, int maxConnections, String ipMask, 
 			String email, Set allowedProfiles, boolean isEnabled, boolean isAdmin, boolean isDebug, boolean mapExcluded) {
 		this.id = id;
-		this.username = username;
+		this.userName = userName;
 		this.password = password;
 		this.displayName = displayName;
 		this.maxConnections = maxConnections;
@@ -124,8 +124,8 @@ public class User {
 	/**
 	 * @return the username
 	 */
-	public String getUsername() {
-		return username;
+	public String getUserName() {
+		return userName;
 	}
 
 	/**
@@ -143,7 +143,7 @@ public class User {
 	}
 
 	public String toString() {
-		return "username: " + username + " " +
+		return "username: " + userName + " " +
 			"password: " + password + " " +
 			"displayName: " + displayName + " " +
 			"maxConnections: " + maxConnections + " " +

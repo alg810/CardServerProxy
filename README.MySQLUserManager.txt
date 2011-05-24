@@ -15,7 +15,6 @@ TODO/SUGGESTIONS:
 ----------------- 
 - check table correctness on csp startup
 - stresstest
-- implement edit profile
 - store the open-access user in database too
 
 Installation:
@@ -67,47 +66,3 @@ Database structure (little overview):
 | mapexclude         | BOOLEAN     |            +------------------------+
 | email              | VARCHAR(30) |
 +--------------------+-------------+
-
-Changelog:
-----------------
-version 0.7 alpha
-- added an extra profile table with a n:m relationship to the user table. That makes it possible to delete or edit profiles without having to
-  change it for each user. The edit function is on my to-do-list. The profile column in the users table is therefor not needed anymore.
-- added code to handle the profile table
-- fixed the delete user function
-- changed maxconnections type in database from INT(10) to TINYINT UNSIGNED (who needs more than 255 connections per profile?)
-- changed the name of the plugin "MySQLWebManagement" to "MySQLWebManagementPlugin" to avoid confusions
-
-version 0.6 alpha
-- automatic table creation
-- added code to add/edit/delete users
-
-version 0.5 alpha
-- added: extended the XmlUserManager so you can parallel use xml sources and local defined users. 
-  priority: (highest) xml - local - mysql (lowest)
-- added: introduced a "Read-Ahead-Cache" to cache the currently needed user informations. It works like this:
-  When a user data is needed the UserCacheManager loads them from the database with only one query and puts them for the specified user into the cache.
-  As long as the data is needed (for example: the user is connected and is watching, or user is logged in into the backend) a background thread 
-  asynchronly refreshes the user data by getting them from the database again. When its not needed anymore (for example: the user disconnected) the cache
-  entry for the specified user gets removed. 
-  The advantages are that in most cases the user data can be get directly out of the cache and is therefore a lot faster than always querying the 
-  database, and the local cached data is always synchron with the database. Also the cache only contains data which is actually needed.
-  Now the time difference compared to user data defined in the proxy.xml on my Intel Atom D510 is 1 ms.
-- changed: set cleaner thread priorities for UserCacheManager and ConnectionPoolManager to low.
-- changed: in the config the mysql connection must be defined in <mysql-database></mysql-database> tags. Only one database connection
-  is currently allowed.
-- fixed: displayname default is now username like it is in the SimpleUserManager
-
-version 0.4 alpha
-- "Set user debug" through admin panel now works
-- now using preparedStatements for querying the database
-- fixed the dynamic connection pool
-
-version 0.3 alpha
-- fixed the default values
-- changed the simple static ConnectionPool to a dynamic ConnectionPool. Now new connections will be created when needed and closed
-  again when they exceed an idletime limit of 60 seconds.
-- removed config parameter <connection-pool-size>
-
-version 0.2 alpha
-- introduced a simple ConnectionPool with static database connections

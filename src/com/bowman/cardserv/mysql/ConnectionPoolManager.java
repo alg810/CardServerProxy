@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.sql.SQLException;
 
 import com.bowman.cardserv.ConfigException;
-import com.bowman.cardserv.mysql.PoolConnection;
 import com.bowman.cardserv.util.ProxyLogger;
 import com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource;
 
@@ -55,7 +53,7 @@ public class ConnectionPoolManager extends Thread {
 		this.dataSource.setRequireSSL(true);
 		
 		// check the mysql database connection
-		if (getPoolConnection() == null) {
+		if (getMySQLConnection() == null) {
 			throw new ConfigException("Could not establish MySQL database connection! Please check your configuration and see the log file for more information.");
 		}
 		
@@ -68,40 +66,28 @@ public class ConnectionPoolManager extends Thread {
 	 * returns a connection out of the connection-pool.
 	 * @return PoolConnection
 	 */
-	public PoolConnection getPoolConnection() {
+	public MySQLConnection getMySQLConnection() {
 
 		synchronized (connectionPool) {
 			if (connectionPool.size() > 0)
-				try {
-					if (((PoolConnection) connectionPool.get(0)).isHealthy()) {
-						return (PoolConnection) connectionPool.remove(0);
-					} else {
-						connectionPool.remove(0);
-						return getPoolConnection();
-					}
-				} catch (SQLException e) {
-					logger.severe("(getPoolConnection) failed to get warnings or connection status!");
+				if (((MySQLConnection) connectionPool.get(0)).isHealthy()) {
+					return (MySQLConnection) connectionPool.remove(0);
+				} else {
+					connectionPool.remove(0);
+					return getMySQLConnection();
 				}
 		}
 		
-		try {
-			return new PoolConnection(dataSource);
-		} catch (ClassNotFoundException e) {
-			logger.severe("(getPoolConnection) class 'com.mysql.jdbc.Driver' not found: " + e);
-		} catch (SQLException e) {
-			logger.severe("(getPoolConnection) Failed to setup DB connection: " + e);
-		}
-		
-		return null;
+		return new MySQLConnection(dataSource);
 	}
 	
 	/**
 	 * turns back an unused PoolConnection
 	 * @param PoolConnection 
 	 */
-	public synchronized void returnPoolConnection(PoolConnection poolConnection) {
+	public synchronized void returnMySQLConnection(MySQLConnection mySQLConnection) {
 		synchronized (connectionPool) {
-			connectionPool.add(poolConnection);
+			connectionPool.add(mySQLConnection);
 		}
 	}
 
@@ -109,23 +95,18 @@ public class ConnectionPoolManager extends Thread {
 	 * checks the inactivity time stamp of each connection in the pool and removes the
 	 * connection if inactive time limit was reached.
 	 */
-	private void cleanInactivePoolConnections() {
+	private void cleanInactiveMySQLConnections() {
 		synchronized (connectionPool) {
 			Iterator iterator = connectionPool.iterator();
 			while (iterator.hasNext()) {
-				PoolConnection poolConnection = (PoolConnection) iterator.next();
-				if (poolConnection.isInactive(inactiveTime)) {
-					try {
-						poolConnection.closeConnection();
-					} catch (SQLException e) {
-						logger.severe("(cleanInactivePoolConnections) failed to close mysql connection: " + e);
-					}
+				MySQLConnection mySQLConnection = (MySQLConnection) iterator.next();
+				if (mySQLConnection.isInactive(inactiveTime)) {
+					mySQLConnection.closeConnection();
 					iterator.remove();
 				}
 			}
 		}
 	}
-	
 	
 	/**
 	 * returns the database connection details as a dataSource object.
@@ -140,16 +121,11 @@ public class ConnectionPoolManager extends Thread {
 	 * little helper function to close all database connections and release
 	 * all PoolConnection Objects in the connectionPool vector.
 	 */
-	private synchronized void closePoolConnections() {
+	private synchronized void closeMySQLConnections() {
 		synchronized (connectionPool) {
 			Iterator iterator = connectionPool.iterator();
 			while (iterator.hasNext()) {
-				PoolConnection poolConnection = (PoolConnection) iterator.next();
-				try {
-					poolConnection.closeConnection();
-				} catch (SQLException e) {
-					logger.severe("(closeConnections) failed to close mysql connection: " + e);
-				}
+				((MySQLConnection) iterator.next()).closeConnection();
 			}
 			connectionPool.clear();
 		}
@@ -159,11 +135,11 @@ public class ConnectionPoolManager extends Thread {
 		try {
 			while(!interrupted()) {
 				sleep(cleaningInterval);
-				cleanInactivePoolConnections();
+				cleanInactiveMySQLConnections();
 			}
 		} catch (InterruptedException e) {
 			/* close all open database connection when threads gets interrupted */
-			closePoolConnections();
+			closeMySQLConnections();
 			logger.info("ConnectionPoolManager interrupted!");
 		}
 	}

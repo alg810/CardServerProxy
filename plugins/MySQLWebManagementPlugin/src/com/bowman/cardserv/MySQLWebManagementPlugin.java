@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,6 +15,7 @@ import java.util.StringTokenizer;
 
 import com.bowman.cardserv.interfaces.ProxyPlugin;
 import com.bowman.cardserv.interfaces.ProxySession;
+import com.bowman.cardserv.mysql.Profile;
 import com.bowman.cardserv.mysql.User;
 import com.bowman.cardserv.util.ProxyLogger;
 import com.bowman.cardserv.util.ProxyXmlConfig;
@@ -42,6 +42,8 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 
 	private final String CTRL_COMMANDS_FILE = "ctrl-commands.xml";
 	private final String STATUS_COMMANDS_FILE = "status-commands.xml";
+	
+	private final int NUM_ROWS = 25;
 	
 	private MySQLUserManager mysqlUserManager;
 	protected ProxyLogger logger = null;
@@ -83,6 +85,170 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 		}
 	}
 	
+	private Set stringToSetOfInteger(String token) {
+		Set set = new HashSet();
+		for(StringTokenizer st = new StringTokenizer(token); st.hasMoreTokens(); ) set.add(new Integer(st.nextToken()));
+		return set;
+	}
+	
+	/* ############################################################################################ */
+	/* ctrl-commands (user)																			*/
+	/* ############################################################################################ */
+	
+	/**
+	 * add a new MySQL database user
+	 * @param params
+	 * @return CtrlCommandResult
+	 */
+	public CtrlCommandResult runCtrlCmdMysqlAddUser(Map params) {
+		getMySQLUserManager();
+		
+		if (((String)params.get("username")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a username.");
+		
+		if (((String)params.get("username")).contains(" "))
+			return new CtrlCommandResult(false, "the username contains whitespaces.");
+		
+		if (((String)params.get("password")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a password.");
+		
+		if (!((String)params.get("password")).equals((String)params.get("passwordretyped")))
+			return new CtrlCommandResult(false, "please check the password.");
+		
+		if (mysqlUserManager.existsMySQLUser((String)params.get("username")))
+			return new CtrlCommandResult(false, "the username already exists in database.");
+
+		if (mysqlUserManager.addUser(
+				(String)params.get("username"), 
+				(String)params.get("password"), 
+				(String)params.get("displayname"), 
+				(String)params.get("ipmask"), 
+				Integer.parseInt((String)params.get("maxconnections")), 
+				Boolean.parseBoolean((String)params.get("enabled")), 
+				Boolean.parseBoolean((String)params.get("debug")), 
+				Boolean.parseBoolean((String)params.get("admin")), 
+				(String)params.get("mail"), 
+				Boolean.parseBoolean((String)params.get("mapexcluded")),
+				stringToSetOfInteger((String)params.get("profile_ids"))
+		)) {
+			return new CtrlCommandResult(true, "user successfully added to database.");
+		} else return new CtrlCommandResult(false, "failed to add user to database.");
+		
+	}
+	
+	/**
+	 * edit an existing MySQL database user.
+	 * @param params
+	 * @return CtrlCommandResult
+	 */
+	public CtrlCommandResult runCtrlCmdMysqlEditUser(Map params) {
+		getMySQLUserManager();
+		
+		if (((String)params.get("username")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a username.");
+		
+		if (((String)params.get("username")).contains(" "))
+			return new CtrlCommandResult(false, "the username contains whitespaces.");
+		
+		if (!mysqlUserManager.existsMySQLUser((String)params.get("username")))
+			return new CtrlCommandResult(false, "the username doesn't exist in database.");
+
+		if (((String)params.get("password")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a password.");
+		
+		if (!((String)params.get("password")).equals((String)params.get("passwordretyped")))
+			return new CtrlCommandResult(false, "please check the password.");
+		
+		if (mysqlUserManager.editUser(
+				Integer.parseInt((String)params.get("id")), 
+				(String)params.get("username"),
+				(String)params.get("password"),
+				(String)params.get("displayname"),
+				(String)params.get("ipmask"), 
+				Integer.parseInt((String)params.get("maxconnections")), 
+				Boolean.parseBoolean((String)params.get("enabled")), 
+				Boolean.parseBoolean((String)params.get("debug")), 
+				Boolean.parseBoolean((String)params.get("admin")), 
+				(String)params.get("mail"), 
+				Boolean.parseBoolean((String)params.get("mapexcluded")),
+				stringToSetOfInteger((String)params.get("profile_ids"))
+		)) {
+			return new CtrlCommandResult(true, "user successfully edited.");
+		} else return new CtrlCommandResult(false, "failed to edit user in database.");
+	}
+	
+	/**
+	 * delete an MySQL database user.
+	 * @param params - username (user which should be deleted or ALL when all should be delted.)
+	 * @param user - current logged in user - which does not get deleted.
+	 * @return CtrlCommandResult
+	 */
+	public CtrlCommandResult runCtrlCmdMysqlDeleteUser(Map params, String user) {
+		getMySQLUserManager();
+		
+		if (((String)params.get("username")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a username.");
+		
+		if (!mysqlUserManager.existsMySQLUser((String)params.get("username")))
+			return new CtrlCommandResult(false, "the username does not exist in the database.");
+		
+		if (!((String)params.get("username")).equals(user)) {
+			if (mysqlUserManager.deleteUser((String)params.get("username"))) {
+				return new CtrlCommandResult(true, "user '" + (String)params.get("username") + "' successfully deleted.");
+			} else {
+				return new CtrlCommandResult(false, "user '" + (String)params.get("username") + "' not deleted.");
+			}
+		} else {
+			return new CtrlCommandResult(false, "you can't delete yourself!");
+		}
+	}
+	
+	/**
+	 * delete all MySQL database users except the one currenty logged in
+	 * @param params
+	 * @param user
+	 * @return CtrlCommandResult
+	 */
+	public CtrlCommandResult runCtrlCmdMysqlDeleteAllUsers(Map params, String user) {
+		getMySQLUserManager();
+		
+		if (mysqlUserManager.deleteAllUsers(user)) {
+			return new CtrlCommandResult(true, "all users successfully deleted.");
+		} else {
+			return new CtrlCommandResult(false, "all users not deleted.");
+		}
+	}
+	
+	/* ############################################################################################ */
+	/* ctrl-commands (import/export)																*/
+	/* ############################################################################################ */
+	
+	/**
+	 * import users from a xml source into the database
+	 * @param params
+	 * @return CtrlCommandResult
+	 */
+	public CtrlCommandResult runCtrlCmdMysqlImport(Map params) {
+		getMySQLUserManager();
+		
+		String newFile = null;
+		try {
+			newFile = FileFetcher.fetchFile(new URL((String)params.get("url")),
+					((String)params.get("key")).equals(new String("")) ? null : (String)params.get("key"), -1);
+		} catch (MalformedURLException e) {
+			logger.throwing(e);
+			logger.warning("Malformed URL: " + e.getMessage());
+		} catch (IOException e) {
+			logger.throwing(e);
+			logger.warning("Failed to fetch user file '" + (String)params.get("url") +"': " + e);
+		}
+
+		if(newFile != null && processUserFile(newFile)) {
+			return new CtrlCommandResult(true, "Users successfully imported.");
+		}
+		return new CtrlCommandResult(false, "Importing users failed!");
+	}
+
 	/**
 	 * processes a xml user source and adds the new users to the database.
 	 * If a user with the same name already exists it skips the new one.
@@ -90,24 +256,16 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 	 * @return TRUE, when url was successfully imported.
 	 */
 	private boolean processUserFile(String newFile) {
+		Set newUsers = new HashSet();		
 		try {
 			ProxyXmlConfig xml = new ProxyXmlConfig(new XMLConfig(newFile, false));
-			ArrayList newUsers = new ArrayList();
 			for(Iterator iter = xml.getMultipleSubConfigs("user"); iter.hasNext(); ) {
-				newUsers.add(parseUser((ProxyXmlConfig)iter.next()));
-			}
-			
-			for (Iterator iter = newUsers.iterator(); iter.hasNext();) {
-				User user = (User) iter.next();
-				if (!mysqlUserManager.existsUserInDatabase(user.getUsername())) {
-					mysqlUserManager.addUserToDB(user);
-				} else {
-					logger.info("user '" + user.getUsername() + "' already exists in MySQL database...not imported!");
+				User user = parseUser((ProxyXmlConfig)iter.next());
+				if (!mysqlUserManager.existsMySQLUser(user.getUserName())) {
+					newUsers.add(user);
 				}
 			}
 			
-			return true;
-		    
 		} catch(XMLConfigException e) {
 			logger.throwing(e);
 			logger.warning("Unable to parse '" + newFile + "': " + e.getMessage());
@@ -115,7 +273,7 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 			logger.throwing(e);
 			logger.warning("Error in user file '" + newFile + "': " + e.getMessage());
 		}
-		return false;
+		return mysqlUserManager.importUsers(newUsers);
 	}
 	
 	/**
@@ -129,7 +287,7 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 
 		String username = xml.getStringValue("name");
 		String password = xml.getStringValue("password");
-		    
+
 		String displayName = "";
 		try {
 		  	displayName = xml.getStringValue("display-name");
@@ -158,172 +316,44 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 	}
 	  
 	/* ############################################################################################ */
-	/* ctrl-commands (user)                                                                         */
+	/* status-commands (user)																		*/
 	/* ############################################################################################ */
 	
-	/**
-	 * add a new MySQL database user
-	 * @param params
-	 * @return CtrlCommandResult
-	 */
-	public CtrlCommandResult runCtrlCmdMysqlAddUser(Map params) {
-		getMySQLUserManager();
-		
-		// must be entered in order to add a user
-		if (((String)params.get("username")).equals(new String("")))
-			return new CtrlCommandResult(false, "please enter a username.");
-		
-		if (((String)params.get("username")).contains(" "))
-			return new CtrlCommandResult(false, "the username contains whitespaces.");
-		
-		if (((String)params.get("password")).equals(new String("")))
-			return new CtrlCommandResult(false, "please enter a password.");
-		
-		if (!((String)params.get("password")).equals((String)params.get("passwordretyped")))
-			return new CtrlCommandResult(false, "please check the password.");
-		
-		// does the username already exists?
-		if (mysqlUserManager.existsUserInDatabase((String)params.get("username")))
-			return new CtrlCommandResult(false, "the username already exists in database.");
-
-		mysqlUserManager.addUserToDB(
-				(String)params.get("username"), 
-				(String)params.get("password"), 
-				((String)params.get("displayname")).equals(new String("")) ? 
-						(String)params.get("username") : (String)params.get("displayname"), 
-				((String)params.get("ipmask")).equals(new String("")) ? "*" : (String)params.get("ipmask"), 
-				Integer.parseInt((String)params.get("maxconnections")), 
-				Boolean.parseBoolean((String)params.get("enabled")), 
-				Boolean.parseBoolean((String)params.get("debug")), 
-				Boolean.parseBoolean((String)params.get("admin")), 
-				(String)params.get("mail"), 
-				Boolean.parseBoolean((String)params.get("mapexcluded")),
-				(String)params.get("profiles")
-		);
-		return new CtrlCommandResult(true, "user successfully added to database.");
-	}
-	
-	/**
-	 * edit an existing MySQL database user.
-	 * @param params
-	 * @return CtrlCommandResult
-	 */
-	public CtrlCommandResult runCtrlCmdMysqlEditUser(Map params) {
-		getMySQLUserManager();
-		
-		// must be entered in order to add a user
-		if (((String)params.get("username")).equals(new String("")))
-			return new CtrlCommandResult(false, "please enter a username.");
-		
-		// does the username already exists?
-		if (!mysqlUserManager.existsUserInDatabase((String)params.get("username")))
-			return new CtrlCommandResult(false, "the username doesn't exist in database.");
-		
-		mysqlUserManager.editUserInDB(
-				(String)params.get("username"),
-				(String)params.get("password"),
-				(String)params.get("displayname"),
-				((String)params.get("ipmask")).equals(new String("")) ? "*" : (String)params.get("ipmask"), 
-				Integer.parseInt((String)params.get("maxconnections")), 
-				Boolean.parseBoolean((String)params.get("enabled")), 
-				Boolean.parseBoolean((String)params.get("debug")), 
-				Boolean.parseBoolean((String)params.get("admin")), 
-				(String)params.get("mail"), 
-				Boolean.parseBoolean((String)params.get("mapexcluded")),
-				(String)params.get("profiles")
-		);
-		return new CtrlCommandResult(true, "user successfully edited.");
-	}
-	
-	/**
-	 * delete an MySQL database user.
-	 * @param params - username (user which should be deleted or ALL when all should be delted.)
-	 * @param user - current logged in user - which does not get deleted.
-	 * @return CtrlCommandResult
-	 */
-	public CtrlCommandResult runCtrlCmdMysqlDeleteUser(Map params, String user) {
-		// make sure we got it
-		getMySQLUserManager();
-		
-		if (((String)params.get("username")).equals(new String("")))
-			return new CtrlCommandResult(false, "please enter a username.");
-		
-		if (!mysqlUserManager.existsUserInDatabase((String)params.get("username")) && 
-				!((String)params.get("username")).equals(new String("ALL")))
-			return new CtrlCommandResult(false, "the username does not exist in the database.");
-		
-		if (((String)params.get("username")).equals(new String("ALL"))) {
-			mysqlUserManager.deleteAllUsersFromDB(user);
-			return new CtrlCommandResult(true, "all users successfully deleted.");
-		} else {
-			if (!((String)params.get("username")).equals(user)) {
-				mysqlUserManager.deleteUserFromDB((String)params.get("username"));
-				return new CtrlCommandResult(true, "user successfully deleted.");
-			} else {
-				return new CtrlCommandResult(false, "you can't delete yourself!");
-			}
-		}
-	}
-	
-	/* ############################################################################################ */
-	/* ctrl-commands (import/export)                                                                */
-	/* ############################################################################################ */
-	
-	public CtrlCommandResult runCtrlCmdMysqlImportUsers(Map params) {
-		// make sure we got it
-		getMySQLUserManager();
-		
-        String newFile = null;
-        try {
-        	newFile = FileFetcher.fetchFile(new URL((String)params.get("url")),
-        			((String)params.get("key")).equals(new String("")) ? null : (String)params.get("key"), -1);
-        } catch (MalformedURLException e) {
-            logger.throwing(e);
-            logger.warning("Malformed URL: " + e.getMessage());
-        } catch (IOException e) {
-            logger.throwing(e);
-            logger.warning("Failed to fetch user file '" + (String)params.get("url") +"': " + e);
-		}
-        
-        if(newFile != null && processUserFile(newFile)) {
-    		return new CtrlCommandResult(true, "Users successfully imported.");
-        }
-		return new CtrlCommandResult(false, "Importing users failed!");
-	}
-
-	/* ############################################################################################ */
-	/* status-commands (user)                                                                         */
-	/* ############################################################################################ */
-	
-	public void runStatusCmdMysqlUsers(XmlStringBuffer xb) throws RemoteException {
+	public void runStatusCmdMysqlUsers(XmlStringBuffer xb, Map params) throws RemoteException {
 		getMySQLUserManager();
 		
 		xb.appendElement("mysql-users");
-		String[] userNames = mysqlUserManager.getMySQLUserNames();
-		for(int i = 0; i < userNames.length; i++) {
-			xmlFormatUser(xb, userNames[i], false);
+		
+		for (int i = 1; i <= mysqlUserManager.getMySQLUserCount() / NUM_ROWS; i++) {
+			xb.appendElement("page","num", i);
+			xb.closeElement("page");
+		}
+		if (mysqlUserManager.getMySQLUserCount() % NUM_ROWS != 0) {
+			xb.appendElement("page","num", (mysqlUserManager.getMySQLUserCount() / NUM_ROWS) + 1);
+			xb.closeElement("page");
+		}
+		
+		if (((String)params.get("username")) != null) {
+			User user = mysqlUserManager.getMySQLUser((String)params.get("username"));
+			if(user != null) xmlFormatUser(xb, user, false);
+		} else {
+			Iterator iterator = null;
+			if ((String)params.get("pageNum") != null) {
+				iterator = mysqlUserManager.getMySQLUserNames(new Integer((String)params.get("pageNum")).intValue() * NUM_ROWS, NUM_ROWS).iterator();				
+			} else {
+				iterator = mysqlUserManager.getMySQLUserNames().iterator();
+			}
+			while (iterator.hasNext()) xmlFormatUser(xb, mysqlUserManager.getMySQLUser((String)iterator.next()), false);
 		}
 		xb.closeElement("mysql-users");
 	} 
 	
-	public void runStatusCmdMysqlUserDetails(XmlStringBuffer xb, Map params, String user) throws RemoteException {
-		getMySQLUserManager();
-		
-		if (mysqlUserManager.isAdmin(user)) {
-			xb.appendElement("mysql-user-details");
-			xmlFormatUser(xb, (String)params.get("username"), false);
-			xb.closeElement("mysql-user-details");
-		}
-	}
-
-	public void runStatusCmdMysqlAddUser(XmlStringBuffer xb) throws RemoteException {
+	public void runStatusCmdMysqlAddUser(XmlStringBuffer xb, Map params) throws RemoteException {
 		getMySQLUserManager();
 		
 		xb.appendElement("mysql-add-user");
-		String[] profileNames = mysqlUserManager.getProfileNames();
-		for(int i = 0; i < profileNames.length; i++) {
-			xmlFormatProfile(xb, profileNames[i]);
-		}
+		Iterator iterator = mysqlUserManager.getProfiles().iterator();
+		while (iterator.hasNext()) xmlFormatProfile(xb, (Profile)iterator.next());
 		xb.closeElement("mysql-add-user");
 	} 
 	
@@ -331,50 +361,21 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 		getMySQLUserManager();
 		
 		xb.appendElement("mysql-edit-user");
-		User user = mysqlUserManager.getMySQLUser((String)params.get("username"));
-		xb.appendElement("user", "username", user.getUsername());
-		xb.appendAttr("password", user.getPassword());
-		xb.appendAttr("displayname", user.getDisplayName());
-		xb.appendAttr("mail", user.getEmail());
-		xb.appendAttr("ipmask", user.getIpMask());
-		xb.appendAttr("maxconnections", user.getMaxConnections());
-		xb.appendAttr("enabled", user.isEnabled());
-		xb.appendAttr("admin", user.isAdmin());
-		xb.appendAttr("debug", user.isDebug());
-		xb.appendAttr("mapexcluded", user.isMapExcluded());
-		xb.endElement(true);
-		
-		Set allowedProfiles = user.getAllowedProfiles();
-		String[] profileNames = mysqlUserManager.getProfileNames();
-		for(int i = 0; i < profileNames.length; i++) {
-			xb.appendElement("profile", "profilename", profileNames[i]);
-			xb.appendAttr("checked", allowedProfiles.contains(profileNames[i]) ? "true" : "false");
-			xb.endElement(true);
-		}
+		xmlFormatUser(xb, mysqlUserManager.getMySQLUser((String)params.get("username")),true);
+		Iterator iterator = mysqlUserManager.getProfiles().iterator();
+		while (iterator.hasNext()) xmlFormatProfile(xb, (Profile)iterator.next());
 		xb.closeElement("mysql-edit-user");
 	} 
 	
-	public void runStatusCmdMysqlDeleteUser(XmlStringBuffer xb) throws RemoteException {
-		getMySQLUserManager();
-		
-		xb.appendElement("mysql-delete-user");
-		xmlFormatUserNames(xb);
-		xb.closeElement("mysql-delete-user");
+	public void runStatusCmdMysqlImport(XmlStringBuffer xb, Map params) throws RemoteException {
+		xb.appendElement("mysql-import");
+		xb.closeElement("mysql-import");
 	} 
 	
-	public void runStatusCmdMysqlSelectUser(XmlStringBuffer xb) throws RemoteException {
-		getMySQLUserManager();
-		
-		xb.appendElement("mysql-select-user");
-		xmlFormatUserNames(xb);
-		xb.closeElement("mysql-select-user");
-	} 
-	
-	private void xmlFormatUser(XmlStringBuffer xb, String username, boolean includePassword) {
-		User user = mysqlUserManager.getMySQLUser(username);
-		xb.appendElement("user", "username", user.getUsername());
-		if (includePassword)
-			xb.appendAttr("password", user.getPassword());
+	private void xmlFormatUser(XmlStringBuffer xb, User user, boolean includePassword) {
+		xb.appendElement("user", "id", user.getId());
+		xb.appendAttr("username", user.getUserName());
+		if (includePassword) xb.appendAttr("password", user.getPassword());
 		xb.appendAttr("displayname", user.getDisplayName());
 		xb.appendAttr("mail", user.getEmail());
 		xb.appendAttr("ipmask", user.getIpMask());
@@ -389,31 +390,6 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 		xb.endElement(true);
 	}
 
-	private void xmlFormatUserNames(XmlStringBuffer xb) {
-		String[] userNames = mysqlUserManager.getMySQLUserNames();
-		for(int i = 0; i < userNames.length; i++) {
-			xb.appendElement("entry", "username", userNames[i]);
-			xb.closeElement("entry");
-		}
-	}
-	
-	/* ############################################################################################ */
-	/* status-commands (database details)                                                                         */
-	/* ############################################################################################ */
-	
-	public void runStatusCmdMysqlDatabaseDetails(XmlStringBuffer xb, Map params, String user) throws RemoteException {
-		getMySQLUserManager();
-		
-		if (mysqlUserManager.isAdmin(user)) {
-			xb.appendElement("mysql-database-details", "host", mysqlUserManager.getDatabaseHost());
-			xb.appendAttr("name", mysqlUserManager.getDatabaseName());
-			xb.appendAttr("port", mysqlUserManager.getDatabasePort());
-			xb.appendAttr("user", mysqlUserManager.getDatabaseUser());
-			xb.endElement(false);
-			xb.closeElement("mysql-database-details");
-		}
-	} 
-	
 	/* ############################################################################################ */
 	/* ctrl-commands (profile)                                                                      */
 	/* ############################################################################################ */
@@ -430,63 +406,114 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 			return new CtrlCommandResult(false, "please enter a profilename.");
 		
 		if (((String)params.get("profilename")).contains(" "))
-			return new CtrlCommandResult(false, "the name contains whitespaces.");
+			return new CtrlCommandResult(false, "the profilename contains whitespaces.");
 		
-		// does the profile already exists?
-		if (mysqlUserManager.existsProfileInDatabase((String)params.get("profilename")))
+		if (mysqlUserManager.existsProfile((String)params.get("profilename")))
 			return new CtrlCommandResult(false, "the profile already exists in database.");
 		
-		mysqlUserManager.addProfileToDB((String)params.get("profilename"));
+		if (mysqlUserManager.addProfile((String)params.get("profilename"))) {
+			return new CtrlCommandResult(true, "profile successfully added to database.");
+		} else {
+			return new CtrlCommandResult(false, "profile not added to database.");
+		}
 		
-		return new CtrlCommandResult(true, "profile successfully added to database.");
+	}
+	
+	/**
+	 * edit Profile in the MySQL database.
+	 * @param params
+	 * @return CtrlCommandResult
+	 */
+	public CtrlCommandResult runCtrlCmdMysqlEditProfile(Map params) {
+		getMySQLUserManager();
+		
+		if (((String)params.get("id")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a profil id.");
+		
+		if (((String)params.get("profilename")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a profilename.");
+		
+		if (((String)params.get("profilename")).contains(" "))
+			return new CtrlCommandResult(false, "the name contains whitespaces.");
+		
+		if (!mysqlUserManager.existsProfile(new Integer((String)params.get("id")).intValue()))
+			return new CtrlCommandResult(false, "the profile to edit does not exist in database.");
+		
+		if (mysqlUserManager.existsProfile((String)params.get("profilename")))
+			return new CtrlCommandResult(false, "the profilename already exists in database.");
+		
+		if (mysqlUserManager.editProfile(new Integer((String)params.get("id")).intValue(), (String)params.get("profilename"))) {
+			return new CtrlCommandResult(true, "profile successfully edited.");
+		} else {
+			return new CtrlCommandResult(false, "profile not edited.");
+		}
 	}
 	
 	/**
 	 * delete profile from MySQL database.
-	 * @param params
+	 * @param params - id
 	 * @return CtrlCommandResult
 	 */
 	public CtrlCommandResult runCtrlCmdMysqlDeleteProfile(Map params) {
 		getMySQLUserManager();
 		
-		if (((String)params.get("profilename")).equals(new String("")))
-			return new CtrlCommandResult(false, "please enter a profilename.");
+		if (((String)params.get("id")).equals(new String("")))
+			return new CtrlCommandResult(false, "please enter a profile id.");
 		
-		if (!mysqlUserManager.existsProfileInDatabase((String)params.get("profilename")) && 
-				!((String)params.get("profilename")).equals(new String("ALL")))
-			return new CtrlCommandResult(false, "the profilename does not exist in the database.");
+		if (!mysqlUserManager.existsProfile(new Integer((String)params.get("id")).intValue()))
+			return new CtrlCommandResult(false, "the profile to delete does not exist in database.");
+
+		if (mysqlUserManager.deleteProfile(new Integer((String)params.get("id")).intValue())) {
+			return new CtrlCommandResult(true, "profile successfully deleted.");
+		} else {
+			return new CtrlCommandResult(false, "profile not deleted.");
+		}
+	}
+	
+	/**
+	 * delete all profiles from MySQL database.
+	 * @return CtrlCommandResult
+	 */
+	public CtrlCommandResult runCtrlCmdMysqlDeleteAllProfiles() {
+		getMySQLUserManager();
 		
-		if (((String)params.get("profilename")).equals(new String("ALL"))) {
-			mysqlUserManager.deleteAllProfilesFromDB();
+		if (mysqlUserManager.deleteAllProfiles()) {
 			return new CtrlCommandResult(true, "all profiles successfully deleted.");
 		} else {
-			mysqlUserManager.deleteProfileFromDB((String)params.get("profilename"));
-			return new CtrlCommandResult(true, "profile successfully deleted.");
+			return new CtrlCommandResult(false, "all profiles not deleted.");
 		}
 	}
 	
 	/* ############################################################################################ */
-	/* status-commands (profile)                                                                    */
+	/* status-commands (profile)																	*/
 	/* ############################################################################################ */
 	
+	/**
+	 * append all profiles to the xml string buffer
+	 * @param xb
+	 */
 	public void runStatusCmdMysqlProfiles(XmlStringBuffer xb) throws RemoteException {
 		getMySQLUserManager();
 		
 		xb.appendElement("mysql-profiles");
-		String[] profileNames = mysqlUserManager.getProfileNames();
-		for(int i = 0; i < profileNames.length; i++) {
-			xmlFormatProfile(xb, profileNames[i]);
-		}
+		Iterator iterator = mysqlUserManager.getProfiles().iterator();
+		while (iterator.hasNext()) xmlFormatProfile(xb, (Profile)iterator.next());
 		xb.closeElement("mysql-profiles");
 	} 
-
-	private void xmlFormatProfile(XmlStringBuffer xb, String profileName) {
-		xb.appendElement("profile", "profilename", profileName);
-		xb.closeElement("profile");
+	
+	/**
+	 * append a formated profile to the xml string buffer
+	 * @param xb
+	 * @param profile
+	 */
+	private void xmlFormatProfile(XmlStringBuffer xb, Profile profile) {
+		xb.appendElement("profile", "id", profile.getId());
+		xb.appendAttr("profilename", profile.getProfileName());
+		xb.endElement(true);
 	}
 	
 	/* ############################################################################################ */
-	/* ProxyPlugin                                                                                  */
+	/* ProxyPlugin																					*/
 	/* ############################################################################################ */
 	
 	public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
@@ -510,12 +537,12 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 
 	public Properties getProperties() {
 		getMySQLUserManager();
-	    Properties p = new Properties();
-	    p.setProperty("mysql-database-host", mysqlUserManager.getDatabaseHost());
-	    p.setProperty("mysql-database-port", String.valueOf(mysqlUserManager.getDatabasePort()));
-	    p.setProperty("mysql-database-name", mysqlUserManager.getDatabaseName());
-	    p.setProperty("mysql-database-user", mysqlUserManager.getDatabaseUser());
-	    return p.isEmpty() ? null : p;
+		Properties p = new Properties();
+		p.setProperty("mysql-database-host", mysqlUserManager.getDatabaseHost());
+		p.setProperty("mysql-database-port", String.valueOf(mysqlUserManager.getDatabasePort()));
+		p.setProperty("mysql-database-name", mysqlUserManager.getDatabaseName());
+		p.setProperty("mysql-database-user", mysqlUserManager.getDatabaseUser());
+		return p.isEmpty() ? null : p;
 	}
 
 	public CamdNetMessage doFilter(ProxySession session, CamdNetMessage msg) {
@@ -523,17 +550,17 @@ public class MySQLWebManagementPlugin implements ProxyPlugin {
 	}
 
 	public byte[] getResource(String path, boolean admin) {
-	    if(path.startsWith("/")) path = path.substring(1);
-	    try {
-	      InputStream is = MySQLWebManagementPlugin.class.getResourceAsStream("/web/" + path);
-	      if(is == null) return null;
-	      DataInputStream dis = new DataInputStream(is);
-	      byte[] buf = new byte[dis.available()];
-	      dis.readFully(buf);
-	      return buf;
-	    } catch (IOException e) {
-	      return null;
-	    }    
+		if(path.startsWith("/")) path = path.substring(1);
+		try {
+			InputStream is = MySQLWebManagementPlugin.class.getResourceAsStream("/web/" + path);
+			if(is == null) return null;
+			DataInputStream dis = new DataInputStream(is);
+			byte[] buf = new byte[dis.available()];
+			dis.readFully(buf);
+			return buf;
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	public byte[] getResource(String path, byte[] inData, boolean admin) {

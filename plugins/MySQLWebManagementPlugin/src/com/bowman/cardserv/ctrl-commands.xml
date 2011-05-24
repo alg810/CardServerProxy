@@ -82,17 +82,24 @@
     <command-param name="username" label="" allow-arbitrary="true"/>
   </command>
 
-  <command name="mysql-import-users" label="Import MySQL users" description="Import users from a xml source to the MySQL database." confirm="true">
+  <command name="mysql-delete-all-users" label="Delete all MySQL users" description="Deletes all users from the MySQL database." confirm="true"/>
+
+  <command name="mysql-import" label="Import MySQL users and profiles" description="Import users and profiles from a xml source to the MySQL database." confirm="true">
     <command-param name="url" label="URL" allow-arbitrary="true"/>
     <command-param name="key" label="Key" allow-arbitrary="true"/>
- </command>
+  </command>
 
   <command name="mysql-add-profile" label="Add MySQL profile" description="Adds a new profile to the MySQL database." confirm="true">
-    <command-param name="name" label="" allow-arbitrary="true"/>
+    <command-param name="profilename" label="" allow-arbitrary="true"/>
+  </command>
+
+  <command name="mysql-edit-profile" label="Edit MySQL profile" description="Edit an existing MySQL database profile." confirm="true">
+    <command-param name="id" label="" allow-arbitrary="true"/>
   </command>
   
   <command name="mysql-delete-profile" label="Delete MySQL profile" description="Deletes the specified profile from the MySQL database." confirm="true">
-    <command-param name="name" label="" allow-arbitrary="true"/>
+    <command-param name="id" label="" allow-arbitrary="true"/>
   </command>
 
-</ctrl-commands>
+  <command name="mysql-delete-all-profiles" label="Delete all MySQL profiles" description="Deletes all profiles from the MySQL database." confirm="true"/>
+ </ctrl-commands>

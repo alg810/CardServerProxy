@@ -1,13 +1,13 @@
 package com.bowman.cardserv;
 
-import com.bowman.cardserv.mysql.CacheManager;
+import com.bowman.cardserv.interfaces.MySQLConstants;
+import com.bowman.cardserv.mysql.UserCacheManager;
 import com.bowman.cardserv.mysql.User;
 import com.bowman.cardserv.util.ProxyLogger;
 import com.bowman.cardserv.util.ProxyXmlConfig;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -26,7 +26,7 @@ public class MySQLUserManager extends XmlUserManager {
 	private static final String DEFAULT_DBNAME = "cardserverproxy";
 		
 	private ProxyLogger logger = null;
-	private CacheManager cacheManager = null;
+	private UserCacheManager cacheManager = null;
 	
 	public MySQLUserManager() {
 	    logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -42,7 +42,7 @@ public class MySQLUserManager extends XmlUserManager {
 		if (cacheManager != null)
 			cacheManager.interrupt();
 
-		cacheManager = new CacheManager(
+		cacheManager = new UserCacheManager(
 				xml.getSubConfig("mysql-database").getStringValue("dbhost", DEFAULT_DBHOST),
 				xml.getSubConfig("mysql-database").getPortValue("dbport", DEFAULT_DBPORT),
 				xml.getSubConfig("mysql-database").getStringValue("dbname", DEFAULT_DBNAME),
@@ -52,7 +52,7 @@ public class MySQLUserManager extends XmlUserManager {
 	}
 	
 	public String[] getUserNames() {
-	    ArrayList userNames = cacheManager.getUserNames();
+	    List userNames = getMySQLUserNames();
 		// now run through the rest (simple and xml usermanager) and merge them
 		String [] tmp = super.getUserNames();
 		for (int i = 0; i < tmp.length; i++) {
@@ -76,7 +76,7 @@ public class MySQLUserManager extends XmlUserManager {
 		if(super.getPassword(user) != null) {
 			return super.getUserName(user);
 		} else {
-			return cacheManager.getUser(user).getUsername();
+			return cacheManager.getUser(user).getUserName();
 		}
 	}
 
@@ -100,7 +100,7 @@ public class MySQLUserManager extends XmlUserManager {
 		if(super.getPassword(user) != null) {
 			return super.getIpMask(user);
 		} else {
-			return cacheManager.getUser(user).getIpMask();
+			return cacheManager.getUser(user).getIpMask().equals(new String("")) ? new String("*") : cacheManager.getUser(user).getIpMask();
 		}
 	}
 
@@ -118,7 +118,7 @@ public class MySQLUserManager extends XmlUserManager {
 		} else {
 			User us = cacheManager.getUser(user);
 			if (us.getDisplayName().equals(new String())) {
-				return us.getUsername();
+				return us.getUserName();
 			} else
 				return us.getDisplayName();
 		}
@@ -176,7 +176,7 @@ public class MySQLUserManager extends XmlUserManager {
 		if(super.getPassword(user) != null) {
 			super.setDebug(user, debug);
 		} else {
-			cacheManager.setUserDebug(user, debug);
+			cacheManager.setDebug(user, debug);
 		}
 	}
 
@@ -217,97 +217,183 @@ public class MySQLUserManager extends XmlUserManager {
 	}
 	
 	/* ############################################################################################ */
-	/* add/edit/delete MySQL users                                                                  */
+	/* add/edit/delete MySQL users																	*/
 	/* ############################################################################################ */
 	
 	/**
-	 * add a new user to the database.
+	 * returns all usernames which are stored in the database 
+	 * limited with skipRows and numRows as a List.
+	 * @param skipRows
+	 * @param numRows
+	 * @return usersnames
 	 */
-	public void addUserToDB(String username, String password, String displayname, String ipmask,
-			int maxconnections, boolean enabled,  boolean debug, boolean admin, 
-			String mail, boolean mapexcluded, String allowedProfiles) {
-		cacheManager.addUserToDB(
-				username, password, displayname, ipmask, maxconnections, enabled, 
-				debug, admin, mail, mapexcluded, allowedProfiles
-		);
+	public List getMySQLUserNames(int skipRows, int numRows) {
+		return cacheManager.getUserNames(skipRows, numRows);
 	}
 	
 	/**
-	 * add a new user to the database.
-	 * @param user - User object
+	 * returns all usernames which are stored in the database as a List.
+	 * @return all usersnames
 	 */
-	public void addUserToDB(User user) {
-		String profiles = "";
-		Iterator iterator = user.getAllowedProfiles().iterator();
-		while(iterator.hasNext()){
-			profiles += (String) iterator.next() + " ";
-		}
-		addUserToDB(user.getUsername(), user.getPassword(), user.getDisplayName(), user.getIpMask(),
-				user.getMaxConnections(), user.isEnabled(),  user.isDebug(), user.isAdmin(), 
-				user.getEmail(), user.isMapExcluded(), profiles);
+	public List getMySQLUserNames() {
+		return getMySQLUserNames(MySQLConstants.DEFAULT_SKIP_ROWS, MySQLConstants.DEFAULT_NUM_ROWS);
+	}
+	
+	/**
+	 * Returns the number of total Users in database
+	 * @return user count
+	 */
+	public int getMySQLUserCount() {
+		return getMySQLUserNames().size();
+	}
+	
+	/**
+	 * Returns user
+	 * @param userName
+	 * @return User
+	 */
+	public User getMySQLUser(String userName) {
+		return cacheManager.getUser(userName);
+	}
+	
+	/**
+	 * tests whether the user exists.
+	 * @param userName
+	 * @return TRUE, when specified user exists
+	 */
+	public boolean existsMySQLUser(String userName) {
+		return cacheManager.getUser(userName) != null;
+	}
+
+	/**
+	 * add a new user to the database.
+	 */
+	public boolean addUser(String username, String password, String displayname, String ipmask,
+			int maxconnections, boolean enabled,  boolean debug, boolean admin, 
+			String mail, boolean mapexcluded, Set allowedProfileIds) {
+		return cacheManager.addUser(
+				username, password, displayname, ipmask, maxconnections, enabled, 
+				debug, admin, mail, mapexcluded, allowedProfileIds
+		);
 	}
 	
 	/**
 	 * edit an existing user entry by passing the new values.
 	 */
-	public void editUserInDB(String username, String password, String displayname, String ipmask, 
+	public boolean editUser(int id, String username, String password, String displayname, String ipmask, 
 			int maxconnections, boolean enabled, boolean debug, boolean admin, String mail, 
-			boolean mapexcluded, String allowedProfiles) {
-		cacheManager.editUserInDB(username, password, displayname, ipmask, maxconnections, 
-				enabled, debug, admin, mail, mapexcluded, allowedProfiles
-		);
-	}
-	
-	/**
-	 * delete all users from the database.
-	 * @param username - the user which should not be deleted.
-	 *        This may be because the user is currently logged in and
-	 *        therefore shouldn't be deleted.
-	 */
-	public void deleteAllUsersFromDB(String username) {
-		cacheManager.deleteAllUsersFromDB(username);
+			boolean mapexcluded, Set allowedProfileIds) {
+		return cacheManager.editUser(id, username, password, displayname, ipmask, maxconnections, 
+				enabled, debug, admin, mail, mapexcluded, allowedProfileIds);
 	}
 	
 	/**
 	 * delete specified user from the MySQL database.
-	 * @param username - user to delete.
+	 * @param id - user to delete.
 	 */
-	public void deleteUserFromDB(String username) {
-		cacheManager.deleteUserFromDB(username);
+	public boolean deleteUser(String username) {
+		return cacheManager.deleteUser(username);
 	}
 	
 	/**
-	 * returns all usernames which are stored in the database as a string array.
-	 * @return all usersnames in the database
+	 * delete all users from the database.
+	 * @param id - the user which should not be deleted.
+	 *        This may be because the user is currently logged in and
+	 *        therefore shouldn't be deleted.
 	 */
-	public String[] getMySQLUserNames() {
-	    ArrayList userNames = cacheManager.getUserNames();
-		Collections.sort(userNames);
-		return (String[])userNames.toArray(new String[userNames.size()]);
+	public boolean deleteAllUsers(String skipUserName) {
+		return cacheManager.deleteAllUsers(skipUserName);
 	}
-		
+	
+	/**
+	 * Little helper to import a Set of user objects with profilen-ames
+	 * instead of profile-ids. Profiles not in DB will be added to DB.
+	 * @param users - set of users to import
+	 * @return TRUE if import was successfull
+	 */
+	public boolean importUsers(Set users) {
+		return cacheManager.importUsers(users);
+	}
+	
 	/**
 	 * tests whether the user with the specified username exists in the MySQL database.
-	 * @param username - the username to check
+	 * @param id - the user to check
 	 * @return TRUE, when the user entry is in database
 	 */
-	public boolean existsUserInDatabase(String username) {
-		return cacheManager.getUser(username) != null;
-	}
+	/**public boolean existsUserInDatabase(String userName) {
+		return cacheManager.getUser(userName) != null;
+	}*/
 	
+	/* ############################################################################################ */
+	/* profiles																						*/
+	/* ############################################################################################ */
+
 	/**
-	 * returns the user
-	 * @param username
-	 * @return User
+	 * Returns all profiles as a list
+	 * @return all profiles
 	 */
-	public User getMySQLUser(String username) {
-		return cacheManager.getUser(username);
+	public List getProfiles() {
+		return cacheManager.getProfiles();
 	}
-	
+
+	/**
+	 * tests whether the profile exists.
+	 * @param id
+	 * @return TRUE, when specified profile exists
+	 */
+	public boolean existsProfile(int id) {
+		return cacheManager.getProfile(id) != null;
+	}
+
+	/**
+	 * tests whether the profile exists.
+	 * @param profileName
+	 * @return TRUE, when specified profile exists
+	 */
+	public boolean existsProfile(String profileName) {
+		return cacheManager.getProfile(profileName) != null;
+	}
+
+	/**
+	 * add a new profile to the mysql database.
+	 * @param profileName - profile to add
+	 * @return TRUE when adding profile was successfull
+	 */
+	public boolean addProfile(String profileName) {
+		return cacheManager.addProfile(profileName);
+	}
+
+	/**
+	 * edit an existing profile in the mysql database.
+	 * @param id - profile to edit
+	 * @param profileName - new profilename
+	 * @return TRUE when editing profile was successfull
+	 */
+	public boolean editProfile(int id, String profileName) {
+		return cacheManager.editProfile(id, profileName);
+	}
+
+	/**
+	 * delete specified profile from the MySQL database.
+	 * @param id - profile to delete
+	 * @return TRUE when profile was successfully deleted.
+	 */
+	public boolean deleteProfile(int id) {
+		return cacheManager.deleteProfile(id);
+	}
+
+	/**
+	 * delete all profiles from the MySQL database.
+	 * @return TRUE when all profiles were successfully deleted.
+	 */
+	public boolean deleteAllProfiles() {
+		return cacheManager.deleteAllProfiles();
+	}
+
 	/* ############################################################################################ */
-	/* database informations                                                                        */
+	/* database informations																		*/
 	/* ############################################################################################ */
-	
+
 	/**
 	 * the hostname or ip address the MySQL server is reached. 
 	 * @return host
@@ -315,7 +401,7 @@ public class MySQLUserManager extends XmlUserManager {
 	public String getDatabaseHost() {
 		return cacheManager.getDatabaseHost();
 	}
-	
+
 	/**
 	 * the database name which is used for the tables.
 	 * @return database name
@@ -323,7 +409,7 @@ public class MySQLUserManager extends XmlUserManager {
 	public String getDatabaseName() {
 		return cacheManager.getDatabaseName();
 	}
-	
+
 	/**
 	 * the port the MySQL database listens on.
 	 * @return port
@@ -331,7 +417,7 @@ public class MySQLUserManager extends XmlUserManager {
 	public int getDatabasePort() {
 		return cacheManager.getDatabasePort();
 	}
-	
+
 	/**
 	 * the username used to connect to the database.
 	 * @return username
@@ -339,51 +425,5 @@ public class MySQLUserManager extends XmlUserManager {
 	public String getDatabaseUser() {
 		return cacheManager.getDatabaseUser();
 	}
-	
-	/* ############################################################################################ */
-	/* profiles                                                                                     */
-	/* ############################################################################################ */
-	
-	/**
-	 * add a new profile to the mysql database.
-	 * @param profileName - profile to add
-	 */
-	public void addProfileToDB(String profileName) {
-		cacheManager.addProfileToDB(profileName);
-	}
-	
-	/**
-	 * delete all profiles from the MySQL database.
-	 */
-	public void deleteAllProfilesFromDB() {
-		cacheManager.deleteAllProfilesFromDB();
-	}
-	
-	/**
-	 * delete specified profile from the MySQL database.
-	 * @param profileName - profile to delete
-	 */
-	public void deleteProfileFromDB(String profileName) {
-		cacheManager.deleteProfileFromDB(profileName);
-	}
-	
-	/**
-	 * returns all profile names as a string array.
-	 * @return profile names
-	 */
-	public String[] getProfileNames() {
-	    ArrayList profileNames = cacheManager.getProfileNames();
-		Collections.sort(profileNames);
-		return (String[])profileNames.toArray(new String[profileNames.size()]);
-	}
-	
-	/**
-	 * tests whether the profile exists in the MySQL database.
-	 * @param profileName
-	 * @return TRUE, when specified profile exists in database
-	 */
-	public boolean existsProfileInDatabase(String profileName) {
-		return cacheManager.getProfile(profileName) != null;
-	}
-	
+
 }
