@@ -95,6 +95,7 @@
 
   <command name="mysql-edit-profile" label="Edit MySQL profile" description="Edit an existing MySQL database profile." confirm="true">
     <command-param name="id" label="" allow-arbitrary="true"/>
+    <command-param name="profilename" label="profilename" allow-arbitrary="true"/>
   </command>
   
   <command name="mysql-delete-profile" label="Delete MySQL profile" description="Deletes the specified profile from the MySQL database." confirm="true">
