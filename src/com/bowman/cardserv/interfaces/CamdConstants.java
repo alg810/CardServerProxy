@@ -42,12 +42,14 @@ public interface CamdConstants {
   public static final String[] CL_NAMES = {
       "Generic", "VDRSC", "LCE", "Camd3", "Radegast", "Gbox2CS", "Mgcamd", "WinCSC", "newcs", "cx", "Kaffeine",
       "Evocamd", "CCcam", "Tecview", "AlexCS", "Rqcamd", "Rq-echo", "Acamd", "Cardlink", "Octagon", "sbcl",
-      "NextYE2k", "NextYE2k", "DiabloCam/UW", "OScam", "Scam", "Rq-sssp/CW", "Rq-sssp/CS", "JlsRq", "eyetvCamd", 
+      "NextYE2k", "NextYE2k", "DiabloCam/UW", "OScam", "Scam", "Rq-sssp/CW", "Rq-sssp/CS", "JlsRq", "eyetvCamd",
+      "mpcs", "kpcs", "Tvheadend"
   };
   public static final int[] CL_IDS = {
       0x0000, 0x5644, 0x4C43, 0x4333, 0x7264, 0x6762, 0x6D67, 0x7763, 0x6E73, 0x6378, 0x6B61,
       0x6576, 0x4343, 0x5456, 0x414C, 0x0666, 0x0667, 0x9911, 0x434C, 0x4765, 0x5342, 
-      0x6E65, 0x4E58, 0x4453, 0x8888, 0x7363, 0x0669, 0x0665, 0x0769, 0x4543
+      0x6E65, 0x4E58, 0x4453, 0x8888, 0x7363, 0x0669, 0x0665, 0x0769, 0x4543,
+      0x6D63, 0x6B63, 0x6502
   };  
   
   // 0x5943 = YaCamd ?
