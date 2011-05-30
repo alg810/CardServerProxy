@@ -19,7 +19,7 @@ if [ ! -e "/tmp/dropbear/dropbearmulti" ]; then
 
   # Get static binaries for some boxtypes, defaults to dynamic
   case $BOXTYPE in
-    dm600pvr|dm7020|mystb)
+    dm600pvr|dm500plus|dm7020|mystb)
       BINARY="dropbearmulti.static.$CPUARCH"
       ;;
 
