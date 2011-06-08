@@ -42,6 +42,8 @@ public class DreamboxPlugin implements ProxyPlugin {
   };
 
   private Set scripts = new HashSet();
+  private Map uploadPermissions = new HashMap();
+  private Set validFileNames = new TreeSet();
 
   public DreamboxPlugin() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -78,7 +80,32 @@ public class DreamboxPlugin implements ProxyPlugin {
 
     checkInterval = xml.getIntValue("check-interval", 5) * 60;
 
+    uploadPermissions.clear(); validFileNames.clear();
+    ProxyXmlConfig fileUploadXml = null, fileXml;
+    try {
+      fileUploadXml = xml.getSubConfig("file-upload");
+    } catch (ConfigException e) {}
+    if(fileUploadXml != null && "true".equalsIgnoreCase(fileUploadXml.getStringValue("enabled", "true"))) {
+      String user, fileName; FileUploadPermission fue;
+      for(Iterator iter = fileUploadXml.getMultipleSubConfigs("file"); iter.hasNext(); ) {
+        fileXml = (ProxyXmlConfig)iter.next();
+        user = fileXml.getStringValue("user");
+        fileName = fileXml.getStringValue("name");
+        validFileNames.add(fileName);
+        fue = (FileUploadPermission)uploadPermissions.get(user);
+        if(fue != null) fue.add(fileName, fileXml.getStringValue("target-path"));
+        else uploadPermissions.put(user, new FileUploadPermission(user, fileName, fileXml.getStringValue("target-path")));
+      }
+    }
+    applyUploadPermissions();
     listScripts();
+  }
+
+  private void applyUploadPermissions() {
+    if(registry == null || registry.size() ==  0) return;
+    BoxMetaData[] boxes = registry.findBox(null);
+    for(int i = 0; i < boxes.length; i++)
+      boxes[i].setFileUploadEntry((FileUploadPermission)uploadPermissions.get(boxes[i].getUser()));
   }
 
   private void listScripts() {
@@ -177,6 +204,7 @@ public class DreamboxPlugin implements ProxyPlugin {
           FileOutputStream fos = new FileOutputStream(script);
           fos.write(buf);
           fos.close();
+          // script.setExecutable(true);
         }
         buf = getResource("test.sh", false);
         script = new File(scripts, "test.sh");
@@ -192,7 +220,6 @@ public class DreamboxPlugin implements ProxyPlugin {
           fos.write(buf);
           fos.close();
         }
-        // script.setExecutable(true);
       } catch(IOException e) {
         logger.warning("Exception extracting helper scripts to 'dreamboxplugin/': " + e);
         logger.throwing(e);
@@ -220,6 +247,7 @@ public class DreamboxPlugin implements ProxyPlugin {
         registry = (BoxRegistry)ois.readObject();
         logger.fine("Loaded registry, " + registry.size() + " entries.");
         ois.close();
+        applyUploadPermissions();
       } catch (Exception e) {
         logger.throwing(e);
         logger.warning("Failed to load registry ('" + registryFile.getPath() + "'): " + e);
@@ -302,8 +330,9 @@ public class DreamboxPlugin implements ProxyPlugin {
       Map map = new HashMap();
       Set set = new TreeSet(listScriptsDir());
       set.addAll(scripts);
-      if(sshd == null) set.remove("sshtunnel.sh");
+      if(sshd == null) set.remove("ssh_tunnel.sh");
       map.put("@scripts", set);
+      if(!validFileNames.isEmpty()) map.put("@filenames", validFileNames);
       XmlHelper.xmlFormatOptionLists(xb, map);
     }
   }
@@ -330,13 +359,14 @@ public class DreamboxPlugin implements ProxyPlugin {
     else {
       String op = (String)params.get("operation");
       String p = (String)params.get("params");
+      String of = (String)params.get("filename");
       XMLConfig xml = (XMLConfig)params.get("xml");
       BoxMetaData box;
       for(Enumeration e = xml.getMultipleSubConfigs("box"); e.hasMoreElements(); ) {
         box = registry.getBox(((XMLConfig)e.nextElement()).getString("id"));
         if(box != null) {
           if("".equals(op) || op == null) box.setPendingOperation(null);
-          else box.setPendingOperation(new BoxOperation(op, p));
+          else box.setPendingOperation(new BoxOperation(op, p, of));
         }
       }
     }

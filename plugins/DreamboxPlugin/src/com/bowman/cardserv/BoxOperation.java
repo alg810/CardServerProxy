@@ -13,17 +13,18 @@ public class BoxOperation {
 
   private static int counter = 0;
 
-  private String cmdLine, scriptName, params;
+  private String cmdLine, scriptName, params, outFile;
   private int id;
   private long startTimeStamp = -1, stopTimeStamp = -1;
   private StringBuffer output;
   private Socket conn;
 
-  public BoxOperation(String s, String params) {
+  public BoxOperation(String s, String params, String outFile) {
     if(s.startsWith("cmd:")) cmdLine = s.substring(4);
     else if(s.startsWith("script:")) scriptName = s.substring(7);
     else throw new IllegalArgumentException(s);
     this.params = params;
+    this.outFile = outFile;
     id = counter++;
   }
 
@@ -43,6 +44,10 @@ public class BoxOperation {
 
   public String getParams() {
     return params;
+  }
+
+  public String getOutFile() {
+    return outFile;
   }
 
   public boolean isScript() {

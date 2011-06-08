@@ -105,7 +105,7 @@
 				<available filepath="${dir.lib}" file="bowxml.jar"/>
 				<available filepath="${dir.lib}" file="cardservproxy.jar"/>
 				<!-- add your depencies for your plugin here -->
-			    <available filepath="${dir.lib}" file="mina-core-2.0.0-M6.jar" />
+			  <available filepath="${dir.lib}" file="mina-core-2.0.0-M6.jar" />
 				<available filepath="${dir.lib}" file="slf4j-api-1.5.2.jar" />
 				<available filepath="${dir.lib}" file="slf4j-jdk14-1.5.2.jar" />
 				<available filepath="${dir.lib}" file="sshd-core-0.3.0.jar" />
@@ -119,8 +119,28 @@
 			debug="on" includeantruntime="false">
 		</javac>
 	</target>
+
+  <target name="compile-1.4" depends="prepare" description="compile plugin for java 1.4.">
+		<javac failonerror="false" srcdir="${dir.src}" includes="**/*.java"
+			destdir="${dir.classes}" classpath="${classpath}" source="1.4" target="1.4"
+			debug="on" includeantruntime="false">
+			<include name="**/*.java"/>
+			<!-- exclude sshd related classes -->
+      <exclude name="**/AgentSshd.java"/>
+			<exclude name="**/DummyShellFactory.java"/>
+		</javac>
+  </target>
 	
 	<target name="build" depends="compile" description="build plugin." if="depencies.present">
+		<jar jarfile="${dir.build.lib}/${ant.project.name}.jar">
+			<fileset dir="${dir.classes}">
+				<include name="**/*" />
+			</fileset>
+		</jar>
+		<copy todir="${dir.dist}" file="${dir.build.lib}/${ant.project.name}.jar"/>
+	</target>
+
+	<target name="build-1.4" depends="compile-1.4" description="build plugin with java 1.4.">
 		<jar jarfile="${dir.build.lib}/${ant.project.name}.jar">
 			<fileset dir="${dir.classes}">
 				<include name="**/*" />

@@ -52,6 +52,7 @@
             <td><strong>User</strong></td><td><strong>Type</strong></td><td><strong>Img</strong></td><td><strong>Ext. IP</strong></td><td><strong>Int. IP</strong></td><td><strong>HWAddr</strong></td><td><strong>Iv</strong></td><td><strong>Next</strong></td><td><strong>SID</strong></td><td><strong>ONID</strong></td><td><strong>Status</strong></td><td><strong>C</strong></td><xsl:if test="../@admin = 'true'"><td><strong>&#160;</strong></td></xsl:if>
           </tr>
           <xsl:for-each select="box">
+            <xsl:sort select="@user"/>
             <tr>
               <xsl:if test="@active = 'false'">
                 <xsl:attribute name="style">font-style: italic</xsl:attribute>
@@ -219,12 +220,22 @@
       </td><td>
         <input name="params" id="paramsInput" type="text"/>
       </td><td>
+        <xsl:call-template name="filename-selector">
+          <xsl:with-param name="elementid" select="'scriptFilenameSelector'"/>
+        </xsl:call-template>
+        &#160;
+      </td><td>
         <input value="OK" id="scriptBtn" type="button"/>
       </td></tr>
       <tr><td>
         Run command on selected boxes:
       </td><td>
         <input name="cmdline" id="cmdlineInput" type="text"/>
+      </td><td>
+        <xsl:call-template name="filename-selector">
+          <xsl:with-param name="elementid" select="'cmdFilenameSelector'"/>
+        </xsl:call-template>
+        &#160;
       </td><td>
         <input value="OK" id="cmdlineBtn" type="button"/>
       </td><td colspan="2">
@@ -234,14 +245,14 @@
         Abort all pending operations:
       </td><td>
         <input value="OK" id="abortBtn" type="button"/>
-      </td><td colspan="3">
+      </td><td colspan="4">
         &#160;
       </td></tr>
       <tr><td>
         Clear all operation history:
       </td><td>
         <input value="OK" id="clearBtn" type="button"/>
-      </td><td colspan="3">
+      </td><td colspan="4">
         &#160;
       </td></tr>
     </table>
@@ -288,6 +299,27 @@
       <br /><br />
     </xsl:if>
     </xsl:for-each>
+  </xsl:template>
+
+  <xsl:template name="filename-selector">
+    <xsl:param name="elementid"/>
+    <xsl:if test="count(//option-list[@name='@filenames']/option) > 0">
+      &#160; &gt; &#160;
+      <select name="filename">
+        <xsl:attribute name="id"><xsl:value-of select="$elementid"/></xsl:attribute>
+        <option>
+          <xsl:attribute name="value">None</xsl:attribute>
+          <xsl:attribute name="selected">selected</xsl:attribute>
+          None
+        </option>
+        <xsl:for-each select="//option-list[@name='@filenames']/option">
+          <option>
+            <xsl:attribute name="value"><xsl:value-of select="@value"/></xsl:attribute>
+            <xsl:value-of select="@value"/>
+          </option>
+        </xsl:for-each>
+      </select>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template name="agent-instructions">

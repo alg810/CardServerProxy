@@ -154,7 +154,7 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     } else if(existingBoxes.length == 1) {
       box = existingBoxes[0];
     } else {
-      box = new BoxMetaData(macAddr, user, seed);
+      box = new BoxMetaData(macAddr, user, seed, null);
       parent.registerBox(box);
     }
 
@@ -166,8 +166,8 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     box.setProperty("kernel-version", req.getHeader("csp-kernel-version"));
     box.setProperty("image-guess", req.getHeader("csp-img-guess"));
     box.setProperty("image-info", req.getHeader("csp-img-info"));
-    box.setProperty("osd-type", req.getHeader("csp-osd-type"));
-    box.setProperty("osd-version", req.getHeader("csp-osd-version"));
+    if(req.getHeader("csp-osd-type") != null) box.setProperty("osd-type", req.getHeader("csp-osd-type"));
+    if(req.getHeader("csp-osd-version") != null) box.setProperty("osd-version", req.getHeader("csp-osd-version"));
     if(req.getHeader("csp-uname-m") != null) box.setProperty("machine", req.getHeader("csp-uname-m"));
 
     box.setProperty("external-ip", req.getRemoteAddress());
@@ -235,6 +235,7 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
         // wrap the script, turning the output into a valid http CONNECT operation, connecting it with the boxId + op
         StringBuffer script = new StringBuffer("#!/bin/ash\n");
         script.append("echo \"CONNECT /output?boxId=").append(box.getBoxId()).append("&opId=").append(op.getId());
+        if(op.getOutFile() != null) script.append("&fileName=").append(op.getOutFile());
         script.append("\n\n").append("\""); // end of http header
         script.append("\n");
         script.append(s); // output from stored script or cmdline
@@ -282,12 +283,34 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     if(urlPattern.equals("/output*")) {
       System.out.println(connectRequest.getQueryString());
       BoxMetaData box = parent.getBox(connectRequest.getParameter("boxId"));
-      BoxOperation op = box.getOperation(Integer.parseInt(connectRequest.getParameter("opId")));
-      if(box != null && op != null) new OutputReaderThread(connectRequest.getConnection(), box, op);
-      else {
+      String fileName = connectRequest.getParameter("fileName");
+      String opIdStr = connectRequest.getParameter("opId");
+      BoxOperation op = null;
+      if(opIdStr != null) op = box.getOperation(Integer.parseInt(opIdStr));
+      File target = null;
+      if(fileName != null) {
+        if(box == null || !box.isUploadAllowed(fileName)) {
+          parent.logger.warning("File upload from unknown/deleted/unauthorized box: " + connectRequest.getQueryString());
+          if(op == null) return HttpResponse.getErrorResponse(401);
+        } else {
+          String targetPath = box.getUploadPath(fileName);
+          target = new File(targetPath);
+          if(target.isDirectory()) target = new File(target, fileName);
+          if((target.exists() && !target.canWrite()) || target.isDirectory()) {
+            try {
+              parent.logger.warning("Unable to write file upload from: " + box.getUser() +  " (" +
+                  target.getCanonicalPath() + ")");
+              target = null;
+              if(op == null) return HttpResponse.getErrorResponse(404);
+            } catch(IOException e) {}
+          }
+        }
+      }
+      if(box == null || (op == null && target == null)) {
         parent.logger.warning("Connect request from unknown/deleted box or operation: " + connectRequest.getQueryString());
         return HttpResponse.getErrorResponse(401);
       }
+      new OutputReaderThread(connectRequest.getConnection(), box, op, target);
       return HttpResponse.CONNECT_RESPONSE;
     } else return HttpResponse.getErrorResponse(405, connectRequest.getMethod());
   }  
@@ -326,28 +349,57 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     Socket conn;
     BoxMetaData box;
     BoxOperation op;
+    File target;
 
-    OutputReaderThread(Socket conn, BoxMetaData box, BoxOperation op) {
-      super("OutputReaderThread[" + op.getId() + "]");
+    OutputReaderThread(Socket conn, BoxMetaData box, BoxOperation op, File target) {
+      super("OutputReaderThread[" + (op==null?target.getPath():String.valueOf(op.getId())) + "]");
       this.conn = conn;
       this.box = box;
       this.op = op;
+      this.target = target;
       start();
     }
 
     public void run() {
-      op.start(conn);
+      // allow both unsolicited file uploads (to file alone) and those connected to a requested operation
+      boolean first = true;
+      if(op != null) op.start(conn);
+      PrintWriter pw = null;
       try {
+        if(target != null) pw = getFileWriter();
         BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
         String line;
         while((line = br.readLine()) != null) {
-          System.out.println(op.getId() + " - " + line);
-          if(line.indexOf(0) == -1) op.appendOutput(line);
+          if(op != null) {
+            System.out.println(op.getId() + " - " + line);
+            if(line.indexOf(0) == -1) op.appendOutput(line);
+          }
+          if(pw != null) {
+            if(first) {
+              first = false;
+              if("".equals(line)) continue;
+            }
+            if(op == null) System.out.println(target.getPath() + " - " + line);
+            if(line.indexOf(0) == -1) pw.println(line);
+          }
         }
       } catch(IOException e) {
         e.printStackTrace();
       }
-      op.end();
+      if(pw != null) pw.flush();
+      if(op != null) op.end();
     }
+
+    private PrintWriter getFileWriter() {
+      try {
+        return new PrintWriter(new FileWriter(target, false), false);
+      } catch(IOException e) {
+        e.printStackTrace();
+        return null;
+      }
+    }
+
   }
+
+
 }

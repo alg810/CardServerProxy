@@ -3,7 +3,7 @@
 //var xsltTrDbp = new BowWeb.XsltTransformer("/plugin/dreamboxplugin/open/xslt/cws-status-resp.xsl", postProcessHook);
 var xsltTrDbp = new BowWeb.XsltTransformer("/plugin/dreamboxplugin/open/xslt/cws-status-resp.xsl", postProcess);
 var hideInactiveBoxes = true;
-var selectedScript, cmdlineText, paramsText;
+var selectedScript, scriptSelectedFilename, cmdSelectedFilename, cmdlineText, paramsText;
 
 //add the postProcess function to cs-status.js
 pluginsPostProcess.push("dreamboxPluginPostProcess()");
@@ -44,15 +44,13 @@ sections['maintenance'] = {
 
     // handle the task form, if visible
     if(getById('scriptSelector')) {
+      var fields = ['scriptSelector', 'paramsInput', 'cmdlineInput', 'scriptFilenameSelector', 'cmdFilenameSelector'];
+      for(i = 0; i < fields.length; i++) setupInputField(fields[i]);
       getById('scriptSelector').onchange = function() {
         selectedScript = this.value;
         busy = false;
       };
-      getById('scriptSelector').onfocus = function() { busy = true; };
-      getById('scriptSelector').onblur = function() { busy = false; };
-      getById('paramsInput').onfocus = function() { busy = true; };
       getById('paramsInput').onblur = function() { paramsText = this.value; busy = false; };
-      getById("cmdlineInput").onfocus = function() { busy = true; };
       getById("cmdlineInput").onblur = function() { cmdlineText = this.value; busy = false; };
 
       if(selectedScript) getById('scriptSelector').value = selectedScript;
@@ -63,6 +61,19 @@ sections['maintenance'] = {
       getById('cmdlineBtn').onclick = executeCmdline;
       getById('abortBtn').onclick = executeAbort;
       getById('clearBtn').onclick = executeClear;
+
+      if(getById('scriptFilenameSelector')) {
+        getById('scriptFilenameSelector').onchange = function() {
+          scriptSelectedFilename = this.value;
+          busy = false;
+        };
+        if(scriptSelectedFilename) getById('scriptFilenameSelector').value = scriptSelectedFilename;
+        getById('cmdFilenameSelector').onchange = function() {
+          cmdSelectedFilename = this.value;
+          busy = false;
+        };
+        if(cmdSelectedFilename) getById('cmdFilenameSelector').value = cmdSelectedFilename;
+      }
     }
 
   }
@@ -113,6 +124,13 @@ sections['boxdetails'] = {
   }
 };
 
+function setupInputField(idStr) {
+  if(getById(idStr)) {
+    getById(idStr).onfocus = function() { busy = true; };
+    getById(idStr).onblur = function() { busy = false; };
+  }
+}
+
 function dreamboxPluginPostProcess() {
   var newLink = document.createElement('a'); // create a new link for this section in the menu
   newLink.href = '#';
@@ -148,8 +166,10 @@ function uncheckAllBoxes() {
   for(var i = 0; i < inputs.length; i++) inputs[i].checked = false;
 }
 
-function executeSetOperations(cmd, params, boxes) {
-  var xml = '<set-operations operation="' + cmd + '" params="' + params + '" include="true">\n';
+function executeSetOperations(cmd, params, boxes, filename) {
+  var fname = '';
+  if(filename != 'None') fname = ' filename="' + filename + '"';
+  var xml = '<set-operations operation="' + cmd + '" params="' + params + '"' + fname + ' include="true">\n';
   for(var i = 0; i < boxes.length; i++) xml += '<box id="' + boxes[i] + '"/>\n';
   xml += '</set-operations>\n';
   executeStatusCmd(xml, processOperationsResult);
@@ -164,16 +184,18 @@ function executeScript() {
   var boxes = getSelectedBoxes();
   if(boxes.length > 0) {
     if(!selectedScript) selectedScript = getById('scriptSelector').value;
+    if(!scriptSelectedFilename && getById('scriptFileNameSelector')) scriptSelectedFilename = getById('scriptFilenameSelector').value;
     if(confirm('Run script "' + selectedScript + "' on " + boxes.length + " box(es)?"))
-      executeSetOperations('script:' + selectedScript, getById('paramsInput').value, boxes);
+      executeSetOperations('script:' + selectedScript, getById('paramsInput').value, boxes, scriptSelectedFilename);
   }
 }
 
 function executeCmdline() {
   var boxes = getSelectedBoxes();
   if(boxes.length > 0) {
+    if(!cmdSelectedFilename && getById('cmdFilenameSelector')) cmdSelectedFilename = getById('cmdFilenameSelector').value;
     if(confirm('Run command line "' + cmdlineText + "' on " + boxes.length + " box(es)?"))
-      executeSetOperations('cmd:' + cmdlineText, '', boxes);
+      executeSetOperations('cmd:' + cmdlineText, '', boxes, cmdSelectedFilename);
   }
 }
 

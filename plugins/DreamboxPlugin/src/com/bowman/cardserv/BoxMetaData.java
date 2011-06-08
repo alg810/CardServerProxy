@@ -20,14 +20,15 @@ public class BoxMetaData implements Serializable {
   private transient int tunnelPort;
   private transient BoxOperation pendingOperation;
   private transient Map executedOperations;
+  private transient FileUploadPermission uploadPermissions;
 
   private Properties boxProperties = new Properties();
 
-  public BoxMetaData(String macAddr, String user, String seed) {
+  public BoxMetaData(String macAddr, String user, String seed, String salt) {
     this.macAddr = macAddr;
     this.user = user;
 
-    this.boxId = generateBoxId(macAddr, user, seed);
+    this.boxId = generateBoxId(macAddr, user, seed, salt);
     this.createTimeStamp = System.currentTimeMillis();
   }
 
@@ -122,12 +123,26 @@ public class BoxMetaData implements Serializable {
 
   public boolean isActive() {
     return (System.currentTimeMillis() - lastCheckinTimeStamp) < (interval * 2000);
-  }  
+  }
 
-  protected static String generateBoxId(String macAddr, String user, String seed) {
+  public boolean isUploadAllowed(String fileName) {
+    if(uploadPermissions == null) return false;
+    else return uploadPermissions.contains(fileName);
+  }
+
+  public void setFileUploadEntry(FileUploadPermission fue) {
+    this.uploadPermissions = fue;
+  }
+
+  public String getUploadPath(String fileName) {
+    if(uploadPermissions == null) return null;
+    else return uploadPermissions.getPath(fileName);
+  }
+
+  protected static String generateBoxId(String macAddr, String user, String seed, String salt) {
     seed = Integer.toString(Integer.parseInt(seed), 16);
     while(seed.length() < 8) seed = '0' + seed;
-    return seed + hexMD5Hash(macAddr + user);
+    return seed + hexMD5Hash(macAddr + user + (salt==null?"":salt));
   }
 
   private static String hexMD5Hash(String text) {
@@ -149,5 +164,6 @@ public class BoxMetaData implements Serializable {
     }
     return null;
   }
+
 
 }

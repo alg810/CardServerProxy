@@ -4,6 +4,11 @@
 
 export SERVICE={PARAMS}
 
+if [ -n "$ENIGMAV" ]; then
+  OSDTYPE="enigma"
+  OSDVER=$ENIGMAV
+fi
+
 enigma_zap() {
 
   if [ -z "$SERVICE" ]; then
@@ -13,7 +18,7 @@ enigma_zap() {
 
   # Request the "all services" root reference and grep for selected sid, lowercase for E1 and uppercase for E2
   if [ $OSDVER -eq 1 ]; then
-    SERVICE=$(echo $SERVICE | tr '[A-Z]' '[a-z]')
+    SERVICE=$(echo $SERVICE | sed 'y/ABCDEF/abcdef/')
     LINE=$(wget -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/cgi-bin/getServices?ref=1:15:fffffffe:12:ffffffff:0:0:0:0:0: | grep $SERVICE)
   else
     SERVICE=$(echo $SERVICE | tr '[a-z]' '[A-Z]')

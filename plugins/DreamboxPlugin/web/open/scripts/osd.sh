@@ -12,6 +12,11 @@ else
   MSG=$(echo "$MSG" | sed 's/[ ]/%20/g')
 fi
 
+if [ -n "$ENIGMAV" ]; then
+  OSDTYPE="enigma"
+  OSDVER=$ENIGMAV
+fi
+
 case $OSDTYPE in
   "enigma")
     if [ $OSDVER -eq 1 ]; then

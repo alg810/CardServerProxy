@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.0.7
+AGENTV=1.0.8
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 TIMEOUT=10
@@ -17,7 +17,7 @@ else
 fi
 
 # Telnet doesn't exist in busybox in some older images, but nc does and works with the same syntax
-if [ $(busybox | grep telnet | wc -l) -le 0 ]; then
+if [ $(which telnet | wc -l) -le 0 ]; then
   TELNET="nc"
 else
   TELNET="telnet"
