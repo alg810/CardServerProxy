@@ -371,6 +371,7 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
         String line;
         while((line = br.readLine()) != null) {
           if(op != null) {
+            if(pw != null && first) op.appendOutput("(Writing output to: " + target.getPath() + ")");
             System.out.println(op.getId() + " - " + line);
             if(line.indexOf(0) == -1) op.appendOutput(line);
           }

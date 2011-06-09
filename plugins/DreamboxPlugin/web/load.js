@@ -168,7 +168,7 @@ function uncheckAllBoxes() {
 
 function executeSetOperations(cmd, params, boxes, filename) {
   var fname = '';
-  if(filename != 'None') fname = ' filename="' + filename + '"';
+  if(filename && filename != 'None') fname = ' filename="' + filename + '"';
   var xml = '<set-operations operation="' + cmd + '" params="' + params + '"' + fname + ' include="true">\n';
   for(var i = 0; i < boxes.length; i++) xml += '<box id="' + boxes[i] + '"/>\n';
   xml += '</set-operations>\n';

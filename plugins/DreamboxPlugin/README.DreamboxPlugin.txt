@@ -49,12 +49,15 @@ NOTE:
   firewalls to let the proxy plugin in, all connections are outgoing from box to plugin.
 - The reason for the separate httpd is simply to allow the regular proxy httpd to use ssl, which wouldn't
   work with busybox builtin wget.
+
 - The file upload support is actually just redirecting command output to a preconfigured server side file, so to
   "interactively" fetch for example a e2 services file, you'd run "cat /etc/enigma2/lamedb" with the file arg set to
   lamedb (and a file upload entry configured for the user that tells the plugin where to put output matching the name
   lamedb - if it exists it will be overwritten).
   The uploading is unsecured, anyone who has access to the box will be able to overwrite the preconfigured target-path
-  on the server side.
+  on the server side. Boxes can also perform unsolicited/scheduled uploads without any associated dbplugin command.
+  NOTE: Requesting uploads in the web ui (by selecting a file name after >) will only apply to boxes registered to the
+  user that has the upload permissions. This is then indicated by a "> f" suffix to the pending operation name.
 
 - Since the addition of the sshd, the plugin has the following dependencies (fetched automatically at runtime, but
   necessary for compiling the plugin - place them in lib/):
@@ -91,7 +94,8 @@ Example config:
 
       <file-upload enabled="true"> <!-- allow certain users to upload files, but only to preconfigured locations -->
         <file name="links.cfg" target-path="etc/links.cfg" user="linkslave"/>
-        <file name="lamedb" target-path="etc/services.e2" user="someuser"/>
+        <file name="lamedb" target-path="etc/services.someuser.e2" user="someuser"/>
+        <file name="lamedb" target-path="etc/services.otheruser.e2" user="otheruser"/>
         <file name="ecm.info" target-path="/tmp/" user="testuser"/>
         <!-- if target-path is a dir the provided file name will be appended, e.g /tmp/ecm.info -->
       </file-upload>

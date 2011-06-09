@@ -365,6 +365,7 @@ public class DreamboxPlugin implements ProxyPlugin {
       for(Enumeration e = xml.getMultipleSubConfigs("box"); e.hasMoreElements(); ) {
         box = registry.getBox(((XMLConfig)e.nextElement()).getString("id"));
         if(box != null) {
+          if(!box.isUploadAllowed(of)) of = null;
           if("".equals(op) || op == null) box.setPendingOperation(null);
           else box.setPendingOperation(new BoxOperation(op, p, of));
         }

@@ -29,7 +29,7 @@ public class BoxOperation {
   }
 
   public String toString() {
-    if(scriptName != null) return scriptName;
+    if(scriptName != null) return scriptName + (outFile==null?"":" > f");
     else if(cmdLine != null) return cmdLine.length() > 10 ? cmdLine.substring(0, 10) + "..." : cmdLine;
     else return "(invalid)";
   }
