@@ -24,7 +24,7 @@ Cardservproxy changelog:
 - Added: Experimental sid cache linking feature, allows cache hits based on meta-data like sid rather than ecm payload.
   Links added via the web commands are stored in etc/links.cfg (this file is monitored for changes and autoloaded also).
 - Added: More sanity checks to DcwFilterPlugin (checksums, length and an option to monitor all replies for duplicates).
-- Added: DreamboxPlugin (csp-agent) support for more/older dm500 images.
+- Added: DreamboxPlugin (csp-agent) support for more/older dm500 images. Basic (unsecured) file upload support.
 - Added: proxy-reference.html updated with highlighting for important elements and additional examples.
 
 - Changes to proxy.xml:

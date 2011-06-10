@@ -16,7 +16,7 @@ public class DefaultCache implements CacheHandler {
   protected ProxyLogger logger;
   protected MessageCacheMap pendingEcms;
   protected MessageCacheMap ecmMap;
-  protected CacheListener listener;
+  protected CacheListener listener, forwarder;
 
   private long maxAge;
   private long maxCacheWait;
@@ -138,6 +138,7 @@ public class DefaultCache implements CacheHandler {
       removeRequest(request);
       notifyAll();
     } else {
+      if(forwarder != null) forwarder.onReply(request, reply);
       if(listener != null) listener.onReply(request, reply);
       if(pendingEcms.containsKey(request)) {
         addReply(request, reply);
@@ -177,7 +178,10 @@ public class DefaultCache implements CacheHandler {
 
   protected synchronized void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     CamdNetMessage oldRequest = (CamdNetMessage)pendingEcms.put(request, request);
-    if(oldRequest == null && listener != null) listener.onRequest(successFactor, request);
+    if(oldRequest == null) {
+      if(forwarder != null) forwarder.onRequest(successFactor, request);
+      if(listener != null) listener.onRequest(successFactor, request);
+    }
   }
 
   protected synchronized void addReply(CamdNetMessage request, CamdNetMessage reply) {
@@ -207,4 +211,13 @@ public class DefaultCache implements CacheHandler {
   public CacheListener getListener() {
     return listener;
   }
+
+  public void setForwarder(CacheListener forwarder) {
+    this.forwarder = forwarder;
+  }
+
+  public CacheListener getForwarder() {
+    return forwarder;
+  }
+
 }

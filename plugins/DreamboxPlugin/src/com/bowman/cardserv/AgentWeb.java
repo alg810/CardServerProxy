@@ -396,6 +396,7 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
         return new PrintWriter(new FileWriter(target, false), false);
       } catch(IOException e) {
         e.printStackTrace();
+        if(op != null) op.appendOutput("(Writing output file failed: " + e + ")");
         return null;
       }
     }

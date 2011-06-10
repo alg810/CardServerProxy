@@ -484,7 +484,7 @@ public class ProxyConfig implements FileChangeListener {
     if(sidLinkerEnabled) {
       sidLinker.init();
       cacheHandler.setListener(sidLinker);
-    } else cacheHandler.setListener(null);
+    }
   }
 
   private void loadProfiles(ProxyXmlConfig currentConfig) throws ConfigException {
@@ -554,10 +554,13 @@ public class ProxyConfig implements FileChangeListener {
     try {
       port = profileConfig.getSubConfig("extended-newcamd");
     } catch (ConfigException e) {}
-    if(port != null && "true".equals(port.getStringValue("enabled", "true"))) {
+    if(port != null && "true".equalsIgnoreCase(port.getStringValue("enabled", "true"))) {
       Properties newPortCfg = port.toProperties();
 
-      CaProfile.MULTIPLE.setDebug("true".equals(port.getStringValue("debug", "true")));
+      try {
+        boolean debug = "true".equalsIgnoreCase(port.getStringValue("debug"));
+        CaProfile.MULTIPLE.setDebug(debug);
+      } catch (ConfigException e) {}
 
       if(newPortCfg.equals(previousPortCfg)) return; // no changes, avoid closing and reopening port
       else previousPortCfg = newPortCfg;

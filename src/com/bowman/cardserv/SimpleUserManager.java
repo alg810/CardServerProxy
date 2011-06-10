@@ -26,7 +26,7 @@ public class SimpleUserManager implements UserManager {
     try {
       openConf = xml.getSubConfig("open-access");
     } catch (ConfigException e) {}
-    if(openConf != null && "true".equals(openConf.getStringValue("enabled", "true"))) {
+    if(openConf != null && "true".equalsIgnoreCase(openConf.getStringValue("enabled", "true"))) {
       openPrefix = openConf.getStringValue("open-username-prefix", "");
       openPasswd = openConf.getStringValue("open-password");
       String profiles = openConf.getStringValue("open-profiles", "");

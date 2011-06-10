@@ -123,7 +123,10 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
     } catch(ConfigException e) {}
     if(cspcXml != null) {
       if("false".equalsIgnoreCase(cspcXml.getStringValue("enabled"))) allowCspConnect = false;
-      CaProfile.MULTIPLE.setDebug("true".equalsIgnoreCase(cspcXml.getStringValue("debug", "true")));
+      try {
+        boolean debug = "true".equalsIgnoreCase(cspcXml.getStringValue("debug"));
+        CaProfile.MULTIPLE.setDebug(debug);
+      } catch(ConfigException e) {}
       ignoreCacheRequests = "true".equalsIgnoreCase(cspcXml.getStringValue("ignore-cache-requests", "false"));
     }
     if(allowCspConnect) {

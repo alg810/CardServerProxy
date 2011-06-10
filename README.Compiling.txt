@@ -26,12 +26,15 @@ $ tar xvzf cardservproxy-0.9.0-src.tar.gz
 $ cd cardservproxy-src
 $ ant
 
-This runs the default build target "tar-app" in the build.xml file. This target compiles all classes, creates
-the jar/war files and finally tars the installation directory structure.
-Each output file ends up in ./dist
+This runs the default build target "build" in the build.xml file. This target compiles all classes and creates
+the jar/war files. Each output file ends up in ./dist
 
-NOTE: tar-app will attempt to build the example plugins (which may have dependencies). If you don't want these then
-run ant with: -Dskip-plugins=true
+NOTE: By default this will attempt to build the example plugins (which may have dependencies that aren't included).
+If you don't want these then run ant with: -Dskip-plugins=true
+
+To build the distribution tar do:
+$ ant tar-app
+
 
 --------------------------------------------------------------------------------------------------------------------
 
