@@ -484,7 +484,7 @@ public class ProxyConfig implements FileChangeListener {
     if(sidLinkerEnabled) {
       sidLinker.init();
       cacheHandler.setListener(sidLinker);
-    }
+    } else cacheHandler.setListener(null);
   }
 
   private void loadProfiles(ProxyXmlConfig currentConfig) throws ConfigException {
