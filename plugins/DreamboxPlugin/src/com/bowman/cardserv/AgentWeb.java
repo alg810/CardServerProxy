@@ -24,6 +24,7 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
   private DreamboxPlugin parent;
   private String frontendHost;
   private int frontendPort;
+  private boolean altConnect;
 
   public AgentWeb(DreamboxPlugin parent) {
     this.parent = parent;
@@ -46,6 +47,8 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
     } catch (ConfigException e) {
       frontendHost = null;
     }
+
+    altConnect = "true".equalsIgnoreCase(xml.getStringValue("alternative-connect", "false"));
 
     if(httpd != null) {
       if(httpd.getListenPort() != listenPort) {
@@ -234,7 +237,10 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
 
         // wrap the script, turning the output into a valid http CONNECT operation, connecting it with the boxId + op
         StringBuffer script = new StringBuffer("#!/bin/ash\n");
-        script.append("echo \"CONNECT /output?boxId=").append(box.getBoxId()).append("&opId=").append(op.getId());
+        script.append("echo \"");
+        if(altConnect) script.append("XCNT");
+        else script.append("CONNECT");
+        script.append(" /output?boxId=").append(box.getBoxId()).append("&opId=").append(op.getId());
         if(op.getOutFile() != null) script.append("&fileName=").append(op.getOutFile());
         script.append("\n\n").append("\""); // end of http header
         script.append("\n");

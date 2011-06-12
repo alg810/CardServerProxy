@@ -84,7 +84,10 @@ Example config:
         <listen-port>8083</listen-port>
         <frontend-host>proxy1.host.com</frontend-host> <!-- external hostname boxes will be accessing via -->
         <frontend-port>8083</frontend-port> <!-- external port (remove to use same as listen port) -->
-        <log-file rotate-count="5" rotate-max-size="2048">log/agent-web-access.log</log-file> <!-- remove to disable -->        
+        <log-file rotate-count="5" rotate-max-size="2048">log/agent-web-access.log</log-file> <!-- remove to disable -->
+                
+        <alternative-connect>false</alternative-connect> 
+        <!-- if true: use XCNT instead of CONNECT, to avoid anti-abuse/open-proxy-scan blocks (if certain boxes never get output through) -->
       </agent-web>
 
       <agent-sshd enabled="false"> <!-- starting the sshd requires java6 or newer -->
