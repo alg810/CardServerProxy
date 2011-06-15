@@ -135,9 +135,10 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
       addSidList(um, getProfile().getName(), true);
       addSidList(um, getProfile().getName(), false);
     }
-    this.allowedConnectors = um.getAllowedConnectors(user);
-    this.allowedRate = um.getAllowedEcmRate(user);
+    allowedConnectors = um.getAllowedConnectors(user);
+    allowedRate = um.getAllowedEcmRate(user);
     if(allowedRate != -1) allowedRate = allowedRate * 1000;
+    if(um.isAdmin(user)) maxPending = 30;
   }
 
   private void addSidList(UserManager um, String profileName, boolean allow) {
