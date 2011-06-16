@@ -112,6 +112,8 @@ get_boxtype()
     else
       BOXTYPE="Unknown"
     fi
+  elif [ -e /root/spark/ywapp.exe ]; then 
+    BOXTYPE="spark"
   else
     if [ -d /proc/bus/tuxbox/dbox2 ]; then
       BOXTYPE="dbox2"
