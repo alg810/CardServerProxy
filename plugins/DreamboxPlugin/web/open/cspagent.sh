@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.0.8
+AGENTV=1.0.9
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 TIMEOUT=10
@@ -8,7 +8,7 @@ TIMEOUT=10
 # Source conf-file
 . /var/etc/cspagent.conf
 
-# Some $WGET versions on dbox crashing with signal 11
+# Some wget versions on dbox crashing with signal 11
 # so we use another binary in /var/bin if it exists
 if [ -x /var/bin/wget.csp ]; then
   WGET="/var/bin/wget.csp"
@@ -43,6 +43,12 @@ get_osd_manager()
     OSDTYPE="enigma"
     OSDVER=1
     echo "OSDTYPE=enigma" >> /var/etc/cspagent.conf
+    echo "OSDVER=1" >> /var/etc/cspagent.conf
+  elif [ -e /root/spark/ywapp.exe ]
+  then
+    OSDTYPE="spark"
+    OSDVER=1
+    echo "OSDTYPE=spark" >> /var/etc/cspagent.conf
     echo "OSDVER=1" >> /var/etc/cspagent.conf
   fi
 }
@@ -83,6 +89,10 @@ get_service()
         SID=$(printf "%d" 0x$SID)
         ONID=$(printf "%d" 0x$ONID)
       fi
+      ;;
+
+    "spark")                            
+        ONID=0
       ;;
   esac
 
@@ -186,6 +196,11 @@ get_imginfo()
         IMGINFO=$(echo $IMGINFO $(cat /etc/image-version))
       fi
       ;;
+
+      "spark")                          
+        IMGGUESS="Pingulux"
+        IMGINFO=$(cat /etc/issue.net | grep STM)
+      ;;
   esac
 
   if [ -z "$IMGINFO" ]; then
@@ -287,7 +302,7 @@ while [ 1 ]; do
 
       # Send all output from script to the proxy
       exec $OUTFILE 2>&1 | $TELNET $CSPHOST $CSPPORT 2> /tmp/csplog &
-      sleep 1
+      sleep 2
       
       # Remove script
       rm -f $OUTFILE
