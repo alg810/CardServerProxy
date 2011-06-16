@@ -199,7 +199,7 @@ get_imginfo()
 
       "spark")                          
         IMGGUESS="Pingulux"
-        IMGINFO=$(cat /etc/issue.net | grep STM)
+        IMGINFO=$(cat /etc/stm-release)
       ;;
   esac
 
