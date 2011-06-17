@@ -717,6 +717,8 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
   }
 
   public ConnectorSelection getConnectorsForService(String profile, ServiceMapping id, Set allowedConnectorNames) {
+    if(config.getSidCacheLinker() != null) // dont bother trying to find services only provided through sid cache linker
+      if(config.getSidCacheLinker().getServicesForProfile(profile).contains(id)) return ConnectorSelection.EMPTY;
     return getServiceMapper(profile).getConnectorsForService(id, allowedConnectorNames);
   }
 

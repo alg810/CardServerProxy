@@ -20,7 +20,7 @@ import java.io.*;
  */
 public class SidCacheLinker implements CacheListener, FileChangeListener, CronTimerListener {
 
-  private static final int MAX_DELTA = 8000;
+  private static final int MAX_DELTA = 5000;
 
   private ProxyConfig config;
   private CacheHandler cache;
@@ -491,7 +491,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     if(services == null) services = new TreeSet();
     if(services.add(sm)) {
       logger.info("Linked previously undecodable service: " + ts2 + " (unlocked by: " + ts1 + ")");
-      // config.getConnManager().cwsFoundService(null, ts2);  // todo
+      config.getConnManager().cwsFoundService(null, ts2, true);
     }
     addedServices.put(profileName, services); // profileName -> all services that wouldn't decode without links
   }
@@ -519,7 +519,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
         if(!retained.contains(ts)) {
           i.remove();
           logger.info("Linked service no longer available: " + ts);
-          // config.getConnManager().cwsLostService(null, ts);  // todo
+          config.getConnManager().cwsLostService(null, ts, true);
         }
       }
       if(added.isEmpty()) iter.remove();
@@ -571,7 +571,7 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
   */
 
   public Set getServicesForProfile(String profileName) {
-    if(cache.getListener() == null) return Collections.EMPTY_SET;
+    if(cache.getListener() != this) return Collections.EMPTY_SET;
     if(!addedServices.containsKey(profileName)) return Collections.EMPTY_SET;
     else return (Set)addedServices.get(profileName);
   }

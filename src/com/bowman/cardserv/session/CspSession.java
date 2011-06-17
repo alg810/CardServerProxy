@@ -309,10 +309,11 @@ public class CspSession extends AbstractSession implements CwsListener {
   }
 
   public void cwsLostService(CwsConnector cws, TvService service, boolean show) {
-    if(cws.getProfile().getNetworkId() == 0) return;
+    CaProfile profile = cws==null?ProxyConfig.getInstance().getProfile(service.getProfileName()):cws.getProfile();
+    if(profile == null || profile.getNetworkId() == 0) return;
     // check if this service has disappeared entirely from all connectors
-    ConnectorSelection conns = cm.getConnectorsForService(cws.getProfileName(), new ServiceMapping(service), null);
-    CspNetMessage.ProfileKey key = new CspNetMessage.ProfileKey(cws.getProfile());
+    ConnectorSelection conns = cm.getConnectorsForService(profile.getName(), new ServiceMapping(service), null);
+    CspNetMessage.ProfileKey key = new CspNetMessage.ProfileKey(profile);
     Integer sid = new Integer(service.getId());
     List state = (List)sentState.get(key);
     List sentSids = CspNetMessage.getStatusItems(CspNetMessage.STATE_SIDS, true, state);
@@ -331,8 +332,9 @@ public class CspSession extends AbstractSession implements CwsListener {
   }
 
   public void cwsFoundService(CwsConnector cws, TvService service, boolean show) {
-    if(cws.getProfile().getNetworkId() == 0) return;    
-    CspNetMessage.ProfileKey key = new CspNetMessage.ProfileKey(cws.getProfile());
+    CaProfile profile = cws==null?ProxyConfig.getInstance().getProfile(service.getProfileName()):cws.getProfile();
+    if(profile == null || profile.getNetworkId() == 0) return;
+    CspNetMessage.ProfileKey key = new CspNetMessage.ProfileKey(profile);
     Integer sid = new Integer(service.getId());
     List state = (List)sentState.get(key);
     List sentSids = CspNetMessage.getStatusItems(CspNetMessage.STATE_SIDS, true, state);

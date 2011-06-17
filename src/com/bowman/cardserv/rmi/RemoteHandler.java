@@ -520,8 +520,10 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
   }
 
   public void cwsFoundService(CwsConnector cws, TvService service, boolean show) {
-    if(service != null && show)
-      fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_FOUND_SERVICE, cws.getLabel(), service.toString(), service.getProfileName()));
+    if(service != null && show) {
+      String label = cws==null?"Internal[SidCacheLinker]":cws.getLabel();
+      fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_FOUND_SERVICE, label, service.toString(), service.getProfileName()));
+    }
   }
 
   public void cwsInvalidCard(CwsConnector cws, String message) {
