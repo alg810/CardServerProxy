@@ -20,6 +20,8 @@ Cardservproxy changelog:
 - Changed: ClusteredCache transport format now includes meta-data such as ca-id and network-id.
   NOTE: This breaks compatibility with previous versions. If one node has the new format, all nodes must be upgraded.
   The source ip's of any received incompatible updates are listed in the property 'version-mismatch'.
+- Changed: Enabling debug for a user now also enables web transaction logs for that user (same as profile debug).
+  NOTE: Kicking the users sessions may be required before this takes effect (both after enabling and disabling).
 - Added: Cws event for found service now shown in the status-web (despite the command being called error-log).
 - Added: Experimental sid cache linking feature, allows cache hits based on meta-data like sid rather than ecm payload.
   Links added via the web commands are stored in etc/links.cfg (this file is monitored for changes and autoloaded also).

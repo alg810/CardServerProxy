@@ -23,6 +23,7 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
   int sessionId, maxPending, maxSessions;
   String user, loginName, clientId;
   String remoteAddress;
+  boolean userDebug;
 
   Set allowedConnectors, mappedProfiles;
   Map allowedServices, blockedServices;
@@ -109,13 +110,15 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
   }
 
   void fireTransactionCompleted(EcmTransaction transaction) {
-    if(!getProfile().isDebug()) return;
-    for(Iterator iter = trListeners.iterator(); iter.hasNext(); ) {
-      try {
-        ((EcmTransactionListener)iter.next()).transactionCompleted(transaction, this);
-      } catch (Throwable t) {
-        logger.severe("Exception in EcmTransaction dispatching: " + t, t);
-      }
+    if(userDebug || getProfile().isDebug()) {
+      if(user != null)
+        for(Iterator iter = trListeners.iterator(); iter.hasNext(); ) {
+          try {
+            ((EcmTransactionListener)iter.next()).transactionCompleted(transaction, this);
+          } catch (Throwable t) {
+            logger.severe("Exception in EcmTransaction dispatching: " + t, t);
+          }
+        }
     }
   }
 
@@ -139,6 +142,7 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
     allowedRate = um.getAllowedEcmRate(user);
     if(allowedRate != -1) allowedRate = allowedRate * 1000;
     if(um.isAdmin(user)) maxPending = 30;
+    userDebug = um.isDebug(user);
   }
 
   private void addSidList(UserManager um, String profileName, boolean allow) {
