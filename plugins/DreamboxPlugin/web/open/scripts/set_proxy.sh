@@ -1,3 +1,4 @@
+#!/bin/ash
 NEWPROXY="{PARAMS}"
 
 edit_config()

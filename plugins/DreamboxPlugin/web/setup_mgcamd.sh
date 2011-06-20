@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ash
 #
 # template for remote mgcamd installation/configuration over csp agent.
 # this will not work out of the box. You have to edit some var's and place mgcamd and keys to the right places.
@@ -145,7 +145,7 @@ case $IMAGE in
 				break
 			else
 				# install cam script
-				echo '#!/bin/sh
+				echo '#!/bin/ash
 CAMNAME="MgCamd 1.35a"
 USERNAME="MgCamd 1.35a"
 START_TIME=4
@@ -210,7 +210,7 @@ exit 0' > /usr/script/mgcamd_1.35a_cam.sh
 				break
 			else
 				# install cam script
-				echo '#!/bin/sh
+				echo '#!/bin/ash
 #emuname=Mgcamd 1.35a
 #ecminfofile=ecm.info
 

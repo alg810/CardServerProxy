@@ -14,6 +14,25 @@ AGENTURL=http://$CSPHOST:$CSPPORT/open
 #
 i=0
 
+# get own busybox binary for pingulux spark os, as default binary dont know about bash functions O_o
+if [ ! -e /root/plugin/bin/busybox ] && [ -e /root/spark/ywapp.exe ]; then
+	echo "output: busybox binary running here was not compatible with CSP Agent ... getting our own binary from server ..."
+	wget -q -O /root/plugin/bin/busybox $AGENTURL/open/binaries/busybox.sh4
+	if [ $? != 0 ]; then
+		echo "output: failed to get cspagent.sh from $AGENTURL/open/binaries/busybox.sh4 ... start installer again ..."
+		exit
+	else
+		chmod +x /root/plugin/bin/busybox
+		insert_line=$(grep -n ywapp.exe /root/autorun.sh | sed 's/[^0-9]//g')
+		let insert_line-=2
+		sed -i "$insert_line iln -sf /root/plugin/bin/busybox /bin/ash" /root/autorun.sh
+		echo "output: busybox binary installed successfully ... starting up installer with new shell ..."
+		ln -sf /root/plugin/bin/busybox /bin/ash
+		/root/plugin/bin/busybox ash $0
+		exit
+	fi
+fi
+
 # make some symlinks if /var was tmpfs
 if [ $(mount | grep /var | grep tmpfs | wc -l) -ge 1 ]; then
 	if ! [ -h /var/bin ]; then
@@ -79,6 +98,11 @@ TMPFILE=/tmp/runme.out
 
 evaluate_method()
 {
+	if [ -e /root/spark/ywapp.exe ]; then
+		pingulux_spark
+		return 0
+	fi
+
 	if [ -d /etc/init.d ] && [ -w /etc/init.d ] && [ $(mount | grep /dev/root | grep squash | wc -c) -eq 0 ]; then
 		echo "output: Generating start script in /etc/init.d/..."
 
@@ -195,18 +219,35 @@ dbox2_sportster()
 
 aaf_image()
 {
-        if [ -e /etc/init.d/autostart/start.sh ]; then
-            if [ $(grep -i csp /etc/init.d/autostart/start.sh | wc -l) -le 0 ]; then
-                insert_line=$(grep -n startEmu\(\) /etc/init.d/autostart/start.sh | sed 's/[^0-9]//g')
-                let insert_line++
-                sed -i "$insert_line i/etc/init.d/cspagent start" /etc/init.d/autostart/start.sh
-                echo "output: CSP Agent start script added to startEmu() in start.sh ..."
-            else
-                echo "output: CSP Agent allready installed. Skipping ..."
-            fi
+	if [ -e /etc/init.d/autostart/start.sh ]; then
+		if [ $(grep -i csp /etc/init.d/autostart/start.sh | wc -l) -le 0 ]; then
+			insert_line=$(grep -n startEmu\(\) /etc/init.d/autostart/start.sh | sed 's/[^0-9]//g')
+        	        let insert_line++
+                	sed -i "$insert_line i/etc/init.d/cspagent start" /etc/init.d/autostart/start.sh
+	                echo "output: CSP Agent start script added to startEmu() in start.sh ..."
+		else
+                	echo "output: CSP Agent allready installed. Skipping ..."
+            	fi
         else
-            echo "output: Error: /etc/init.d/autostart/start.sh not found. Skipping ..."
+        	echo "output: Error: /etc/init.d/autostart/start.sh not found. Skipping ..."
         fi
+}
+
+pingulux_spark()
+{
+	if [ -e /root/autorun.sh ];then
+		if [ $(grep -i csp /root/autorun.sh | wc -l) -le 0 ]; then
+			insert_line=$(grep -n ywapp.exe /root/autorun.sh | sed 's/[^0-9]//g')
+			let insert_line-=2
+			sed -i "$insert_line i/var/bin/cspagent.sh\ \&" /root/autorun.sh
+			echo "output: CSP Agent added to autorun.sh ..."
+			check_running_agent
+		else
+			echo "output: CSP Agent allready installed. Skipping ..."
+		fi
+	else
+		echo "output: Error: /root/autorun.sh not found. Skipping ..."
+	fi
 }
 
 echo "output: CSP Agent v$AGENTV installation"
