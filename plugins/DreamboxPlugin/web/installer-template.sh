@@ -20,7 +20,11 @@ if [ ! -e /root/plugin/bin/busybox ] && [ -e /root/spark/ywapp.exe ]; then
 	if [ ! -e /root/plugin/bin ]; then
 		mkdir /root/plugin/bin
 	fi
-	wget -q -O /root/plugin/bin/busybox $AGENTURL/open/binaries/busybox.sh4
+
+	if [ ! -e /root/plugin/var/etc ]; then
+		mkdir /root/plugin/var/etc
+	fi
+	wget -q -O /root/plugin/bin/busybox $AGENTURL/binaries/busybox.sh4
 	if [ $? != 0 ]; then
 		echo "output: failed to get cspagent.sh from $AGENTURL/open/binaries/busybox.sh4 ... please start installer again ..."
 		exit
@@ -243,10 +247,10 @@ pingulux_spark()
 			let insert_line++
 			sed -i "$insert_line i/var/bin/cspagent.sh\ \&" /root/autorun.sh
 			echo "output: CSP Agent added to autorun.sh ..."
-			check_running_agent
 		else
 			echo "output: CSP Agent allready installed. Skipping ..."
 		fi
+		check_running_agent
 	else
 		echo "output: Error: /root/autorun.sh not found. Skipping ..."
 	fi
