@@ -26,9 +26,7 @@ if [ ! -e /root/plugin/bin/busybox ] && [ -e /root/spark/ywapp.exe ]; then
 		exit
 	else
 		chmod +x /root/plugin/bin/busybox
-		insert_line=$(grep -n ywapp.exe /root/autorun.sh | sed 's/[^0-9]//g')
-		let insert_line-=2
-		sed -i "$insert_line iln -sf /root/plugin/bin/busybox /bin/ash" /root/autorun.sh
+		sed -i "2iln -sf /root/plugin/bin/busybox /bin/ash" /root/autorun.sh
 		ln -sf /root/plugin/bin/busybox /bin/ash
 		echo "output: busybox binary installed successfully ... starting up installer in new shell ..."
 		/root/plugin/bin/busybox ash $0
@@ -240,8 +238,9 @@ pingulux_spark()
 {
 	if [ -e /root/autorun.sh ];then
 		if [ $(grep -i csp /root/autorun.sh | wc -l) -le 0 ]; then
+			# run csp agent after gui startup
 			insert_line=$(grep -n ywapp.exe /root/autorun.sh | sed 's/[^0-9]//g')
-			let insert_line-=2
+			let insert_line++
 			sed -i "$insert_line i/var/bin/cspagent.sh\ \&" /root/autorun.sh
 			echo "output: CSP Agent added to autorun.sh ..."
 			check_running_agent
