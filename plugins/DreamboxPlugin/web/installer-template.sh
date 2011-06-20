@@ -17,6 +17,9 @@ i=0
 # get own busybox binary for pingulux spark os, as default binary dont know about bash functions O_o
 if [ ! -e /root/plugin/bin/busybox ] && [ -e /root/spark/ywapp.exe ]; then
 	echo "output: busybox binary running here was not compatible with CSP Agent ... getting our own binary from server ..."
+	if [ ! -e /root/plugin/bin ]; then
+		mkdir /root/plugin/bin
+	fi
 	wget -q -O /root/plugin/bin/busybox $AGENTURL/open/binaries/busybox.sh4
 	if [ $? != 0 ]; then
 		echo "output: failed to get cspagent.sh from $AGENTURL/open/binaries/busybox.sh4 ... start installer again ..."
@@ -35,11 +38,11 @@ fi
 
 # make some symlinks if /var was tmpfs
 if [ $(mount | grep /var | grep tmpfs | wc -l) -ge 1 ]; then
-	if ! [ -h /var/bin ]; then
+	if [ ! -h /var/bin ]; then
 		ln -s /usr/bin /var/bin
 	fi
 
-	if ! [ -h /var/etc ]; then
+	if [ ! -h /var/etc ]; then
 		ln -s /etc /var/etc
 	fi
 fi
@@ -111,11 +114,11 @@ evaluate_method()
 
 # make some symlinks if /var was tmpfs
 if [ $(mount | grep /var | grep tmpfs | wc -l) -ge 1 ]; then
-        if ! [ -h /var/bin ]; then
+        if [ ! -h /var/bin ]; then
                 ln -s /usr/bin /var/bin
         fi
 
-        if ! [ -h /var/etc ]; then
+        if [ ! -h /var/etc ]; then
                 ln -s /etc /var/etc
         fi
 fi
@@ -127,7 +130,7 @@ if [ $(ifconfig lo | grep UP | wc -l) -le 0 ] || \
 fi
 
 # start/stop cspagent
-if ! [ -x /var/bin/cspagent.sh ]; then
+if [ ! -x /var/bin/cspagent.sh ]; then
 	exit 0
 fi
 
@@ -160,7 +163,7 @@ exit 0' > /etc/init.d/cspagent
 
 		    for i in $RUNLEVELS
 		    do
-			    if ! [ -e /etc/rc$i.d/S80cspagent ]; then
+			    if [ ! -e /etc/rc$i.d/S80cspagent ]; then
 				    ln -s /etc/init.d/cspagent /etc/rc$i.d/S80cspagent
 			    else
 				    echo "output: Link to runlevel $i allready exists..."
