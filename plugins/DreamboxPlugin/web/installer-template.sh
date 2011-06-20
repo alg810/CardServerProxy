@@ -242,9 +242,8 @@ pingulux_spark()
 {
 	if [ -e /root/autorun.sh ];then
 		if [ $(grep -i csp /root/autorun.sh | wc -l) -le 0 ]; then
-			# run csp agent after gui startup
 			insert_line=$(grep -n ywapp.exe /root/autorun.sh | sed 's/[^0-9]//g')
-			let insert_line++
+			let insert_line--
 			sed -i "$insert_line i/var/bin/cspagent.sh\ \&" /root/autorun.sh
 			echo "output: CSP Agent added to autorun.sh ..."
 		else
