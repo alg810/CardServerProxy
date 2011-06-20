@@ -22,15 +22,15 @@ if [ ! -e /root/plugin/bin/busybox ] && [ -e /root/spark/ywapp.exe ]; then
 	fi
 	wget -q -O /root/plugin/bin/busybox $AGENTURL/open/binaries/busybox.sh4
 	if [ $? != 0 ]; then
-		echo "output: failed to get cspagent.sh from $AGENTURL/open/binaries/busybox.sh4 ... start installer again ..."
+		echo "output: failed to get cspagent.sh from $AGENTURL/open/binaries/busybox.sh4 ... please start installer again ..."
 		exit
 	else
 		chmod +x /root/plugin/bin/busybox
 		insert_line=$(grep -n ywapp.exe /root/autorun.sh | sed 's/[^0-9]//g')
 		let insert_line-=2
 		sed -i "$insert_line iln -sf /root/plugin/bin/busybox /bin/ash" /root/autorun.sh
-		echo "output: busybox binary installed successfully ... starting up installer with new shell ..."
 		ln -sf /root/plugin/bin/busybox /bin/ash
+		echo "output: busybox binary installed successfully ... starting up installer in new shell ..."
 		/root/plugin/bin/busybox ash $0
 		exit
 	fi
