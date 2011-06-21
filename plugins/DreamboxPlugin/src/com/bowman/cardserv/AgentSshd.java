@@ -1,19 +1,17 @@
 package com.bowman.cardserv;
 
-import org.apache.sshd.SshServer;
-import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
-import org.apache.sshd.server.*;
-import org.apache.sshd.server.shell.ProcessShellFactory;
-import org.apache.sshd.server.session.ServerSession;
-
-import java.io.*;
-import java.security.PublicKey;
-import java.net.InetSocketAddress;
-import java.util.logging.*;
-import java.util.*;
-
 import com.bowman.cardserv.interfaces.XmlConfigurable;
 import com.bowman.cardserv.util.ProxyXmlConfig;
+import org.apache.sshd.SshServer;
+import org.apache.sshd.server.*;
+import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import org.apache.sshd.server.session.ServerSession;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.security.PublicKey;
+import java.util.*;
+import java.util.logging.LogManager;
 
 /**
  * Created by IntelliJ IDEA.
@@ -52,7 +50,7 @@ public class AgentSshd implements XmlConfigurable {
     sshd.setPort(listenPort);
 
     // sshd.setShellFactory(new ProcessShellFactory(new String[] { "/bin/sh", "-i", "-l" }));
-    sshd.setShellFactory(new DummyShellFactory());
+    // sshd.setShellFactory(new DummyShellFactory());
 
     sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider("etc/hostkey.ser"));
 

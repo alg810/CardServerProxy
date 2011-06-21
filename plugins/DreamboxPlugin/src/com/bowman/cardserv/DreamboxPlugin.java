@@ -282,6 +282,7 @@ public class DreamboxPlugin implements ProxyPlugin {
   }
 
   protected void registerBox(BoxMetaData box) {
+    box.setFileUploadEntry((FileUploadPermission)uploadPermissions.get(box.getUser()));
     registry.registerBox(box);
   }
 
@@ -360,10 +361,21 @@ public class DreamboxPlugin implements ProxyPlugin {
       String op = (String)params.get("operation");
       String p = (String)params.get("params");
       String of = (String)params.get("filename");
-      XMLConfig xml = (XMLConfig)params.get("xml");
+      String id = (String)params.get("boxid");
       BoxMetaData box;
-      for(Enumeration e = xml.getMultipleSubConfigs("box"); e.hasMoreElements(); ) {
-        box = registry.getBox(((XMLConfig)e.nextElement()).getString("id"));
+
+      if(id == null) { // no boxid specified, assume this a xml post with multiple boxes
+        XMLConfig xml = (XMLConfig)params.get("xml");
+        for(Enumeration e = xml.getMultipleSubConfigs("box"); e.hasMoreElements(); ) {
+          box = registry.getBox(((XMLConfig)e.nextElement()).getString("id"));
+          if(box != null) {
+            if(!box.isUploadAllowed(of)) of = null;
+            if("".equals(op) || op == null) box.setPendingOperation(null);
+            else box.setPendingOperation(new BoxOperation(op, p, of));
+          }
+        }
+      } else {
+        box = registry.getBox(id);
         if(box != null) {
           if(!box.isUploadAllowed(of)) of = null;
           if("".equals(op) || op == null) box.setPendingOperation(null);
@@ -492,6 +504,8 @@ public class DreamboxPlugin implements ProxyPlugin {
     } else { // selected only
       String[] props = {"type", "agent-version", "external-ip", "local-ip", "image-guess", "sid", "onid"};
       for(int i = 0; i < props.length; i++) xb.appendAttr(props[i], box.getProperty(props[i]));
+      if(box.getProperty("load") != null) xb.appendAttr("load", box.getProperty("load"));
+      if("true".equals(box.getProperty("cpu-warn"))) xb.appendAttr("cpu-warn", "true");
       xb.endElement(true);
     }
   }

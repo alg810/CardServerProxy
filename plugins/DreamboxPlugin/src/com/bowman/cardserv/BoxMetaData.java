@@ -87,6 +87,16 @@ public class BoxMetaData implements Serializable {
 
   public void setProperty(String name, String value) {     
     boxProperties.setProperty(name, value);
+    if("uptime".equals(name) && value != null)
+      if(value.indexOf(", load average: ") != -1) {
+        String load = value.split(", load average: ")[1];
+        boxProperties.setProperty("load", load);
+        String[] n = load.split(", ");
+        if(n.length == 3)
+          if(!n[0].startsWith("0") && !n[1].startsWith("0") && !n[2].startsWith("0")) {
+            boxProperties.setProperty("cpu-warn", "true");
+          } else boxProperties.setProperty("cpu-warn", "false");
+      }
   }
 
   public String getProperty(String name) {

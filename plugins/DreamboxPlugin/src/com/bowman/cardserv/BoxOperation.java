@@ -43,7 +43,8 @@ public class BoxOperation {
   }
 
   public String getParams() {
-    return params;
+    if(params == null) return "";
+    else return params;
   }
 
   public String getOutFile() {

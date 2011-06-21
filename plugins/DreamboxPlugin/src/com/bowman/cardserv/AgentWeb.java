@@ -270,7 +270,7 @@ public class AgentWeb implements HttpRequestListener, XmlConfigurable {
 
     if(s.indexOf("{TUNNELPORT}") != -1) s = s.replaceFirst("\\{TUNNELPORT\\}", String.valueOf(parent.getTunnelPort()));
     s = s.replaceFirst("\\{SSHDPORT\\}", String.valueOf(parent.getSshdPort()));
-    s = s.replaceFirst("\\{CPUARCH\\}", parent.getBoxCpuArch(box));
+    s = s.replaceFirst("\\{CPUARCH\\}", DreamboxPlugin.getBoxCpuArch(box));
     s = s.replaceFirst("\\{USERNAME\\}", box.getUser());
     s = s.replaceFirst("\\{PASSWORD\\}", parent.getUserPasswd(box.getUser()));
     s = s.replaceFirst("\\{IMAGE\\}", box.getProperty("image-guess"));

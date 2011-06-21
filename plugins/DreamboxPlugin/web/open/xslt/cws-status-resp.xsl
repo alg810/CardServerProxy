@@ -74,6 +74,7 @@
                 <a>
                   <xsl:attribute name="href">javascript:selectBox('<xsl:value-of select="@id"/>');</xsl:attribute>
                   <xsl:value-of select="@type"/>
+                  <xsl:if test="@cpu-warn = 'true'"> (!)</xsl:if>
                 </a>
               </td>
               <td><xsl:value-of select="@image-guess"/></td>
