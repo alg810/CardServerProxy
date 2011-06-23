@@ -276,6 +276,27 @@ exit 0' > /usr/script/mgcamd_135a_em.sh
 		fi
 		;;
 
+        "Pingulux")
+                # create plugin dirs
+                if [ ! -e /root/plugin/var ]; then
+                        mkdir /root/plugin/var
+                fi
+
+                if [ ! -e /root/plugin/var/bin ]; then
+                        mkdir /root/plugin/var/bin
+                fi
+
+                if [ ! -e /root/plugin/var/keys ]; then
+                        mkdir /root/plugin/var/keys
+                fi
+
+                fetch_file "mgcamd.$CPUARCH" "/root/plugin/var/bin" "1"
+
+                # set default cam to mgcamd
+                echo -e '<?xml version="1.0"?>\n<BOOT_CAMID CURRENT_CAMID="mgcamd.sh4" />' > /root/plugin/var/bin/plugin.xml
+                echo "Mgcamd installed successfully on Pingulux with Spark image ..."
+                ;;
+
 	"SkipInstall")
 		echo "Config only parameter set ... will skip installation ..."
 		IMAGE=$OLDIMAGE
@@ -342,6 +363,10 @@ case $OSDTYPE in
                 fi
                 ;;
 
+        "spark")
+                echo "O: { 00 } root root" >> $NCDCFG
+                ;;
+
         *)
                 echo "O: { 00 } root password" >> $NCDCFG
                 ;;
@@ -362,6 +387,10 @@ case $BOXTYPE in
 			echo "B: { 08 }" >> $NCDCFG
 		fi
 		;;
+
+        "spark")
+                echo "B: { 11 }" >> $NCDCFG
+                ;;
 
 	*)
 		echo "B: { 00 }" >> $NCDCFG
