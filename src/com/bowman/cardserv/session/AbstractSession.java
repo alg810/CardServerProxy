@@ -25,7 +25,7 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
   String remoteAddress;
   boolean userDebug;
 
-  Set allowedConnectors, mappedProfiles;
+  Set allowedConnectors, mappedProfiles, allowedProfiles = new HashSet();
   Map allowedServices, blockedServices;
   int allowedRate;
 
@@ -140,6 +140,7 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
     }
     allowedConnectors = um.getAllowedConnectors(user);
     allowedRate = um.getAllowedEcmRate(user);
+    allowedProfiles = um.getAllowedProfiles(user);
     if(allowedRate != -1) allowedRate = allowedRate * 1000;
     if(um.isAdmin(user)) maxPending = 30;
     userDebug = um.isDebug(user);
@@ -187,6 +188,12 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
       }
 
       if(interval < 60000) avgList.addRecord(now, (int)interval); // avoid extreme entries after standby/idletime
+
+      if(!allowedProfiles.isEmpty())
+        if(!allowedProfiles.contains(profileName)) {
+          msg.setFilteredBy("Profile not allowed: " + profileName);
+          return false;
+        }
 
       Set services;
       if(allowedServices != null) {

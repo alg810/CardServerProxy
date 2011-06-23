@@ -149,7 +149,7 @@ public class CspCwsConnector extends AbstractCwsConnector implements MultiCwsCon
 
   }
 
-  private void handleStatusUpdate(CspNetMessage msg, boolean full) throws IOException {
+  private void handleStatusUpdate(CspNetMessage msg, boolean full, boolean initial) throws IOException {
     // notify service mappers
     if(!msg.isEmpty()) {
       Set keys = msg.getProfileKeys(); CspNetMessage.ProfileKey key; List updates;
@@ -157,6 +157,20 @@ public class CspCwsConnector extends AbstractCwsConnector implements MultiCwsCon
         key = (CspNetMessage.ProfileKey)iter.next();
         updates = msg.getStatusUpdatesForKey(key);
         if(updates != null) reportRemoteState(key, updates, full);
+      }
+      if(initial) { // remove profiles no longer available from the state before saving
+        for(Iterator iter = receivedState.keySet().iterator(); iter.hasNext(); ) {
+          key = (CspNetMessage.ProfileKey)iter.next();
+          if(!keys.contains(key)) {
+            iter.remove();
+            logger.warning("Profile no longer available: " + key);
+            CaProfile profile = config.getProfileById(key.onid, key.caid);
+            if(profile != null) { // remove local service mappings if removed remote profile had a corresponding local one
+              connManager.reportMultiStatus(this, profile, new ServiceMapping[0], true, false); // clear candecode
+              connManager.reportMultiStatus(this, profile, new ServiceMapping[0], false, false); // clear cannotdecode
+            }
+          }
+        }
       }
       saveRemoteState();
     }
@@ -271,7 +285,7 @@ public class CspCwsConnector extends AbstractCwsConnector implements MultiCwsCon
         connecting = true;
       } else {
         remoteProxyId = msg.getOriginId();
-        handleStatusUpdate(msg, true);
+        handleStatusUpdate(msg, true, true);
 
         if(remoteProxyId == config.getProxyOriginId()) {
           logger.warning("Remote proxy has same id as local (" + DESUtil.intToHexString(remoteProxyId, 4) + "), aborting...");
@@ -307,10 +321,10 @@ public class CspCwsConnector extends AbstractCwsConnector implements MultiCwsCon
                 if(!reportReply(msg.getCamdMessage())) logger.fine("No listener found for ECM reply: " + msg);
                 break;
               case CspNetMessage.TYPE_FULLSTATE:
-                handleStatusUpdate(msg, true);
+                handleStatusUpdate(msg, true, false);
                 break;
               case CspNetMessage.TYPE_INCRSTATE:
-                handleStatusUpdate(msg, false);
+                handleStatusUpdate(msg, false, false);
                 break;
               case CspNetMessage.TYPE_STATEACK:
                 logger.fine("Keep-alive reply received: [" + msg.getSeqNr() + "]");
