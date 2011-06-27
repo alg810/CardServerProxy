@@ -37,11 +37,10 @@ public class ProxyConfig implements FileChangeListener {
 
   private int proxyOriginId = (int)System.currentTimeMillis(); // use lower 4 bytes of sys clock as id for this run
   private int logRotateCount, logRotateLimit;
-  private String logFile, logLevel, wtBadFlags, msgtoemu, clientMsg;
+  private String logFile, logLevel, wtBadFlags;
   private int wtMaxDelay, etMinCount, maxThreads, sessionTimeout, newcamdMaxMsgSize, maxPending, maxConnectionsIP;
-  private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs, blockCaidMismatch, blockEmm, osdMsg;
+  private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs, blockCaidMismatch;
   private boolean wtIncludeFile, userAllowDifferentIp;
-  private Set denyCam;
 
   private boolean firstRead = true, started = false;
   private byte[] defaultProfileDesKey, defaultConnectorDesKey, defaultClientId;
@@ -75,7 +74,7 @@ public class ProxyConfig implements FileChangeListener {
     real.remove(CaProfile.MULTIPLE);
     return real;
   }
-
+  
   public CaProfile getProfile(String name) {
     if(name == null) return null;
     else return (CaProfile)profiles.get(name);
@@ -254,7 +253,7 @@ public class ProxyConfig implements FileChangeListener {
   public TvService getService(CamdNetMessage msg) {
     CaProfile profile;
     profile = getProfile(msg.getProfileName());
-    if(profile == null) profile = getProfileById(msg.getNetworkId(), msg.getCaId());
+    if(profile == null) profile = getProfileById(msg.getNetworkId(), msg.getCaId());    
     String profileName = profile==null?"*":profile.getName();
     return getService(profileName, new ServiceMapping(msg));
   }
@@ -312,7 +311,7 @@ public class ProxyConfig implements FileChangeListener {
           warning = true;
           break;
         }
-    }
+    }    
     return warning;
   }
 
@@ -391,11 +390,6 @@ public class ProxyConfig implements FileChangeListener {
     newcamdMaxMsgSize = profileConf.getIntValue("newcamd-maxmsgsize", 400);
     blockCaidMismatch = "true".equalsIgnoreCase(profileConf.getStringValue("block-caid-mismatch", "true"));
     maxConnectionsIP = profileConf.getIntValue("max-connections-ip", 0);
-    osdMsg = "true".equalsIgnoreCase(profileConf.getStringValue("msg-enabled", "false"));
-    clientMsg = profileConf.getStringValue("msg-words", " Your Account will Be Expire In ");
-    msgtoemu = profileConf.getStringValue("msg-emu", "");
-    denyCam = new HashSet(Arrays.asList(profileConf.getStringValue("deny-cam", "").split(" ")));
-    blockEmm = "true".equalsIgnoreCase(profileConf.getStringValue("drop-emm", "false"));
 
     ProxyXmlConfig keepAliveConf = null;
     try {
@@ -643,7 +637,7 @@ public class ProxyConfig implements FileChangeListener {
     }
     return plugin;
   }
-
+  
   public void stopPlugins() {
     if(!proxyPlugins.isEmpty() && logger != null) logger.info("Stopping " + proxyPlugins.size() + " loaded plugins...");
     ProxyPlugin plugin;
@@ -693,7 +687,7 @@ public class ProxyConfig implements FileChangeListener {
       String jarName = subConf.getStringValue("jar-file", "");
       if(!"".equals(jarName)) { // jar-file specified, load using disposable classloader
         File jarFile = null;
-        try {
+        try { 
           jarFile = new File("plugins", jarName);
           if(!jarFile.exists()) throw new ConfigException(subConf.getFullName(), "File not found: " + jarFile.getAbsolutePath());
           cl = new PluginClassLoader(jarFile, ProxyConfig.class.getClassLoader());
@@ -818,7 +812,7 @@ public class ProxyConfig implements FileChangeListener {
   public int getEtMinCount() {
     return etMinCount;
   }
-
+  
   public int getMaxPending() {
     return maxPending;
   }
@@ -879,7 +873,7 @@ public class ProxyConfig implements FileChangeListener {
               sm.setProviderIdent(Integer.parseInt(service[1], 16));
               identSet = true;
             } else sm.setCustomId(Integer.parseInt(service[2], 16));
-          }
+          }         
         }
         if(!identSet) sm.setProviderIdent(ServiceMapping.NO_PROVIDER);
 
@@ -901,9 +895,4 @@ public class ProxyConfig implements FileChangeListener {
       this.jarFile = jarFile;
     }
   }
-    public String getclientMsg() { return clientMsg; }
-    public String getmsgtoemu() { return msgtoemu; }
-    public boolean getosdMsg(){ return osdMsg; }
-    public Set getdenyCam() { return denyCam; }
-
 }

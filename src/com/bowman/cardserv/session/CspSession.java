@@ -80,10 +80,6 @@ public class CspSession extends AbstractSession implements CwsListener {
     logger.fine("State unchanged for: " + key + " (" + stateHashes.get(key) + ")");
     return false;
   }
-    public String getstartMsg()
-    {
-        return startMsg;
-    }
 
   public void run() {
     logger.fine("Starting...");

@@ -59,10 +59,6 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
     }
     return (Integer[])providers.toArray(new Integer[providers.size()]);
   }
-    public String getstartMsg()
-    {
-        return startMsg;
-    }
 
   protected CamdNetMessage getLoginOkMsg() {
     CamdNetMessage msg = super.getLoginOkMsg();
@@ -165,7 +161,6 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
     Set allowed = ProxyConfig.getInstance().getUserManager().getAllowedProfiles(user);
     return allowed == null || allowed.isEmpty() || allowed.contains(profile.getName());
   }
-
 
   CamdNetMessage readMessage() throws IOException {
     // add extended info to msg and identify network id

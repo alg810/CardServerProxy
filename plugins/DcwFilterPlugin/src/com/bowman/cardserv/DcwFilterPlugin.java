@@ -17,10 +17,8 @@ import java.util.*;
  */
 public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
 
-    private static final byte[] badDcw1 = DESUtil.stringToBytes("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-    private static final byte[] badDcw2 = DESUtil.stringToBytes("00 00 00 00 00 00 3C 3C 00 00 00 00 00 00 3C 3C");
-    private static final byte[] badDcw3 = DESUtil.stringToBytes("FF FF FF FD FF FF FF FD FF FF FF FD FF FF FF FD");
-    private static final byte[] badDcw4 = DESUtil.stringToBytes("01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16");
+  private static final byte[] badDcw1 = DESUtil.stringToBytes("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
+  private static final byte[] badDcw2 = DESUtil.stringToBytes("00 00 00 00 00 00 3C 3C 00 00 00 00 00 00 3C 3C");
 
   private ProxyLogger logger;
   private Set badDcws = new HashSet();

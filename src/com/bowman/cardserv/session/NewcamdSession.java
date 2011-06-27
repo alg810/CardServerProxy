@@ -8,9 +8,6 @@ import com.bowman.util.Globber;
 
 import java.net.*;
 import java.io.*;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -22,7 +19,7 @@ import java.util.*;
 public class NewcamdSession extends AbstractSession {
 
   private static final int LOGIN_SO_TIMEOUT = 30 * 1000;
-  public String OsdMessage;
+
   private int emmCount, keepAliveCount;
   private long lastKeepAliveTimeStamp;
 
@@ -115,30 +112,28 @@ public class NewcamdSession extends AbstractSession {
             loginFailure(user, "client-id not allowed/supported: " + clientId, msg);
           } else if(checkProfile && !profiles.contains(getProfileName())) {
             loginFailure(user, "no access for profile: " + getProfileName(), msg);
-          } else if(checkExpired(user, um) || checkStart(user, um)) {
-            loginFailure(user, "account has expired or not started", msg);
-          }  else if(config.getdenyCam().contains(clientId)) {
-            loginFailure(user, "User has Denied Client ID : " + clientId, msg);
           } else { // successful login
 
             maxSessions = config.getUserManager().getMaxConnections(user);
-              if(maxSessions == -1) maxSessions = 1;
+            if(maxSessions == -1) maxSessions = getProfile().getNewcamdPortCount();
 
             int sessionCount = sm.syncCountSessions(user, getProfileName());
 
             logger.info("User '" + user + "' (" + com.bowman.cardserv.util.CustomFormatter.formatAddress(getRemoteAddress()) +
                 ") login successful. Client: " + clientId + " - [" + (sessionCount + 1) + "/" + maxSessions + "]");
-            if(!um.isSpider(user)) checkuserspider(config.getRemoteHandler().getName());
+
             if(sessionCount >= maxSessions) {
               long idleMins = sm.closeOldestSession(user, false, getProfileName()) / 60000;
               logger.info("User '" + user + "' already has [" + maxSessions + "] connection(s), closing oldest (idle " +
-                  idleMins + " mins)"); }
+                  idleMins + " mins)");
+            }
 
             if(config.getMaxConnectionsIP() > 0 && sessionCount >= config.getMaxConnectionsIP()) {
               long idleMins = sm.closeOldestSession(getRemoteAddress(), true, getProfileName()) / 60000;
               logger.info("IP '" + com.bowman.cardserv.util.CustomFormatter.formatAddress(getRemoteAddress()) +
                   "' already has [" + sessionCount + "] connection(s), closing oldest (idle " +
-                  idleMins + " mins)"); }
+                  idleMins + " mins)");
+            }
 
             this.user = user;
             setupLimits(um);
@@ -157,9 +152,6 @@ public class NewcamdSession extends AbstractSession {
             }
             conn.setSoTimeout(config.getSessionTimeout());
             Thread.currentThread().setName(Thread.currentThread().getName() + "[" + user + "]");
-            OsdMessage = config.getmsgtoemu();
-            if(config.getosdMsg() && checkExpiredtime(user, um) != 0L && OsdMessage.contains(clientId) && sessionCount == 0)
-            startMsg = config.getclientMsg() + " " + um.getExpireDate(user);
           }
         }
       }
@@ -196,8 +188,6 @@ public class NewcamdSession extends AbstractSession {
             checksOk = checkLimits(msg); // checks use setFilteredBy to indicate a unwanted/bad message should not be processed
             checksOk = checksOk && handleMessage(msg);
             fireCamdMessage(msg, false); // still need to notify the rest of the proxy about the bad message to give plugins and logging a chance to see it
-            if(checkExpired(this.user, um)) { logger.warning("'User '" + user + "' kicked, account has expired");
-            close(); }
             if(!checksOk) {
               setFlag(msg, 'B');
               if(isConnected()) sendEcmReply(msg, msg.getEmptyReply()); // nothing elsewhere will acknowledge a filtered message so do it here
@@ -324,9 +314,7 @@ public class NewcamdSession extends AbstractSession {
         sendMessageNative(cardDataMsg, msg.getSequenceNr(), true);
 
         fireCamdMessage(cardDataMsg, true);
-        if (this.getstartMsg()!= null) {
-        sendOsdMessage(this.getstartMsg());
-        }        break;
+        break;
     }
     return true;
   }
@@ -451,54 +439,6 @@ public class NewcamdSession extends AbstractSession {
     if(status != -1) fireCamdMessage(msg, true);
     return status;
   }
-    public boolean checkStart(String user, UserManager um) {
-      Date startDateDt = null;
-      try {
-                  String startDateStr = um.getStartDate(user);
-                  DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
-                  if (startDateStr == null) startDateDt = null;
-                  else startDateDt = df.parse(startDateStr);
-          }
-          catch(ParseException ignored) {}
-          long currDateMs = System.currentTimeMillis();
-          long startDateMs = 0;
-          if (startDateDt != null) startDateMs = startDateDt.getTime();
-
-        return (startDateMs != 0) && (currDateMs < startDateMs);
-    }
-
-    public boolean checkExpired(String user, UserManager um)
-      {
-          Date expireDateDt = null;
-          long currDate = System.currentTimeMillis();
-          long expDateMs = 0L;
-          try
-          {
-              String expireDateStr = um.getExpireDate(user);
-              DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
-              if(expireDateStr == null)
-                  expireDateDt = null;
-              else
-                  expireDateDt = df.parse(expireDateStr);
-          }
-          catch(ParseException ex) { }
-          currDate = System.currentTimeMillis();
-          expDateMs = 0L;
-          if(expireDateDt != null)
-              expDateMs = expireDateDt.getTime();
-          return expDateMs != 0L && currDate > expDateMs;
-      }
-
-      public long checkExpiredtime(String user, UserManager um)
-      { Date expireDateDt = null; long currDate = System.currentTimeMillis();  long expDateMs = 0L;
-          try {  String expireDateStr = um.getExpireDate(user);
-              DateFormat df = new SimpleDateFormat("dd-MM-yyyy");  if(expireDateStr == null)  expireDateDt = null;
-              else  expireDateDt = df.parse(expireDateStr);  } catch(ParseException ex) { }  currDate = System.currentTimeMillis();
-          expDateMs = 0L; if(expireDateDt != null) expDateMs = expireDateDt.getTime(); if(expireDateDt != null) return (expDateMs - currDate) / 0x5265c00L; else return 0L; }
-
-    public String getstartMsg() {
-        return startMsg;
-    }
 
   public int sendEcmReplyNative(CamdNetMessage ecmRequest, CamdNetMessage ecmReply) {
     int result = sendMessageNative(ecmReply, ecmRequest.getSequenceNr(), true);
@@ -533,16 +473,15 @@ public class NewcamdSession extends AbstractSession {
     else return card.toString();
   }
 
-    public boolean sendOsdMessage(String message) {
-        if(!OsdMessage.contains(clientId))  return false;
-        CamdNetMessage osdMsg = new CamdNetMessage(CamdNetMessage.EXT_OSD_MESSAGE);
-        try {  osdMsg.setCustomData(message.getBytes("ISO-8859-1")); } catch(UnsupportedEncodingException e) {  e.printStackTrace();  }  return sendMessage(osdMsg) != -1; }
-
-   public boolean checkuserspider(String user)
-     {  CamdNetMessage osdMsg = new CamdNetMessage(CamdNetMessage.CWS_CHECKSPID);
-         try  { osdMsg.setCustomData(user.getBytes("ISO-8859-1"));
-         } catch(UnsupportedEncodingException e)
-         { e.printStackTrace(); } return sendMessage(osdMsg) != -1;
-     }
-
+  public boolean sendOsdMessage(String message) {
+    if("Mgcamd".equals(clientId) || "Acamd".equals(clientId)) {
+      CamdNetMessage osdMsg = new CamdNetMessage(CamdNetMessage.EXT_OSD_MESSAGE);
+      try {
+        osdMsg.setCustomData(message.getBytes("ISO-8859-1"));
+      } catch(UnsupportedEncodingException e) {
+        e.printStackTrace();
+      }
+      return sendMessage(osdMsg) != -1;
+    } else return false;
+  }
 }
