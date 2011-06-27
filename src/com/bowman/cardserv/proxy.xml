@@ -4,7 +4,7 @@
     <default-des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14</default-des-key>
     <msg-enabled>false</msg-enabled>
     <msg-emu>Mgcamd Acamd Prifix Dream Smartlink LinkSuper LinkSat Ig Derake Evocamd</msg-emu>
-    <msg-words>Wellcom From DreamCo Server Your Account Ended In </msg-words>
+    <msg-words>Welcome to CardServProxy</msg-words>
 
     <extended-newcamd listen-port="15112" debug="true"/>
 
