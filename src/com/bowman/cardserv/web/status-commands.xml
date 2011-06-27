@@ -4,13 +4,13 @@
   <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper -->
 
   <command name="ca-profiles" label="Show profile(s)" description="List of available profile definitions.">
-    <command-param name="name" label="" optional="true">
+    <command-param name="name" label="" optional="true" admin-only="true">
       <option source="@profiles"/>
     </command-param>
   </command>
 
   <command name="cws-connectors" label="Show connector(s)" description="List of available connector definitions.">
-    <command-param name="name" label="" optional="true">
+    <command-param name="name" label="" optional="true" admin-only="true">
       <option source="@connectors"/>
     </command-param>
   </command>
@@ -25,13 +25,13 @@
     </command-param>
   </command>
 
-  <command name="proxy-status" label="Show status summary" description="Current proxy status." />
+  <command name="proxy-status" label="Show status summary" description="Current proxy status."  admin-only="true"/>
 
-  <command name="cache-status" label="Show cache status" description="Current cache status and metadata." />
+  <command name="cache-status" label="Show cache status" description="Current cache status and metadata."  admin-only="true"/>
 
-  <command name="error-log" label="Show cws events" description="Recent connector errors and events." />
+  <command name="error-log" label="Show cws events" description="Recent connector errors and events."  admin-only="true"/>
 
-  <command name="file-log" label="Show file log events" description="Recent SEVERE and WARNING level loggings."/>
+  <command name="file-log" label="Show file log events" description="Recent SEVERE and WARNING level loggings." admin-only="true"/>
 
   <command name="user-log" label="Show user transaction log" description="Recent ecm transaction for one user.">
     <command-param name="name" label="" optional="true" admin-only="true">
@@ -45,8 +45,8 @@
     </command-param>
   </command>
 
-  <command name="cws-log" label="Show cws transaction log" description="Recent ecm transaction for one connector." admin-only="true">
-    <command-param name="name" label="" optional="false">
+  <command name="cws-log" label="Show cws transaction log" description="Recent ecm transaction for one connector.">
+    <command-param name="name" label="" optional="false" admin-only="true">
       <option source="@connectors"/>
     </command-param>
   </command>
@@ -55,8 +55,8 @@
 
   <command name="watched-services" label="Show watched services" description="List of the currently watched services." />
 
-  <command name="export-services" label="Export service maps" description="Export current state of service mappers as xml." admin-only="true">
-    <command-param name="name" label="" optional="true">
+  <command name="export-services" label="Export service maps" description="Export current state of service mappers as xml.">
+    <command-param name="name" label="" optional="true" admin-only="true">
       <option source="@connectors"/>
     </command-param>
     <command-param name="format" label="" optional="true">
@@ -76,16 +76,16 @@
   </command>
 
   <command name="proxy-plugins" label="Show loaded plugins" description="List all currently loaded plugins.">
-    <command-param name="name" label="" optional="true" />
+    <command-param name="name" label="" optional="true"  admin-only="true"/>
   </command>
 
   <command name="fetch-cfg" label="Show current config" description="Retrieve currently loaded xml config." admin-only="true" />
 
   <command name="ctrl-commands" label="Show ctrl-commands" description="Retrieve ctrl-command definitions and metadata." admin-only="true" />
 
-  <command name="status-commands" label="Show status-commands" description="Retrieve status-command definitions and metadata." />
+  <command name="status-commands" label="Show status-commands" description="Retrieve status-command definitions and metadata."  admin-only="true"/>
 
-  <command name="cws-bouquet" label="Create bouquet" description="Create enigma bouquet file from the specified services." />
+  <command name="cws-bouquet" label="Create bouquet" description="Create enigma bouquet file from the specified services."  admin-only="true"/>
 
   <command name="system-properties" label="System properties" description="Dump JVM system properties." admin-only="true" />
 

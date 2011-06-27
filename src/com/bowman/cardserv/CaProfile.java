@@ -32,10 +32,12 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
 
   private String name;
   private boolean enabled, cacheOnly, debug, mismatchedCards;
+  private boolean ecmBlocker;
   private Boolean requireProviderMatch;
   private int caId, networkId;
   private long maxCwWait, congestionLimit;
   private int serviceConflicts;
+  private int blockerStart, blockerEnd;
   private String servicesFile, providerFilter, fileCaId, servicesFileFormat;
   private FileWatchdog servicesFwd;
   private Properties previousPorts;
@@ -59,6 +61,10 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
     enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
     debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "true"));
     cacheOnly = "true".equalsIgnoreCase(xml.getStringValue("cache-only", "false"));
+    ecmBlocker = "true".equalsIgnoreCase(xml.getStringValue("ecm-blocker","false")) ;
+    try { blockerStart = xml.getIntValue("blocker-start"); } catch (ConfigException e) { blockerStart = 0;
+    } try { blockerEnd = xml.getIntValue("blocker-end"); } catch (ConfigException e) { blockerEnd = 0;
+    }
     requireProviderMatch = null;
     try {
       if("true".equalsIgnoreCase(xml.getStringValue("require-provider-match"))) requireProviderMatch = Boolean.TRUE;
@@ -430,6 +436,19 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
     set.addAll(predefinedProviders);
     return set;
   }
+
+    public boolean getecmBlocker() {
+      return ecmBlocker;
+    }
+
+    public int getblockerStart() {
+      return blockerStart;
+    }
+
+    public int getblockerEnd() {
+      return blockerEnd;
+    }
+    
 
   public Integer[] getProviderIdents() {
     Set set = getProviderSet();

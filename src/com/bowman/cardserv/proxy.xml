@@ -4,8 +4,12 @@
     <default-des-key>01 02 03 04 05 06 07 08 09 10 11 12 13 14</default-des-key>
 
     <extended-newcamd listen-port="15112" debug="true"/>
+      <deny-cam></deny-cam>      <!--deny unwanted cam clients-->
+      <msg-enabled>true</msg-enabled>  <!--true = send expire days to clints screens like Acamd , Mgacmd , Prifix-->
+      <msg-emu>Mgcamd Acamd Prifix Dream</msg-emu>
+      <msg-words>Wellcom To Server Your Account Will Expire In </msg-words>    <!--message to clients when loged in with remaining days in Server-->
 
-    <profile name="myprofile" ca-id="0000" network-id="0000" provider-idents="00 00 00" enabled="true" debug="true">
+    <profile name="myprofile" ca-id="0604" network-id="0800" provider-idents="00 00 00" enabled="true" debug="true">
       <newcamd listen-port="11112">
         <no-validation>true</no-validation>
       </newcamd>
@@ -14,6 +18,9 @@
       </radegast>
       <services-file>etc/services</services-file>
       <max-cw-wait>8500 ms</max-cw-wait>
+      <ecm-blocker>true</ecm-blocker>
+      <blocker-start>49</blocker-start>
+      <blocker-end>65</blocker-end>
     </profile>
   </ca-profiles>
 
@@ -39,7 +46,7 @@
   <user-manager class="com.bowman.cardserv.SimpleUserManager">
     <auth-config>
       <user name="admin" password="secret" max-connections="3" admin="true"/>
-      <user name="user1" password="secret1" profiles="myprofile"/>
+      <user name="user1" password="secret1" profiles="myprofile" start-date="01-07-2010" expire-date="01-11-2010" ecm-rate="-1"/>
     </auth-config>
   </user-manager>
 

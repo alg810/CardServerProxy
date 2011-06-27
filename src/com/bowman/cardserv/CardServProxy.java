@@ -23,8 +23,8 @@ import java.util.*;
  */
 public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runnable {
 
-  public static final String APP_VERSION = "0.9.0";
-  public static String APP_BUILD = "";
+  public static final String APP_VERSION = "DreamCo.0.9.0";
+  public static String APP_BUILD = "114";
   static ProxyLogger logger;
   private static Registry registry;
 
@@ -259,7 +259,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
 
 
   public static void main(String[] args) {
-
+    System.out.println("This Software Is Totaly Free From Samerjarmeh d1.zapto@hotmail.com for http://d1d2.org/vb");   
     if("true".equalsIgnoreCase(System.getProperty("com.bowman.cardserv.allowanyjvm"))) {
       // any jvm allowed
     } else {
@@ -369,7 +369,11 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
         }
       }
       msg.setProfileName(profile.getName()); // just a lookup shortcut for all remaining processing
-    }
+      if (profile.getecmBlocker() && msg.getType() == CamdNetMessage.TYPE_RECEIVED && msg != null){
+      if (msg.getDataLength() >= profile.getblockerStart() && msg.getDataLength() <= profile.getblockerEnd()) {
+      } else { logger.warning("Ecm-Blocker block ECM - SID:" + Integer.toHexString(msg.getServiceId()) + " Length:" + msg.getDataLength() + " Profile :" + session.getProfileName() + " User:" + session.getUser() + " Command:" + msg.getCommandName());
+      denyMessage(session, msg); return;
+      } } }
 
     switch(msg.getCommandTag()) { 
 

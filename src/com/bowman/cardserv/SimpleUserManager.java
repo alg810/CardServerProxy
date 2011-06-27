@@ -69,15 +69,19 @@ public class SimpleUserManager implements UserManager {
       emailAddr = xml.getStringValue("email-address");
     } catch (ConfigException e) {}
 
+    String expireDate = null; try { expireDate = xml.getStringValue("endDate"); } catch(ConfigException e) { expireDate = null; }
+    String startDate = null; try { startDate = xml.getStringValue("startDate"); } catch(ConfigException e) {  startDate = null; }
+    int EcmRate = -1; try { EcmRate = xml.getIntValue("ecm-rate"); } catch(ConfigException e) { EcmRate = -1; }
     int maxConnections = xml.getIntValue("max-connections", -1);
 
     boolean enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
     boolean admin = "true".equalsIgnoreCase(xml.getStringValue("admin", "false"));
     boolean exclude = "true".equalsIgnoreCase(xml.getStringValue("map-exclude", "false"));
-    boolean debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "false"));
+    boolean debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "true"));
+    boolean spider = "true".equalsIgnoreCase(xml.getStringValue("spider", "true"));
 
     UserEntry user = new UserEntry(xml.getStringValue("name"), xml.getStringValue("password"), ipMask, emailAddr,
-        maxConnections, enabled, admin, exclude, debug);
+        maxConnections, enabled, admin, exclude, debug, startDate, expireDate, EcmRate, spider);
 
     try {
       user.displayName = xml.getStringValue("display-name");
@@ -87,7 +91,18 @@ public class SimpleUserManager implements UserManager {
       String profiles = xml.getStringValue("profiles");
       for(StringTokenizer st = new StringTokenizer(profiles); st.hasMoreTokens(); ) user.profiles.add(st.nextToken());
     } catch (ConfigException e) {}
-
+      try {
+      String allowServ = xml.getStringValue("allowedServices");
+      for(StringTokenizer st = new StringTokenizer(allowServ); st.hasMoreTokens(); ) user.allowedServices.add(st.nextToken());
+    } catch (ConfigException e) {}
+      try {
+      String blockServ = xml.getStringValue("blockedServices");
+      for(StringTokenizer st = new StringTokenizer(blockServ); st.hasMoreTokens(); ) user.blockedServices.add(st.nextToken());
+    } catch (ConfigException e) {}
+      try {
+      String allowConn = xml.getStringValue("allowedConnectors");
+      for(StringTokenizer st = new StringTokenizer(allowConn); st.hasMoreTokens(); ) user.allowedConnectors.add(st.nextToken());
+    } catch (ConfigException e) {}
     return user;
   }
 
@@ -119,6 +134,9 @@ public class SimpleUserManager implements UserManager {
       else return null;
     } else return entry.password;
   }
+    public String getExpireDate(String user) {  UserEntry _la = getUser(user); if(_la == null) return null; else return _la.expireDate; }
+    public boolean isSpider(String user) { UserEntry entry = getUser(user); if(entry == null) return false; else return entry.spider; }
+    public String getStartDate(String user) { UserEntry entry = getUser(user); if(entry == null) return null; else return entry.startDate; }
 
   public String getUserName(String user) {
     UserEntry entry = getUser(user);
@@ -213,45 +231,96 @@ public class SimpleUserManager implements UserManager {
   }
 
   // access control/limits
-  public Set getAllowedServices(String user, String profile) {
+  public Set getAllowedServices(String user, String profile){
     return null; // return Set of Integer, null for all
-  }
+  }  /*
+  {
+      HashSet hashset = new HashSet();
+      if((user = getUser(user)) != null && !((g) (user)).r.isEmpty())
+      {
+          user = ((g) (user)).r.iterator();
+          do
+          {
+              if(!user.hasNext())
+                  break;
+              String s2;
+              if((s2 = (String)user.next()).matches("^" + profile + ":[a-zA-Z0-9]*"))
+                  hashset.add(new Integer(Integer.parseInt(s2.replace(profile + ":", ""), 16)));
+          } while(true);
+      } else
+      {
+          hashset = null;
+      }
+      return hashset;
+  }  */
 
-  public Set getBlockedServices(String user, String profile) {
-    return null; // return Set of Integer, null for all
-  }
+  public Set getBlockedServices(String user, String profile)
+  {
+      return null; // return Set of Integer, null for all
+    }  /*
+  {
+      UserEntry entry = getUser(user);
+      if((user = a(user)) != null && !((g) (user)).s.isEmpty())
+      {
+          user = ((g) (user)).s.iterator();
+          do
+          {
+              if(!user.hasNext())
+                  break;
+              String s2;
+              if((s2 = (String)user.next()).matches("^" + profile + ":[a-zA-Z0-9]*"))
+                  hashset.add(new Integer(Integer.parseInt(s2.replace(profile + ":", ""), 16)));
+          } while(true);
+      } else
+      {
+          hashset = null;
+      }
+      return hashset;
+  }    */
 
-  public Set getAllowedConnectors(String user) {
-    return null; // return Set of String, null for all
-  }
-
-  public int getAllowedEcmRate(String user) {
-    return -1; // return minimum interval between ecm in seconds, -1 for no limit
-  }
-
-  static class UserEntry {
-
-    String name, password;
-    String ipMask;
-    String email, displayName;
-    int maxConnections;
-    boolean enabled, admin, exclude, debug;
-    Set profiles = new HashSet();
-
-    public UserEntry(String name, String password, String ipMask, String email, int maxConnections, boolean enabled,
-                     boolean admin, boolean exclude, boolean debug)
-    {
-      this.name = name;
-      this.displayName = name;
-      this.password = password;
-      this.ipMask = ipMask;
-      this.email = email;
-      this.maxConnections = maxConnections;
-      this.enabled = enabled;
-      this.admin = admin;
-      this.exclude = exclude;
-      this.debug = debug;
+    public Set getAllowedConnectors(String user) {
+      UserEntry entry = getUser(user);
+      if(entry == null) {
+        return Collections.EMPTY_SET;
+      }
+      else return entry.allowedConnectors;
     }
+
+    public int getAllowedEcmRate(String user) {
+        UserEntry entry = getUser(user);
+        if(entry == null) return -1;
+        else return entry.EcmRate;
+    }
+
+    static class UserEntry {
+
+      String name, password;
+      String ipMask;
+      String email, displayName, expireDate, startDate;
+      int maxConnections, EcmRate;
+      boolean enabled, admin, exclude, debug, spider;
+      Set profiles = new HashSet();
+      Set blockedServices = new HashSet();
+      Set allowedServices = new HashSet();
+      Set allowedConnectors = new HashSet();
+      public UserEntry(String name, String password, String ipMask, String email, int maxConnections, boolean enabled,
+                       boolean admin, boolean exclude, boolean debug, String startDate, String expireDate, int EcmRate, boolean spider)
+      {
+        this.name = name;
+        this.displayName = name;
+        this.password = password;
+        this.ipMask = ipMask;
+        this.email = email;
+        this.maxConnections = maxConnections;
+        this.enabled = enabled;
+        this.admin = admin;
+        this.exclude = exclude;
+        this.debug = debug;
+        this.spider = spider;
+        this.expireDate = expireDate;
+        this.EcmRate = EcmRate;
+        this.startDate = startDate;
+      }
 
   }
 

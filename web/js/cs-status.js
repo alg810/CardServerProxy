@@ -137,7 +137,7 @@ var sections = {
   status: {
     label: 'Status',
     queries: ['proxy-status', 'cache-status', 'proxy-plugins', 'ca-profiles', 'cws-connectors'],
-    repeat: true,
+    repeat: false,
     handler: function(xml) {
       var status = getFirstByTag('proxy-status', xml);
       fixTimeStamp(status, 'started');
@@ -178,7 +178,7 @@ var sections = {
   sessions: {
     label: 'Sessions',
     queries: ['proxy-status', 'ca-profiles', 'proxy-users hide-inactive="true"'],
-    repeat: true,
+    repeat: false,
     handler: function(xml) {
       if(hideInactive) getFirstByTag('proxy-users', xml).setAttribute('hide-inactive', 'true');
       if(toggleDuration) getFirstByTag('proxy-users', xml).setAttribute('toggle-duration', 'true');

@@ -22,6 +22,7 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
 
   int sessionId, maxPending, maxSessions;
   String user, loginName, clientId;
+  String startMsg;
   String remoteAddress;
   boolean userDebug;
 

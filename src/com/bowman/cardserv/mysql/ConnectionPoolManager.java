@@ -31,7 +31,7 @@ public class ConnectionPoolManager extends Thread {
 	/**
 	 * main constructor to initialize the connection pool manager
 	 * 
-	 * @param maxPoolSize - maximum established connections
+	 * @param  - maximum established connections
 	 * @param databaseHost - MySQL hostname
 	 * @param databasePort - MySQL tcp destination port
 	 * @param databaseName - MySQL database name to use
@@ -83,7 +83,7 @@ public class ConnectionPoolManager extends Thread {
 	
 	/**
 	 * turns back an unused PoolConnection
-	 * @param PoolConnection 
+	 * @param
 	 */
 	public synchronized void returnMySQLConnection(MySQLConnection mySQLConnection) {
 		synchronized (connectionPool) {

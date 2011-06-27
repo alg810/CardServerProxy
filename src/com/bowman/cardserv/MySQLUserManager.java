@@ -289,7 +289,7 @@ public class MySQLUserManager extends XmlUserManager {
 	
 	/**
 	 * delete specified user from the MySQL database.
-	 * @param id - user to delete.
+	 * @param  - user to delete.
 	 */
 	public boolean deleteUser(String username) {
 		return cacheManager.deleteUser(username);
@@ -297,7 +297,7 @@ public class MySQLUserManager extends XmlUserManager {
 	
 	/**
 	 * delete all users from the database.
-	 * @param id - the user which should not be deleted.
+	 * @param  - the user which should not be deleted.
 	 *        This may be because the user is currently logged in and
 	 *        therefore shouldn't be deleted.
 	 */

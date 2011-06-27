@@ -16,6 +16,8 @@ public interface UserManager extends XmlConfigurable {
   boolean authenticate(String user, String pass);
   int getMaxConnections(String user);
   String getIpMask(String user);
+  String getExpireDate(String  user);
+  String getStartDate(String s);
   String getEmailAddress(String user);
   String getDisplayName(String user);
   Set getAllowedProfiles(String user);
@@ -25,6 +27,7 @@ public interface UserManager extends XmlConfigurable {
   boolean isMapExcluded(String user);
   boolean isDebug(String user);
   void setDebug(String user, boolean debug);
+  boolean isSpider(String user);
   int getUserCount();
   void start();
 
