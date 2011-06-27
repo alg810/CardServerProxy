@@ -69,15 +69,33 @@ public class SimpleUserManager implements UserManager {
       emailAddr = xml.getStringValue("email-address");
     } catch (ConfigException e) {}
 
+    String expireDate = null;
+      try {
+          expireDate = xml.getStringValue("expire-date");
+      } catch(ConfigException e) {
+          expireDate = null;
+      }
+    String startDate = null;
+      try {
+          startDate = xml.getStringValue("start-date");
+      } catch(ConfigException e)
+      {  startDate = null;
+      }
+    int EcmRate = -1; try {
+          EcmRate = xml.getIntValue("ecm-rate");
+      } catch(ConfigException e) {
+          EcmRate = -1;
+      }
     int maxConnections = xml.getIntValue("max-connections", -1);
 
     boolean enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
     boolean admin = "true".equalsIgnoreCase(xml.getStringValue("admin", "false"));
     boolean exclude = "true".equalsIgnoreCase(xml.getStringValue("map-exclude", "false"));
     boolean debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "false"));
+    boolean spider = "true".equalsIgnoreCase(xml.getStringValue("spider", "true"));
 
     UserEntry user = new UserEntry(xml.getStringValue("name"), xml.getStringValue("password"), ipMask, emailAddr,
-        maxConnections, enabled, admin, exclude, debug);
+        maxConnections, enabled, admin, exclude, debug, startDate, expireDate, EcmRate, spider);
 
     try {
       user.displayName = xml.getStringValue("display-name");
@@ -162,6 +180,21 @@ public class SimpleUserManager implements UserManager {
     if(entry == null) return 1;
     else return entry.maxConnections;
   }
+    public String getExpireDate(String user) {
+        UserEntry entry = getUser(user);
+        if(entry == null) return null;
+        else return entry.expireDate;
+    }
+    public boolean isSpider(String user) {
+        UserEntry entry = getUser(user);
+        if(entry == null) return false;
+        else return entry.spider;
+    }
+    public String getStartDate(String user) {
+        UserEntry entry = getUser(user);
+        if(entry == null) return null;
+        else return entry.startDate;
+    }
 
   public Set getAllowedProfiles(String user) {
     UserEntry entry = getUser(user);
@@ -225,21 +258,23 @@ public class SimpleUserManager implements UserManager {
     return null; // return Set of String, null for all
   }
 
-  public int getAllowedEcmRate(String user) {
-    return -1; // return minimum interval between ecm in seconds, -1 for no limit
-  }
+    public int getAllowedEcmRate(String user) {
+        UserEntry entry = getUser(user);
+        if(entry == null) return -1;
+        else return entry.EcmRate;
+    }
 
   static class UserEntry {
 
     String name, password;
     String ipMask;
-    String email, displayName;
-    int maxConnections;
-    boolean enabled, admin, exclude, debug;
+    String email, displayName, expireDate, startDate;
+    int maxConnections, EcmRate;
+    boolean enabled, admin, exclude, debug, spider;
     Set profiles = new HashSet();
 
     public UserEntry(String name, String password, String ipMask, String email, int maxConnections, boolean enabled,
-                     boolean admin, boolean exclude, boolean debug)
+                     boolean admin, boolean exclude, boolean debug, String startDate, String expireDate, int EcmRate, boolean spider)
     {
       this.name = name;
       this.displayName = name;
@@ -251,6 +286,10 @@ public class SimpleUserManager implements UserManager {
       this.admin = admin;
       this.exclude = exclude;
       this.debug = debug;
+      this.spider = spider;
+      this.expireDate = expireDate;
+      this.EcmRate = EcmRate;
+      this.startDate = startDate;
     }
 
   }

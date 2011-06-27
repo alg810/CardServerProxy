@@ -19,13 +19,16 @@ public class UserStatus extends AbstractStatus implements Serializable {
   private final String userName, displayName;
   private final boolean admin;
   private final int maxSessions;
+  private final String expire, start;
 
   private final List sessions = new ArrayList();
 
-  public UserStatus(String userName, String displayName, int maxSessions, boolean admin) {
+  public UserStatus(String userName, String displayName, String start, String expire, int maxSessions, boolean admin) {
     this.userName = userName;
     this.displayName = displayName;
     this.admin = admin;
+    this.start = start;
+    this.expire = expire;
     this.maxSessions = maxSessions;
   }
 
@@ -40,6 +43,13 @@ public class UserStatus extends AbstractStatus implements Serializable {
   public boolean isAdmin() {
     return admin;
   }
+    public String getStartDate() {
+      return start;
+    }
+    public String getExpireDate()
+    {
+        return expire;
+    }
 
   public int getSessionCount(String profileName) {
     if(profileName == null) return sessions.size();

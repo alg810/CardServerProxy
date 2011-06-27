@@ -16,6 +16,7 @@ public interface CamdConstants {
   public static final int EXT_REMOVE_CARD = 0xD4;
   public static final int EXT_GET_VERSION = 0xD6;
   public static final int EXT_SID_LIST = 0xD7;
+  public static final int CWS_CHECKSPID = 0xA1;
 
   public static final int
       MSG_CLIENT_2_SERVER_LOGIN = CWS_FIRSTCMDNO,

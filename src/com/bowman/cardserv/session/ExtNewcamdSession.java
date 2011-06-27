@@ -259,6 +259,12 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
     updateSentState(getProfileMap());
   }
 
+    public String getstartMsg()
+    {
+        return startMsg;
+    }
+    
+
   public void cwsConnectionFailed(CwsConnector cws, String message) {}
   public void cwsEcmTimeout(CwsConnector cws, String message, int failureCount) {}
   public void cwsLostService(CwsConnector cws, TvService service, boolean show) {}

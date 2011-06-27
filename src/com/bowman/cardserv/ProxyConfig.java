@@ -37,9 +37,9 @@ public class ProxyConfig implements FileChangeListener {
 
   private int proxyOriginId = (int)System.currentTimeMillis(); // use lower 4 bytes of sys clock as id for this run
   private int logRotateCount, logRotateLimit;
-  private String logFile, logLevel, wtBadFlags;
+  private String logFile, logLevel, wtBadFlags, msgtoemu, clientMsg;
   private int wtMaxDelay, etMinCount, maxThreads, sessionTimeout, newcamdMaxMsgSize, maxPending, maxConnectionsIP;
-  private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs, blockCaidMismatch;
+  private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs, blockCaidMismatch, osdMsg;
   private boolean wtIncludeFile, userAllowDifferentIp;
 
   private boolean firstRead = true, started = false;
@@ -390,6 +390,9 @@ public class ProxyConfig implements FileChangeListener {
     newcamdMaxMsgSize = profileConf.getIntValue("newcamd-maxmsgsize", 400);
     blockCaidMismatch = "true".equalsIgnoreCase(profileConf.getStringValue("block-caid-mismatch", "true"));
     maxConnectionsIP = profileConf.getIntValue("max-connections-ip", 0);
+    osdMsg = "true".equalsIgnoreCase(profileConf.getStringValue("msg-enabled", "false"));
+    clientMsg = profileConf.getStringValue("msg-words", " Your Account will Be Expire In ");
+    msgtoemu = profileConf.getStringValue("msg-emu", "");
 
     ProxyXmlConfig keepAliveConf = null;
     try {
@@ -895,4 +898,13 @@ public class ProxyConfig implements FileChangeListener {
       this.jarFile = jarFile;
     }
   }
+    public String getclientMsg() {
+        return clientMsg;
+    }
+    public String getmsgtoemu() {
+        return msgtoemu;
+    }
+    public boolean getosdMsg(){
+        return osdMsg;
+    }
 }
