@@ -871,8 +871,8 @@ public class XmlHelper implements CommandManager {
     for(int i = 0; i < users.length; i++) {
       xb.appendElement("user", "name", users[i].getUserName());
       xb.appendAttr("display-name", users[i].getDisplayName());
-      xb.appendAttr("startDate", users[i].getStartDate());
-      xb.appendAttr("expireDate", users[i].getExpireDate());
+      xb.appendAttr("start-date", users[i].getStartDate());
+      xb.appendAttr("expire-date", users[i].getExpireDate());
       if(users[i].isAdmin()) xb.appendAttr("admin", users[i].isAdmin());
 
       xb.appendAttr("sessions", users[i].getSessionCount(null));

@@ -505,8 +505,8 @@
                 <xsl:attribute name="href">http://www.ip-adress.com/ip_tracer/<xsl:value-of select="@host"/></xsl:attribute>
                 trace                </a>              
 				</td>
-              <td><xsl:value-of select="../@startDate"/></td>
-              <td><xsl:value-of select="../@expireDate"/></td>
+              <td><xsl:value-of select="../@start-date"/></td>
+              <td><xsl:value-of select="../@expire-date"/></td>
              <td><a target="_blank"> <xsl:attribute name="href">/xmlHandler?command=kick-user&amp;name=<xsl:value-of select="../@name"/></xsl:attribute>kick</a></td>
               <td>
                 <xsl:value-of select="@duration"/>
