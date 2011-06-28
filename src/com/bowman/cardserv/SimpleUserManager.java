@@ -79,6 +79,11 @@ public class SimpleUserManager implements UserManager {
       expirationDate = xml.getStringValue("expiration-date");
     } catch (ConfigException e) {}
 
+    int EcmRate = -1;
+    try {
+      EcmRate = xml.getIntValue("ecm-rate");
+    } catch (ConfigException e) {}
+
     int maxConnections = xml.getIntValue("max-connections", -1);
 
     boolean enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
@@ -87,7 +92,7 @@ public class SimpleUserManager implements UserManager {
     boolean debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "false"));
 
     UserEntry user = new UserEntry(xml.getStringValue("name"), xml.getStringValue("password"), ipMask, emailAddr,
-        maxConnections, enabled, admin, exclude, startDate, expirationDate, debug);
+        maxConnections, enabled, admin, exclude, startDate, expirationDate, EcmRate, debug);
 
     try {
       user.displayName = xml.getStringValue("display-name");
@@ -248,7 +253,9 @@ public class SimpleUserManager implements UserManager {
   }
 
   public int getAllowedEcmRate(String user) {
-    return -1; // return minimum interval between ecm in seconds, -1 for no limit
+    UserEntry entry = getUser(user);
+    if(entry == null) return -1; // return minimum interval between ecm in seconds, -1 for no limit
+    else return entry.EcmRate;
   }
 
   static class UserEntry {
@@ -257,12 +264,12 @@ public class SimpleUserManager implements UserManager {
     String ipMask;
     String email, displayName;
     String startDate, expirationDate;
-    int maxConnections;
+    int maxConnections, EcmRate;
     boolean enabled, admin, exclude, debug;
     Set profiles = new HashSet();
 
     public UserEntry(String name, String password, String ipMask, String email, int maxConnections, boolean enabled,
-                     boolean admin, boolean exclude, String startDate, String expirationDate, boolean debug)
+                     boolean admin, boolean exclude, String startDate, String expirationDate, int EcmRate, boolean debug)
     {
       this.name = name;
       this.displayName = name;
@@ -275,6 +282,7 @@ public class SimpleUserManager implements UserManager {
       this.exclude = exclude;
       this.startDate = startDate;
       this.expirationDate = expirationDate;
+      this.EcmRate = EcmRate;
       this.debug = debug;
     }
 
