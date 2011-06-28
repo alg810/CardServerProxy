@@ -174,7 +174,7 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
         user.addSession(session);
       } else {
         String displayName = session.isTempUser()?session.getLoginName():um.getDisplayName(name);
-          user = new UserStatus(name, displayName,um.getStartDate(name),um.getExpireDate(name), um.getMaxConnections(name), false);
+        user = new UserStatus(name, displayName,um.getStartDate(name),um.getExpireDate(name), um.getMaxConnections(name), false);
         user.addSession(session);
         users.put(name, user);
       }

@@ -225,16 +225,20 @@ public class NewcamdSession extends AbstractSession {
     Date startDateDt = null;
     try {
       String startDateStr = um.getStartDate(user);
-                DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
-                if (startDateStr == null) startDateDt = null;
-                else startDateDt = df.parse(startDateStr);
-        }
-        catch(ParseException ignored) {}
-        long currDateMs = System.currentTimeMillis();
-        long startDateMs = 0;
-        if (startDateDt != null) startDateMs = startDateDt.getTime();
+      DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+      if (startDateStr == null)
+        startDateDt = null;
+      else
+        startDateDt = df.parse(startDateStr);
+    }
+    catch(ParseException ignored) {}
+    long currDateMs = System.currentTimeMillis();
+    long startDateMs = 0;
 
-        return (startDateMs != 0) && (currDateMs < startDateMs);
+    if (startDateDt != null)
+      startDateMs = startDateDt.getTime();
+
+    return (startDateMs != 0) && (currDateMs < startDateMs);
   }
 
   public boolean checkExpired(String user, UserManager um) {
@@ -394,9 +398,11 @@ public class NewcamdSession extends AbstractSession {
         sendMessageNative(cardDataMsg, msg.getSequenceNr(), true);
 
         fireCamdMessage(cardDataMsg, true);
-        if (this.getstartMsg()!= null) {
-        sendOsdMessage(this.getstartMsg());
-        }        break;
+
+        if (this.getstartMsg() != null) 
+          sendOsdMessage(this.getstartMsg());
+
+        break;
     }
     return true;
   }

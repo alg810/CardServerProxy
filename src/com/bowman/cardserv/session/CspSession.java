@@ -263,9 +263,9 @@ public class CspSession extends AbstractSession implements CwsListener {
     else return System.currentTimeMillis() - conn.getLastTrafficTimeStamp();
   }
 
-   public String getstartMsg() {
-      return startMsg;
-    }
+  public String getstartMsg() {
+    return startMsg;
+  }
 
   public void close() {
     if(conn != null) conn.close();

@@ -43,13 +43,14 @@ public class UserStatus extends AbstractStatus implements Serializable {
   public boolean isAdmin() {
     return admin;
   }
-    public String getStartDate() {
-      return start;
-    }
-    public String getExpireDate()
-    {
-        return expire;
-    }
+
+  public String getStartDate() {
+    return start;
+  }
+
+  public String getExpireDate() {
+      return expire;
+  }
 
   public int getSessionCount(String profileName) {
     if(profileName == null) return sessions.size();
