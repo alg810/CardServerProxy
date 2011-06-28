@@ -70,22 +70,26 @@ public class SimpleUserManager implements UserManager {
     } catch (ConfigException e) {}
 
     String expireDate = null;
-      try {
-          expireDate = xml.getStringValue("expire-date");
-      } catch(ConfigException e) {
-          expireDate = null;
-      }
+    try {
+        expireDate = xml.getStringValue("expire-date");
+    } catch(ConfigException e) {
+        expireDate = null;
+    }
+
     String startDate = null;
-      try {
-          startDate = xml.getStringValue("start-date");
-      } catch(ConfigException e)
-      {  startDate = null;
-      }
-    int EcmRate = -1; try {
-          EcmRate = xml.getIntValue("ecm-rate");
-      } catch(ConfigException e) {
-          EcmRate = -1;
-      }
+    try {
+        startDate = xml.getStringValue("start-date");
+    } catch(ConfigException e) {
+        startDate = null;
+    }
+
+    int EcmRate = -1; 
+    try {
+        EcmRate = xml.getIntValue("ecm-rate");
+    } catch(ConfigException e) {
+        EcmRate = -1;
+    }
+
     int maxConnections = xml.getIntValue("max-connections", -1);
 
     boolean enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
@@ -180,21 +184,24 @@ public class SimpleUserManager implements UserManager {
     if(entry == null) return 1;
     else return entry.maxConnections;
   }
-    public String getExpireDate(String user) {
-        UserEntry entry = getUser(user);
-        if(entry == null) return null;
-        else return entry.expireDate;
-    }
-    public boolean isSpider(String user) {
-        UserEntry entry = getUser(user);
-        if(entry == null) return false;
-        else return entry.spider;
-    }
-    public String getStartDate(String user) {
-        UserEntry entry = getUser(user);
-        if(entry == null) return null;
-        else return entry.startDate;
-    }
+
+  public String getExpireDate(String user) {
+    UserEntry entry = getUser(user);
+    if(entry == null) return null;
+    else return entry.expireDate;
+  }
+
+  public boolean isSpider(String user) {
+    UserEntry entry = getUser(user);
+    if(entry == null) return false;
+    else return entry.spider;
+  }
+
+  public String getStartDate(String user) {
+    UserEntry entry = getUser(user);
+    if(entry == null) return null;
+    else return entry.startDate;
+  }
 
   public Set getAllowedProfiles(String user) {
     UserEntry entry = getUser(user);
