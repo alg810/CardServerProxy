@@ -265,11 +265,11 @@ public class SimpleUserManager implements UserManager {
     return null; // return Set of String, null for all
   }
 
-    public int getAllowedEcmRate(String user) {
-        UserEntry entry = getUser(user);
-        if(entry == null) return -1;
-        else return entry.EcmRate;
-    }
+  public int getAllowedEcmRate(String user) {
+    UserEntry entry = getUser(user);
+    if(entry == null) return -1;
+    else return entry.EcmRate;
+  }
 
   static class UserEntry {
 
@@ -281,8 +281,7 @@ public class SimpleUserManager implements UserManager {
     Set profiles = new HashSet();
 
     public UserEntry(String name, String password, String ipMask, String email, int maxConnections, boolean enabled,
-                     boolean admin, boolean exclude, boolean debug, String startDate, String expireDate, int EcmRate, boolean spider)
-    {
+                     boolean admin, boolean exclude, boolean debug, String startDate, String expireDate, int EcmRate, boolean spider) {
       this.name = name;
       this.displayName = name;
       this.password = password;
@@ -298,7 +297,5 @@ public class SimpleUserManager implements UserManager {
       this.EcmRate = EcmRate;
       this.startDate = startDate;
     }
-
   }
-
 }
