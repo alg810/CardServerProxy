@@ -15,8 +15,6 @@ public interface UserManager extends XmlConfigurable {
   String getUserName(String user); // returns the same string but with the stored case
   boolean authenticate(String user, String pass);
   int getMaxConnections(String user);
-  String getExpireDate(String  user);
-  String getStartDate(String s);
   String getIpMask(String user);
   String getEmailAddress(String user);
   String getDisplayName(String user);
@@ -27,7 +25,6 @@ public interface UserManager extends XmlConfigurable {
   boolean isMapExcluded(String user);
   boolean isDebug(String user);
   void setDebug(String user, boolean debug);
-  boolean isSpider(String user);
   int getUserCount();
   void start();
 

@@ -50,11 +50,6 @@ Glossary:<br />
 Contents (element paths in <strong>bold</strong> represent common changes, anything else can be considered advanced tweaking):<br />
 <ul>
 <li><a href="#cardserv-proxy">/cardserv-proxy (attributes: *ver)</a></li>
-<br />
-<li><a href="#msg-enabled">msg-enabled</a></li>
-<li><a href="#msg-emu">msg-emu</a></li>
-<li><a href="#msg-words">msg-words</a></li>
-<br />
 <li><a href="#ca-profiles">ca-profiles</a></li>
 <ul>
 <li><a href="#ca-profiles/default-des-key"><strong>ca-profiles/default-des-key</strong></a></li>
@@ -256,30 +251,6 @@ The root element for the proxy config file. <br />
 - <strong class='bold'>ver</strong>: The version attribute must always match the version of the proxy itself (lib/cardservproxy.jar). This is an intentional safeguard to force a manual check of the proxy.xml contents when upgrading to a new version. Even if no changes are strictly required from one particular version to the next, it makes sense to double-check. To get a fresh start that is guaranteed to work with the currently installed version, simply remove proxy.xml entirely and start without it. A blank template will then be generated.<br />
 <br />
 Example: <em class='italic'>&lt;cardserv-proxy ver="0.9.1"></em><br />
-<br />
-</a>
-
-<a name="msg-enabled">
-<div class='indent'><strong>msg-enabled</strong></div><br />
-** please complete documentation ** <br />
-<br />
-Example: <em class='italic'>&lt;msg-enabled>true&lt;/msg-enabled></em><br />
-<br />
-</a>
-
-<a name="msg-emu">
-<div class='indent'><strong>msg-emu</strong></div><br />
-** please complete documentation ** <br />
-<br />
-Example: <em class='italic'>&lt;msg-emu>Mgcamd Acamd Evocamd&lt;/msg-emu></em><br />
-<br />
-</a>
-
-<a name="msg-words">
-<div class='indent'><strong>msg-words</strong></div><br />
-** please complete documentation ** <br />
-<br />
-Example: <em class='italic'>&lt;msg-words>Welcome to CardServProxy&lt;/msg-words></em><br />
 <br />
 </a>
 
@@ -821,7 +792,7 @@ Optionally restricts open access to only the listed profile names (separated by 
 </a>
 
 <a name="user-manager/auth-config/user">
-<div class='indent'><strong>user-manager/auth-config/user (attributes: *name, *password, display-name, ip-mask, profiles, max-connections, admin, enabled, start-date, expire-date, spider, ecm-rate)</strong></div><br />
+<div class='indent'><strong>user-manager/auth-config/user (attributes: *name, *password, display-name, ip-mask, profiles, max-connections, admin, enabled)</strong></div><br />
 One user definition for the SimpleUserManager (also used by the XmlUserManager, see <strong>README.XmlUserManager.txt</strong> for more details):<br /><br />
 - <strong class='bold'>name</strong>: User name, avoid long names, spaces and special characters. There are no particular limitations as far as the proxy is concerned, but the camd clients may have them.<br />
 - <strong class='bold'>password</strong>: Avoid special characters.<br />
@@ -831,10 +802,6 @@ One user definition for the SimpleUserManager (also used by the XmlUserManager, 
 - <strong class='bold'>max-connections</strong>: Number of connections to allow, if the user exceeds this then any older existing connections will be closed. <strong>NOTE: </strong> as of 0.9.0 this has changed to max-connections per profile, meaning and old values will likely need to be changed. Since it is no longer the total number of connections, the value should now reflect the number of clients/boxes the user is expected to connect with (regardless of how many profiles the user has access to) .<br />
 - <strong class='bold'>admin</strong>: true/false (default: false). Is this user an administrator? Affects access to http/xml api features only.<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true). Allows disabling of accounts without deleting them.<br />
-- <strong class='bold'>start-date</strong>: (dd-mm-yyyy) Start date for user account.<br />
-- <strong class='bold'>expire-date</strong>: (dd-mm-yyy) Date after the user account expires.<br />
-- <strong class='bold'>spider</strong>: true/false (default: true) ** please complete documentation **<br />
-- <strong class='bold'>ecm-rate</strong>: ** please complete documentation **<br />
 - <strong class='bold'>map-exclude</strong>: true/false (default: false). Set to true to prevent the user from causing changes to the service maps. If a particular user is sending bad ecms or is otherwise misbehaving, this will protect the service mappings and ensure no other users are affected. Only use this if you are sure a particular client is misbehaving, the service mapping can't work if no clients are allowed to update the map.<br />
 - <strong class='bold'>debug</strong>: true/false (default: false). Set to true to enable ecm/emm/zap logging for this user only (has no effect if these are already enabled globally).<br />
 <br />
