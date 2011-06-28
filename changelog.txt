@@ -29,7 +29,7 @@ Cardservproxy changelog:
 - Added: DreamboxPlugin (csp-agent) support for more/older dm500 images. Basic (unsecured) file upload support.
 - Added: proxy-reference.html updated with highlighting for important elements and additional examples.
 - Added: Ability to set start and expiration date for user accounts (only Simple and XmlUsermanager).
-- Added: Ability to set minimum interval between ecm's in seconds (ecm-rate).
+- Added: Ability to set minimum interval between ecm's in seconds (only Simple and XmlUsermanager).
 
 - Changes to proxy.xml:
   Added: Attribute 'enable-service-linking' to <cache-handler> (true/false, default: false). Enables sid cache linker.
