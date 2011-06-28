@@ -8,6 +8,9 @@ import com.bowman.util.Globber;
 
 import java.net.*;
 import java.io.*;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -112,6 +115,8 @@ public class NewcamdSession extends AbstractSession {
             loginFailure(user, "client-id not allowed/supported: " + clientId, msg);
           } else if(checkProfile && !profiles.contains(getProfileName())) {
             loginFailure(user, "no access for profile: " + getProfileName(), msg);
+          } else if(checkAccountExpired(user, um) || checkAccountStarted(user, um)) {
+            loginFailure(user, "account has expired or has not reached start date yet", msg);
           } else { // successful login
 
             maxSessions = config.getUserManager().getMaxConnections(user);
@@ -188,6 +193,10 @@ public class NewcamdSession extends AbstractSession {
             checksOk = checkLimits(msg); // checks use setFilteredBy to indicate a unwanted/bad message should not be processed
             checksOk = checksOk && handleMessage(msg);
             fireCamdMessage(msg, false); // still need to notify the rest of the proxy about the bad message to give plugins and logging a chance to see it
+            if(checkAccountExpired(this.user, um)) {
+              logger.warning("'User '" + user + "' kicked, account has expired");
+              close();
+            }
             if(!checksOk) {
               setFlag(msg, 'B');
               if(isConnected()) sendEcmReply(msg, msg.getEmptyReply()); // nothing elsewhere will acknowledge a filtered message so do it here
@@ -210,6 +219,50 @@ public class NewcamdSession extends AbstractSession {
 
   protected boolean checkClientId(String id) {
     return true;
+  }
+
+  public boolean checkAccountStarted(String user, UserManager um) {
+    Date startedDateDt = null;
+    try {
+      String startedDateStr = um.getStartDate(user);
+      DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+      if (startedDateStr == null)
+        startedDateDt = null;
+      else
+        startedDateDt = df.parse(startedDateStr);
+    }
+    catch(ParseException ignored) {}
+    long currDateMs = System.currentTimeMillis();
+    long startedDateMs = 0;
+
+    if (startedDateDt != null)
+      startedDateMs = startedDateDt.getTime();
+
+    return (startedDateMs != 0) && (currDateMs < startedDateMs);
+  }
+
+  public boolean checkAccountExpired(String user, UserManager um) {
+    Date expirationDateDt = null;
+    long currDate = System.currentTimeMillis();
+    long expirationDateMs = 0L;
+    try
+    {
+      String expirationDateStr = um.getExpirationDate(user);
+      DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+
+      if(expirationDateStr == null)
+        expirationDateDt = null;
+      else
+        expirationDateDt = df.parse(expirationDateStr);
+    }
+    catch(ParseException ex) { }
+    currDate = System.currentTimeMillis();
+    expirationDateMs = 0L;
+
+    if(expirationDateDt != null)
+      expirationDateMs = expirationDateDt.getTime();
+
+    return expirationDateMs != 0L && currDate > expirationDateMs;
   }
 
   protected boolean handleMessage(CamdNetMessage msg) {

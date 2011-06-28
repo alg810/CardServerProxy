@@ -16,16 +16,18 @@ public class UserStatus extends AbstractStatus implements Serializable {
 
   private static final long serialVersionUID = -4091190186183181716L;
 
-  private final String userName, displayName;
+  private final String userName, displayName, startDate, expirationDate;
   private final boolean admin;
   private final int maxSessions;
 
   private final List sessions = new ArrayList();
 
-  public UserStatus(String userName, String displayName, int maxSessions, boolean admin) {
+  public UserStatus(String userName, String displayName, String startDate, String expirationDate, int maxSessions, boolean admin) {
     this.userName = userName;
     this.displayName = displayName;
     this.admin = admin;
+    this.startDate = startDate;
+    this.expirationDate = expirationDate;
     this.maxSessions = maxSessions;
   }
 
@@ -39,6 +41,14 @@ public class UserStatus extends AbstractStatus implements Serializable {
 
   public boolean isAdmin() {
     return admin;
+  }
+
+  public String getStartDate() {
+    return startDate;
+  }
+
+  public String getExpirationDate() {
+    return expirationDate;
   }
 
   public int getSessionCount(String profileName) {

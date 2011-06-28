@@ -69,6 +69,16 @@ public class SimpleUserManager implements UserManager {
       emailAddr = xml.getStringValue("email-address");
     } catch (ConfigException e) {}
 
+    String startDate = null;
+    try {
+      startDate = xml.getStringValue("start-date");
+    } catch (ConfigException e) {}
+
+    String expirationDate = null;
+    try {
+      expirationDate = xml.getStringValue("expiration-date");
+    } catch (ConfigException e) {}
+
     int maxConnections = xml.getIntValue("max-connections", -1);
 
     boolean enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
@@ -77,7 +87,7 @@ public class SimpleUserManager implements UserManager {
     boolean debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "false"));
 
     UserEntry user = new UserEntry(xml.getStringValue("name"), xml.getStringValue("password"), ipMask, emailAddr,
-        maxConnections, enabled, admin, exclude, debug);
+        maxConnections, enabled, admin, exclude, startDate, expirationDate, debug);
 
     try {
       user.displayName = xml.getStringValue("display-name");
@@ -163,6 +173,18 @@ public class SimpleUserManager implements UserManager {
     else return entry.maxConnections;
   }
 
+  public String getStartDate(String user) {
+    UserEntry entry = getUser(user);
+    if(entry == null) return null;
+    else return entry.startDate;
+  }
+
+  public String getExpirationDate(String user) {
+    UserEntry entry = getUser(user);
+    if(entry == null) return null;
+    else return entry.expirationDate;
+  }
+
   public Set getAllowedProfiles(String user) {
     UserEntry entry = getUser(user);
     if(entry == null) {
@@ -234,12 +256,13 @@ public class SimpleUserManager implements UserManager {
     String name, password;
     String ipMask;
     String email, displayName;
+    String startDate, expirationDate;
     int maxConnections;
     boolean enabled, admin, exclude, debug;
     Set profiles = new HashSet();
 
     public UserEntry(String name, String password, String ipMask, String email, int maxConnections, boolean enabled,
-                     boolean admin, boolean exclude, boolean debug)
+                     boolean admin, boolean exclude, String startDate, String expirationDate, boolean debug)
     {
       this.name = name;
       this.displayName = name;
@@ -250,6 +273,8 @@ public class SimpleUserManager implements UserManager {
       this.enabled = enabled;
       this.admin = admin;
       this.exclude = exclude;
+      this.startDate = startDate;
+      this.expirationDate = expirationDate;
       this.debug = debug;
     }
 

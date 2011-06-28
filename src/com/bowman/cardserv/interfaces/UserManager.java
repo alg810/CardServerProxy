@@ -33,5 +33,7 @@ public interface UserManager extends XmlConfigurable {
   Set getBlockedServices(String user, String profile); // return Set of Integer, null for all
   Set getAllowedConnectors(String user); // return Set of String, null for all
   int getAllowedEcmRate(String user); // return minimum interval between ecm in seconds, -1 for no limit
+  String getStartDate(String user);
+  String getExpirationDate(String user);
 
 }
