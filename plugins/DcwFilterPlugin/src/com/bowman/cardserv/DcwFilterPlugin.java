@@ -236,12 +236,10 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
     for(int i = 0; i < curr.length; i++) curr[i] |= prev[i];
   }
 
-  private static boolean checksumDcw(byte[] data) {
-    if(data[3] != (byte)((data[0] + data[1] + data[2]) & 0xFF) || data[7] != (byte)((data[4] + data[5] + data[6]) & 0xFF)) {
-      return false;
-    }
-    if(data[11] != (byte)((data[8] + data[9] + data[10]) & 0xFF) || data[15] != (byte)((data[12] + data[13] + data[14]) & 0xFF)) {
-      return false;
+  private static boolean checksumDcw(byte[] cw) {
+    for (int i = 0; i < 16; i+=4) {
+      if (cw[i+3] != (byte)((cw[i] + cw[i+1] + cw[i+2]) & 0xFF))
+        return false;
     }
     return true;
   }
