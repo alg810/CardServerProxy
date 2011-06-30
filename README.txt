@@ -59,7 +59,7 @@ The creator accepts no responsibility or liability for any breach of provider co
 
 The proxy prefers a sun JRE (1.4.2 or later) but others like JamVM _may_ work. If you're interested in getting the
 proxy to run properly under gcj/gij or any other non-sun jre, contact me on efnet (be prepared to make source changes).
-As of 0.9.0 the proxy will not start with non-sun jvms, unless you explicit force it to by adding the cmd line argument:
+As of 0.9.0 the proxy will not start with non-sun jvms, unless you explicitly force it to by adding the cmd line argument:
 -Dcom.bowman.cardserv.allowanyjvm=true
 
 To get started read the example configs and the proxy-reference.html, + the changelog and cardproxy.sh start script.

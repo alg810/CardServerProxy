@@ -803,9 +803,6 @@ One user definition for the SimpleUserManager (also used by the XmlUserManager, 
 - <strong class='bold'>admin</strong>: true/false (default: false). Is this user an administrator? Affects access to http/xml api features only.<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true). Allows disabling of accounts without deleting them.<br />
 - <strong class='bold'>map-exclude</strong>: true/false (default: false). Set to true to prevent the user from causing changes to the service maps. If a particular user is sending bad ecms or is otherwise misbehaving, this will protect the service mappings and ensure no other users are affected. Only use this if you are sure a particular client is misbehaving, the service mapping can't work if no clients are allowed to update the map.<br />
-- <strong class='bold'>start-date</strong>: (dd-mm-yyyy) Start date for the user account.<br />
-- <strong class='bold'>expiration-date</strong>: (dd-mm-yyyy) Expiration date for the user account.<br /> 
-- <strong class='bold'>ecm-rate</strong>: Minimum interval between ecm's in seconds (disabled by default).<br />
 - <strong class='bold'>debug</strong>: true/false (default: false). Set to true to enable ecm/emm/zap logging for this user only (has no effect if these are already enabled globally).<br />
 <br />
 Example:  <em class='italic'>&lt;user name="usr1" password="secret" display-name="User one" profiles="profile1 otherprofile" max-connections="3" enabled="false"/></em> <br />
