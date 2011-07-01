@@ -30,7 +30,7 @@ Cardservproxy changelog:
 - Added: More sanity checks to DcwFilterPlugin (checksums, length and an option to monitor all replies for duplicates).
 - Added: DreamboxPlugin (csp-agent) support for more/older dm500 images. Basic (unsecured) file upload support.
 - Added: proxy-reference.html updated with highlighting for important elements and additional examples.
-- Added: New TestUserManager to show how to add um-specific functionality without changing the core or existing um's.
+- Added: New AdvancedUserManager to show how to add um-specific functionality without changing the core or existing um's.
 
 - Changes to proxy.xml:
   Added: Attribute 'enable-service-linking' to <cache-handler> (true/false, default: false). Enables sid cache linker.

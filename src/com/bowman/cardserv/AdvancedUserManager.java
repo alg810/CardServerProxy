@@ -10,7 +10,7 @@ import java.text.*;
  * Date: 2011-06-30
  * Time: 23:26
  */
-public class TestUserManager extends SimpleUserManager {
+public class AdvancedUserManager extends SimpleUserManager {
 
   static final SimpleDateFormat fmt = new SimpleDateFormat("yy-MM-dd");
 
