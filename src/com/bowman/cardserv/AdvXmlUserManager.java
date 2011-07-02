@@ -10,46 +10,46 @@ import java.text.*;
  * Date: 2011-06-30
  * Time: 23:26
  */
-public class TestUserManager extends SimpleUserManager {
+public class AdvXmlUserManager extends XmlUserManager {
 
-  static final SimpleDateFormat fmt = new SimpleDateFormat("yy-MM-dd");
+  static final SimpleDateFormat fmt = new SimpleDateFormat("dd-MM-yyyy");
 
   protected UserEntry parseUser(ProxyXmlConfig xml) throws ConfigException {
-    TestUserEntry tue = new TestUserEntry(super.parseUser(xml)); // call SimpleUserManager parsing and wrap user entry
+    AdvUserEntry aue = new AdvUserEntry(super.parseUser(xml)); // call XmlUserManager parsing and wrap user entry
 
     String edStr = null;
     try {
       edStr = xml.getStringValue("expire-date");
-      tue.expireDate = fmt.parse(edStr).getTime();
+      aue.expireDate = fmt.parse(edStr).getTime();
     } catch(ConfigException e) {
-      tue.expireDate = -1;
+      aue.expireDate = -1;
     } catch(ParseException e) {
-      throw new ConfigException("Bad expire-date for user '" + tue.name + "': " + edStr + " (expected yy-mm-dd)");
+      throw new ConfigException("Bad expire-date for user '" + aue.name + "': " + edStr + " (expected dd-mm-yyyy)");
     }
     String sdStr = null;
     try {
       sdStr = xml.getStringValue("start-date");
-      tue.startDate = fmt.parse(sdStr).getTime();
+      aue.startDate = fmt.parse(sdStr).getTime();
     } catch(ConfigException e) {
-      tue.startDate = -1;
+      aue.startDate = -1;
     } catch(ParseException e) {
-      throw new ConfigException("Bad start-date for user '" + tue.name + "': " + sdStr + " (expected yy-mm-dd)");
+      throw new ConfigException("Bad start-date for user '" + aue.name + "': " + sdStr + " (expected dd-mm-yyyy)");
     }
-    if(tue.startDate != -1 && tue.expireDate != -1)
-      if(tue.startDate > tue.expireDate) throw new ConfigException("User '" + tue.name + "' start-date must be before expire-date.");
+    if(aue.startDate != -1 && aue.expireDate != -1)
+      if(aue.startDate > aue.expireDate) throw new ConfigException("User '" + aue.name + "' start-date must be before expire-date.");
 
     try {
-      tue.ecmRate = xml.getIntValue("ecm-rate");
+      aue.ecmRate = xml.getIntValue("ecm-rate");
     } catch(ConfigException e) {
-      tue.ecmRate = -1;
+      aue.ecmRate = -1;
     }
 
-    return tue;
+    return aue;
   }
 
   public boolean isEnabled(String user) {
     if(super.isEnabled(user)) {
-      TestUserEntry entry = (TestUserEntry)getUser(user);
+      AdvUserEntry entry = (AdvUserEntry)getUser(user);
       if(entry == null) return true;
       if(entry.startDate == -1 && entry.expireDate == -1) return true;
       long now = System.currentTimeMillis();
@@ -61,18 +61,19 @@ public class TestUserManager extends SimpleUserManager {
   }
 
   public int getAllowedEcmRate(String user) {
-    TestUserEntry entry = (TestUserEntry)getUser(user);
+    AdvUserEntry entry = (AdvUserEntry)getUser(user);
     if(entry == null) return -1;
     else return entry.ecmRate;
   }
 
-  static class TestUserEntry extends UserEntry {
+  static class AdvUserEntry extends UserEntry {
     int ecmRate;
     long startDate, expireDate;
 
-    public TestUserEntry(UserEntry ue) {
+    public AdvUserEntry(UserEntry ue) {
       super(ue.name, ue.password, ue.ipMask, ue.email, ue.maxConnections, ue.enabled, ue.admin, ue.exclude, ue.debug);
       profiles = ue.profiles;
     }
   }
+
 }
