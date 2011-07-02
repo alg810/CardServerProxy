@@ -30,7 +30,6 @@ Cardservproxy changelog:
 - Added: More sanity checks to DcwFilterPlugin (checksums, length and an option to monitor all replies for duplicates).
 - Added: DreamboxPlugin (csp-agent) support for more/older dm500 images. Basic (unsecured) file upload support.
 - Added: proxy-reference.html updated with highlighting for important elements and additional examples.
-- Added: New TestUserManager to show how to add um-specific functionality without changing the core or existing um's.
 - Added: New AdvXmlUserManager similar to XmlUserManager but with "advanced" features (ecm-rate, start and expire-date)
   based on the suggestions made in TestUserManager.
 
