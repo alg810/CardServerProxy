@@ -72,6 +72,7 @@ public class TestUserManager extends SimpleUserManager {
 
     public TestUserEntry(UserEntry ue) {
       super(ue.name, ue.password, ue.ipMask, ue.email, ue.maxConnections, ue.enabled, ue.admin, ue.exclude, ue.debug);
+      profiles = ue.profiles;
     }
   }
 }
