@@ -261,7 +261,7 @@ exit 0' > /usr/script/mgcamd_135a_em.sh
 		if [ $? != "0" ]; then
 			break
 		else
-			sed -i 's/emu=.*/emu=\"mgcamd_1.35\ \&\"/' /etc/init.d/autostart/start-config
+			sed -i 's/emu=.*/emu=mgcamd_1.35\.emu/' /etc/init.d/autostart/start-config
 			echo "Mgcamd installed successfully on ufs912 with AAF image ..."
 		fi
 		;;
