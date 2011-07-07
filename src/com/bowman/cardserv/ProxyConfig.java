@@ -485,6 +485,11 @@ public class ProxyConfig implements FileChangeListener {
       sidLinker.init();
       cacheHandler.setListener(sidLinker);
     } else cacheHandler.setListener(null);
+    ProxyPlugin plugin;
+    for(Iterator iter = proxyPlugins.values().iterator(); iter.hasNext(); ) { // hack to start cache plugins on first load
+      plugin = (ProxyPlugin)iter.next();
+      if(plugin instanceof CacheListener) plugin.start((CardServProxy)rootConfigurable);
+    }
   }
 
   private void loadProfiles(ProxyXmlConfig currentConfig) throws ConfigException {

@@ -25,7 +25,7 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
   String remoteAddress;
   boolean userDebug;
 
-  Set allowedConnectors, mappedProfiles, allowedProfiles = new HashSet();
+  Set allowedConnectors, mappedProfiles, allowedProfiles;
   Map allowedServices, blockedServices;
   int allowedRate;
 

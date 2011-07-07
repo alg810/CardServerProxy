@@ -37,6 +37,10 @@ public class TvService implements Serializable, Comparable {
   }
 
   public TvService(TvService ts, long customData) {
+    this(ts, customData, null);
+  }
+
+  public TvService(TvService ts, long customData, String profile) {
     this.id = ts.id;
     this.namespace = ts.namespace;
     this.transponder = ts.transponder;
@@ -44,7 +48,7 @@ public class TvService implements Serializable, Comparable {
     this.type = ts.type;
     this.number = ts.number;
     this.unknown = ts.unknown;
-    this.profileName = ts.profileName;
+    this.profileName = profile==null?ts.profileName:profile;
     this.provider = ts.provider;
     this.name = ts.name;
     this.customData = customData;

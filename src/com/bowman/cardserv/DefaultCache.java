@@ -22,7 +22,7 @@ public class DefaultCache implements CacheHandler {
   private long maxCacheWait;
   private int maxWaitPercent;
 
-  private int timeouts, instantHits, waitHits, remoteHits;
+  private int timeouts, instantHits, waitHits, remoteHits, pendingPeak;
 
   public DefaultCache() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -45,6 +45,7 @@ public class DefaultCache implements CacheHandler {
     else pendingEcms.setMaxAge(maxAge);
     if(ecmMap == null) ecmMap = new MessageCacheMap(maxAge);
     else ecmMap.setMaxAge(maxAge);
+    pendingPeak = 0;
   }
 
   public long getMaxCacheWait(long maxCwWait) {
@@ -64,7 +65,7 @@ public class DefaultCache implements CacheHandler {
 
     synchronized(this) {
       
-      boolean waited = false;
+      boolean waited = false, alerted = false;
       long delay;
 
       if(!ecmMap.containsKey(request)) {
@@ -77,7 +78,7 @@ public class DefaultCache implements CacheHandler {
         if(listener != null) {
           // allow a set cache listener to introduce a lock for any other arbitrary reason
           if(!pendingEcms.containsKey(request) && listener.lockRequest(successFactor, request))
-            addRequest(successFactor, request, alwaysWait);
+            addRequest(successFactor, request, true); // alwayswait = true <-- prevent clusteredcache from sending the lock
         }
       
         while(pendingEcms.containsKey(request)) {
@@ -97,9 +98,11 @@ public class DefaultCache implements CacheHandler {
           delay = System.currentTimeMillis() - start;
           logger.finest("Waited for " + request.hashCodeStr() + " in cache: " + delay + " ms");
           waited = true;
-          if(delay >= maxWait) {
-            break;
+          if(!alerted && delay >= (maxWait / 2)) {
+            alerted = true;
+            delayAlert(successFactor, request, alwaysWait, maxWait);
           }
+          if(delay >= maxWait) break;
         }
       }
 
@@ -133,6 +136,10 @@ public class DefaultCache implements CacheHandler {
 
   }
 
+  protected void delayAlert(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxWait) {
+    // nothing to do in this impl
+  }
+
   public synchronized boolean processReply(CamdNetMessage request, CamdNetMessage reply) {
     if(reply == null || reply.isEmpty()) {
       removeRequest(request);
@@ -159,7 +166,7 @@ public class DefaultCache implements CacheHandler {
 
   public Properties getUsageStats() {
     Properties p = new Properties();
-    p.setProperty("pending-ecms", String.valueOf(pendingEcms.size()));
+    p.setProperty("pending-ecms", String.valueOf(pendingEcms.size()) + " (peak: " + pendingPeak + ")");
     p.setProperty("cached-ecms", String.valueOf(ecmMap.size()));
     p.setProperty("timeouts", String.valueOf(timeouts));
     p.setProperty("instant-hits", String.valueOf(instantHits));
@@ -178,6 +185,7 @@ public class DefaultCache implements CacheHandler {
 
   protected synchronized void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     CamdNetMessage oldRequest = (CamdNetMessage)pendingEcms.put(request, request);
+    if(pendingEcms.size() > pendingPeak) pendingPeak = pendingEcms.size();
     if(oldRequest == null) {
       if(forwarder != null) forwarder.onRequest(successFactor, request);
       if(listener != null) listener.onRequest(successFactor, request);
