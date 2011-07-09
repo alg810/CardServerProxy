@@ -18,7 +18,7 @@ public class DefaultCache implements CacheHandler {
   protected MessageCacheMap ecmMap;
   protected CacheListener listener, forwarder;
 
-  private long maxAge;
+  protected long maxAge;
   private long maxCacheWait;
   private int maxWaitPercent;
 
@@ -100,7 +100,7 @@ public class DefaultCache implements CacheHandler {
           waited = true;
           if(!alerted && delay >= (maxWait / 2)) {
             alerted = true;
-            delayAlert(successFactor, request, alwaysWait, maxWait);
+            if(!ecmMap.containsKey(request)) delayAlert(successFactor, request, alwaysWait, maxWait);
           }
           if(delay >= maxWait) break;
         }

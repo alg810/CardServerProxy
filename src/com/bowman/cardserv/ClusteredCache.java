@@ -19,6 +19,7 @@ import java.util.*;
 public class ClusteredCache extends DefaultCache implements Runnable, StaleEntryListener {
 
   private static final int TYPE_REQUEST = 1, TYPE_REPLY = 2, TYPE_PINGREQ = 3, TYPE_PINGRPL = 4;
+  private static final int TYPE_RESENDREQ = 5;
 
   private InetAddress mcGroup;
   private String trackerKey, localHost;
@@ -31,21 +32,24 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private DatagramSocket recvSock, sendSock;
   private Thread clusterThread, trackerThread;
 
-  private boolean useMulticast = false, debug = false, hideNames = false;
+  private boolean useMulticast, debug, hideNames, autoAddPeers;
 
   private int trackerFailures, receivedEntries, receivedPending, receivedDiscarded;
-  private int sentPending, sentEntries;
+  private int sentPending, sentEntries, reSentEntries, receivedResendReqs, sentResendReqs;
 
   private TimedAverageList sentAvg = new TimedAverageList(10), recvAvg = new TimedAverageList(10);
   private RequestArbiter arbiter = new RequestArbiter();
 
   private Set mismatchedHosts = new HashSet();
+  private MessageCacheMap resendReqs;
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     super.configUpdated(xml);
 
     pendingEcms.setStaleEntryListener(this);
     mismatchedHosts.clear();
+    if(resendReqs == null) resendReqs = new MessageCacheMap(maxAge);
+    else resendReqs.setMaxAge(maxAge);
 
     InetAddress remoteCache;
 
@@ -64,6 +68,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     if(debug) logger.warning("Cache debug mode enabled (will fail sooner or later under any significant traffic).");
 
     hideNames = "true".equalsIgnoreCase(xml.getStringValue("hide-names", "false"));
+    autoAddPeers = "true".equalsIgnoreCase(xml.getStringValue("auto-add-peers", "false"));
 
     syncPeriod = xml.getTimeValue("sync-period", 0, "ms");
     if(syncPeriod > 0) logger.info("Strict cache-synchronization is enabled (sync-period is: " + syncPeriod + " ms).");
@@ -359,6 +364,11 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     return super.processRequest(successFactor, request, alwaysWait, maxCwWait); // call the default processing
   }
 
+  protected void delayAlert(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxWait) {
+    // only ask for help if there is no local resource
+    if(successFactor == -1 || alwaysWait || successFactor > maxWait) sendResendRequest(request);
+  }
+
   protected void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     super.addRequest(successFactor, request, alwaysWait);
     if(!alwaysWait) { // dont send any notification when we wont be forwarding to card
@@ -369,10 +379,12 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   }
 
   public synchronized boolean processReply(CamdNetMessage request, CamdNetMessage reply) {
-    if(pendingEcms.containsKey(request)) {
-      if(reply == null) reply = request.getEmptyReply();
-      sendMessage(request, reply);
-    }
+    if(reply == null || reply.isEmpty()) {
+      if(pendingEcms.containsKey(request)) { // only send null replies for requests that were actually locked
+        if(reply == null) reply = request.getEmptyReply();
+        sendMessage(request, reply);
+      }
+    } else sendMessage(request, reply);
     return super.processReply(request, reply);
   }
 
@@ -419,6 +431,52 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
       sendToPeers(buf);
     } catch(IOException e) {
       logger.throwing(e);
+    }
+  }
+
+  private void reSendMessage(CamdNetMessage request, CamdNetMessage reply, CachePeer peer) {
+    try {
+      if(hideNames && reply.getConnectorName() != null) {
+        reply = new CamdNetMessage(reply);
+        reply.setConnectorName(null);
+      }
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      DataOutputStream dos = new DataOutputStream(bos);
+      dos.writeByte(TYPE_REPLY);
+      request.setArbiterNumber(null);
+      writeCacheReq(dos, request);
+      writeCacheRpl(dos, reply);
+      dos.close();
+      byte[] buf = bos.toByteArray();
+      if(debug) logger.fine("Resending ecm>cw pair, " + buf.length + " bytes");
+      reSentEntries++;
+      sendToPeer(buf, peer.addr, peer.port);
+    } catch(IOException e) {
+      logger.throwing(e);
+    }
+  }
+
+  private void sendResendRequest(CamdNetMessage request) {
+    if(!hasPeers()) return;
+    Long lastSend = (Long)resendReqs.get(request);
+    long now = System.currentTimeMillis();
+    if(lastSend == null || now - lastSend.longValue() > 50) { // avoid rebroadcasting the same req too often
+      resendReqs.put(request, new Long(now));
+      try {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+        dos.writeByte(TYPE_RESENDREQ);
+        dos.writeInt(localPort);
+        request.setArbiterNumber(null);
+        writeCacheReq(dos, request);
+        dos.close();
+        byte[] buf = bos.toByteArray();
+        if(debug) logger.fine("Sending resend request, " + buf.length + " bytes");
+        sentResendReqs++;
+        sendToPeers(buf);
+      } catch(IOException e) {
+        logger.throwing(e);
+      }
     }
   }
 
@@ -494,7 +552,6 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(bos);
       dos.writeByte(TYPE_PINGRPL);
-      pingSent = System.currentTimeMillis();
       dos.writeLong(ping);
       dos.close();
       byte[] buf = bos.toByteArray();
@@ -529,7 +586,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         switch(type) {
           case TYPE_REPLY:
             receivedEntries++;
-            incrementReceived(packet.getAddress());
+            incrementReceived(packet.getAddress().getHostAddress());
             request = CamdNetMessage.parseCacheReq(dis);
             request.setOriginAddress(packet.getAddress().getHostAddress());            
             CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request);
@@ -560,12 +617,24 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
             ping = dis.readLong();
             int port = dis.readInt();
             sendPingReply(ping, packet.getAddress(), port);
+            if(autoAddPeers) autoAddPeer(new CachePeer(packet.getAddress(), port));
             break;
 
           case TYPE_PINGRPL:
             ping = dis.readLong();
             ping = System.currentTimeMillis() - ping;
-            hostPings.put(packet.getAddress(), new Long(ping));
+            hostPings.put(packet.getAddress().getHostAddress(), new Long(ping));
+            break;
+
+          case TYPE_RESENDREQ:
+            receivedResendReqs++;
+            port = dis.readInt();
+            request = CamdNetMessage.parseCacheReq(dis);
+            CachePeer peer = new CachePeer(packet.getAddress(), port);
+            if(peerList.contains(peer)) {
+              reply = peekReply(request);
+              if(reply != null) reSendMessage(request, reply, peer);
+            }
             break;
 
           default:
@@ -589,7 +658,15 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     logger.fine("Cluster thread dying.");
   }
 
-  private void incrementReceived(InetAddress addr) {
+  private void autoAddPeer(CachePeer peer) {
+    if(!peerList.contains(peer)) {
+      peerList.add(peer);
+      logger.info("New peer auto-added: " + peer.addr.getHostAddress() + ":" + peer.port);
+    }
+    if(System.currentTimeMillis() - pingSent > 4000) sendPing();
+  }
+
+  private void incrementReceived(String addr) {
     Long l = (Long)hostReceives.get(addr);
     if(l == null) l = new Long(1);
     else l = new Long(1 + l.longValue());
@@ -628,6 +705,9 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     p.setProperty("received-pending", String.valueOf(receivedPending));
     p.setProperty("received-cached", String.valueOf(receivedEntries));
     p.setProperty("received-discarded", String.valueOf(receivedDiscarded));
+    p.setProperty("received-resendreqs", String.valueOf(receivedResendReqs));
+    p.setProperty("sent-resends", String.valueOf(reSentEntries));
+    p.setProperty("sent-resendreqs", String.valueOf(sentResendReqs));
     p.setProperty("sent-pending", String.valueOf(sentPending));
     p.setProperty("sent-cached", String.valueOf(sentEntries));
     p.setProperty("avg-sent-bytes/s", String.valueOf(sentAvg.getTotal(true) / 10));
