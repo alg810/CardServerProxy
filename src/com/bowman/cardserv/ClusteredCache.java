@@ -396,13 +396,6 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private void sendMessage(CamdNetMessage request, CamdNetMessage reply) {
     if(!hasPeers()) return;
     try {
-      if(hideNames) {
-        if(reply != null) {
-          reply = new CamdNetMessage(reply);
-          reply.setConnectorName(null);
-        }
-      }
-
       // 4 scenarios (type + tag + sid + onid + caid + hash + maybe arbiternr)
       // - request with arbiternumber:    1 + 1 + 2 + 2 + 2 + 4 + 8 (type request) negotiation for lock
       // - request without arbiternumber: 1 + 1 + 2 + 2 + 2 + 4     (type request) lock
@@ -416,8 +409,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         dos.writeByte(TYPE_REPLY);
         request.setArbiterNumber(null);
       }
-      writeCacheReq(dos, request);
-      if(reply != null) writeCacheRpl(dos, reply);
+      writeCacheReq(dos, request, true);
+      if(reply != null) writeCacheRpl(dos, reply, !hideNames);
       dos.close();
       byte[] buf = bos.toByteArray();
 
@@ -436,16 +429,12 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
 
   private void reSendMessage(CamdNetMessage request, CamdNetMessage reply, CachePeer peer) {
     try {
-      if(hideNames && reply.getConnectorName() != null) {
-        reply = new CamdNetMessage(reply);
-        reply.setConnectorName(null);
-      }
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(bos);
       dos.writeByte(TYPE_REPLY);
       request.setArbiterNumber(null);
-      writeCacheReq(dos, request);
-      writeCacheRpl(dos, reply);
+      writeCacheReq(dos, request, false);
+      writeCacheRpl(dos, reply, !hideNames);
       dos.close();
       byte[] buf = bos.toByteArray();
       if(debug) logger.fine("Resending ecm>cw pair, " + buf.length + " bytes");
@@ -467,8 +456,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         DataOutputStream dos = new DataOutputStream(bos);
         dos.writeByte(TYPE_RESENDREQ);
         dos.writeInt(localPort);
-        request.setArbiterNumber(null);
-        writeCacheReq(dos, request);
+        writeCacheReq(dos, request, false);
         dos.close();
         byte[] buf = bos.toByteArray();
         if(debug) logger.fine("Sending resend request, " + buf.length + " bytes");
@@ -480,20 +468,20 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     }
   }
 
-  private static void writeCacheReq(DataOutputStream dos, CamdNetMessage msg) throws IOException {
+  public static void writeCacheReq(DataOutputStream dos, CamdNetMessage msg, boolean extra) throws IOException {
     dos.writeByte(msg.getCommandTag());
     dos.writeShort(msg.getServiceId());
     dos.writeShort(msg.getNetworkId());
     dos.writeShort(msg.getCaId());
     dos.writeInt(msg.getDataHash());
-    if(msg.getArbiterNumber() != null) dos.writeDouble(msg.getArbiterNumber().doubleValue());
+    if(extra && msg.getArbiterNumber() != null) dos.writeDouble(msg.getArbiterNumber().doubleValue());
   }
 
-  private static void writeCacheRpl(DataOutputStream dos, CamdNetMessage msg) throws IOException {
+  public static void writeCacheRpl(DataOutputStream dos, CamdNetMessage msg, boolean extra) throws IOException {
     dos.writeByte(msg.getCommandTag());
     if(!msg.isEmpty()) {
       dos.write(msg.getCustomData());
-      if(msg.getConnectorName() != null) dos.writeUTF(msg.getConnectorName());
+      if(extra && msg.getConnectorName() != null) dos.writeUTF(msg.getConnectorName());
     }
   }
 
@@ -587,9 +575,9 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
           case TYPE_REPLY:
             receivedEntries++;
             incrementReceived(packet.getAddress().getHostAddress());
-            request = CamdNetMessage.parseCacheReq(dis);
+            request = CamdNetMessage.parseCacheReq(dis, false);
             request.setOriginAddress(packet.getAddress().getHostAddress());            
-            CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request);
+            CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request, true);
             reply.setOriginAddress(packet.getAddress().getHostAddress());
             if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());
             if(!this.contains(request)) super.processReply(request, reply);
@@ -599,7 +587,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
             break;
 
           case TYPE_REQUEST:
-            request = CamdNetMessage.parseCacheReq(dis);
+            request = CamdNetMessage.parseCacheReq(dis, true);
             request.setOriginAddress(packet.getAddress().getHostAddress());            
             if(request.getArbiterNumber() != null) {
               arbiter.addArbitrationPeer(request);
@@ -629,7 +617,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
           case TYPE_RESENDREQ:
             receivedResendReqs++;
             port = dis.readInt();
-            request = CamdNetMessage.parseCacheReq(dis);
+            request = CamdNetMessage.parseCacheReq(dis, false);
             CachePeer peer = new CachePeer(packet.getAddress(), port);
             if(peerList.contains(peer)) {
               reply = peekReply(request);

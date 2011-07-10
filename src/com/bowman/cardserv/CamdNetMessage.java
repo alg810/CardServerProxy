@@ -126,20 +126,20 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return msg;
   }
 
-  public static CamdNetMessage parseCacheReq(DataInputStream dais) throws IOException {
+  public static CamdNetMessage parseCacheReq(DataInputStream dais, boolean extra) throws IOException {
     CamdNetMessage msg = new CamdNetMessage(dais.readUnsignedByte());
     msg.setServiceId(dais.readUnsignedShort());
     msg.setNetworkId(dais.readUnsignedShort());
     msg.setCaId(dais.readUnsignedShort());
     msg.protocol = "Dummy";
     msg.dataHash = dais.readInt();
-    if(dais.available() == 8) { // this is a request with arbitration set
+    if(extra && dais.available() == 8) { // this is a request with arbitration set
       msg.arbiterNumber = new Double(dais.readDouble());
     }
     return msg;
   }
 
-  public static CamdNetMessage parseCacheRpl(DataInputStream dais, CamdNetMessage request) throws IOException {
+  public static CamdNetMessage parseCacheRpl(DataInputStream dais, CamdNetMessage request, boolean extra) throws IOException {
     CamdNetMessage msg = new CamdNetMessage(dais.readUnsignedByte());
     msg.type = TYPE_RECEIVED;
     msg.protocol = "Dummy";
@@ -153,7 +153,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
       msg.refreshDataHash(); // just in case
       msg.dataLength = 16;
       try {
-        if(dais.available() > 0) msg.connectorName = dais.readUTF();
+        if(extra && dais.available() > 0) msg.connectorName = dais.readUTF();
       } catch (EOFException e) {
       }
     }
@@ -233,6 +233,17 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     this.stringData = new String[0];
     this.fixedData = new byte[10];
     this.type = TYPE_NEW;
+  }
+
+  public CamdNetMessage(int commandTag, int dataHash) {
+    this();
+    this.commandTag = commandTag;
+    this.dataHash = dataHash;
+    this.dataLength = 0;
+    this.customData = new byte[0];
+    this.stringData = new String[0];
+    this.fixedData = new byte[10];
+    this.type = TYPE_RECEIVED;
   }
 
   public int getCommandTag() {
