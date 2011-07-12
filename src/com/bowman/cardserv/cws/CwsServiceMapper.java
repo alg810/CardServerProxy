@@ -41,7 +41,7 @@ public class CwsServiceMapper implements XmlConfigurable {
   private long cacheSaveAge;
 
   private int autoExcludeThreshold;
-  private boolean autoDiscoverAll, retryLostServices, hideUnknownServices, hideDisabledConnectors;
+  private boolean autoDiscoverAll, retryLostServices, hideUnknownServices, hideDisabledConnectors, hideRadioServices;
   private boolean logMissingSid, bcMissingSid, redundantForwarding;
 
   private File cacheDir;
@@ -120,6 +120,7 @@ public class CwsServiceMapper implements XmlConfigurable {
     autoExcludeThreshold = xml.getIntValue("auto-reset-threshold", -1);
     retryLostServices = "true".equalsIgnoreCase(xml.getStringValue("retry-lost-services", "true"));
     hideUnknownServices = "true".equalsIgnoreCase(xml.getStringValue("hide-unknown-services", "false"));
+    hideRadioServices = "true".equalsIgnoreCase(xml.getStringValue("hide-radio-services", "true"));
     hideDisabledConnectors = "true".equalsIgnoreCase(xml.getStringValue("hide-disabled-connectors", "false"));
 
     overrideCanDecodeMap.clear();
@@ -329,9 +330,11 @@ public class CwsServiceMapper implements XmlConfigurable {
           service = config.getService(profile.getName(), id); // todo?
           if(service == null) {
             if(!hideUnknownServices) services.add(TvService.getUnknownService(profile.getName(), id.serviceId));
-          } else if(service.isTv())
+          } else if(service.isTv()) {
+            if(hideRadioServices && service.getType() == TvService.TYPE_RADIO) continue;
             services.add(service);
           }
+        }
       }
     }
     if(!raw) Collections.sort(services);

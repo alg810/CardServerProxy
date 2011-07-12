@@ -172,6 +172,7 @@ Contents (element paths in <strong>bold</strong> represent common changes, anyth
         <li><a href="#connection-manager/service-map/mapper/redundant-forwarding">mapper/redundant-forwarding</a></li>
         <li><a href="#connection-manager/service-map/mapper/retry-lost-services">mapper/retry-lost-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/hide-unknown-services">mapper/hide-unknown-services</a></li>
+        <li><a href="#connection-manager/service-map/mapper/hide-radio-services">mapper/hide-radio-services</a></li>
         <li><a href="#connection-manager/service-map/mapper/hide-disabled-connectors">mapper/hide-disabled-connectors</a></li>
       </ul>
       <li><a href="#connection-manager/service-map/mapper-override"><strong>service-map/mapper (attributes: *profile, enabled)</strong></a></li>
@@ -1021,6 +1022,13 @@ Under normal circumstances, you probably want to keep this switched on, for all 
 <div class='indent'>connection-manager/service-map/mapper/hide-unknown-services</div><br />
 true/false (default: false). Determines whether to hide services with no known names (sids that were not found in the services file for the profile) from the query api and hence the status web.<br />
 <br /><strong>NOTE: </strong> If you're not using a services file, setting this to true would hide all services.
+<br />
+</a>
+
+<a name="connection-manager/service-map/mapper/hide-radio-services">
+<div class='indent'>connection-manager/service-map/mapper/hide-radio-services</div><br />
+true/false (default: true). Hide services with type radio from the query api and hence the status web (was default in previous proxy versions, set to false if you want them displayed).<br />
+<br /><strong>NOTE: </strong> Whether or not a service is radio is typically only known when using enigma services files, if not then this setting has no effect.
 <br />
 </a>
 

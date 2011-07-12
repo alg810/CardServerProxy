@@ -15,6 +15,8 @@ Cardservproxy changelog:
 - Fixed: The default-deny-list wasn't checked for CspConnect connection attempts.
 - Fixed: Closing of old sessions (on new login) wasn't working for ExtNewcamd.
 - Fixed: Debug mode for the "*" pseudo profile (Csp, ExtNewcamd) couldn't be turned off via config (attribute ignored).
+- Fixed: Using manual service mapping (can-decode list) for one connector would affect discovery of the listed services
+  for other connectors in the same profile.
 - Fixed: Removing a profile from a user that had used csp-connect had no effect, as it remained locally cached at the
   client proxy, and no mechanism existed for removing it or blocking the now disallowed requests.
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
@@ -41,6 +43,7 @@ Cardservproxy changelog:
   Added: Attribute 'enable-service-linking' to <cache-handler> (true/false, default: false). Enables sid cache linker.
   Added: Attribute 'allow-different-ip' to <user-manager>, allows newcamd connections from different ip sources
   for the same user.
+  Added: Element <hide-radio-services> to <mapper> (true/false, default: true). Show/hide radio services in web/xml api.
 
 - Changes to the http/xml api:
   Added: Attribute 'filtered-by' to <ecm> (transaction logs). Contains the reason for a B flag, or the filtering plugin.
