@@ -289,10 +289,14 @@ public class CwsServiceMapper implements XmlConfigurable {
     return tmp;
   }
 
-  Collection getOverrideConnectors(ServiceMapping id, boolean canDecode) {
+  List getOverrideConnectors(ServiceMapping id, boolean canDecode) {
     List names = (List)(canDecode?overrideCanDecodeMap.get(id):overrideCannotDecodeMap.get(id));
     if(names == null) return Collections.EMPTY_LIST;
     else return new ArrayList(names);
+  }
+
+  boolean isServiceOverridden(String cwsName, ServiceMapping id) {
+    return getOverrideConnectors(id, true).indexOf(cwsName) != -1;
   }
 
   List getServicesForConnector(String cwsName, boolean canDecode, boolean raw) {
@@ -639,12 +643,12 @@ public class CwsServiceMapper implements XmlConfigurable {
           resetSingle(new ServiceMapping(id.serviceId, -1), conn.getName());
           if(session != null) session.setFlag(msg, '-');
           cacheUpdated = true;
-          if(!overrideCanDecodeMap.containsKey(id)) {
+          if(!isServiceOverridden(conn.getName(), id)) {
             config.getConnManager().cwsLostService(conn, config.getService(msg), !resetServices.contains(id));
           }
           registerRediscovery(conn.getName(), id);
         } else {
-          if(overrideCanDecodeMap.containsKey(id)) {
+          if(isServiceOverridden(conn.getName(), id)) {
             if(session != null)
               logger.info("Service [" + config.getServiceName(msg) + "] failed to decode on CWS: " + conn.getName() +
                   " (according to the manual can-decode list it should always decode). Ecm source was: " + session);
