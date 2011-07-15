@@ -130,6 +130,10 @@ public class SessionManager implements CronTimerListener {
     return count;
   }
 
+  public synchronized List getSessionsIP(String ip) {
+    return (List)sessionsByIp.get(ip);
+  }
+
   int countSessions(String user, String profileName) {
     int count = 0;
     List userSessions = (List)sessionsByUser.get(user);
