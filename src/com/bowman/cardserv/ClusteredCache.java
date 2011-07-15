@@ -371,7 +371,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
 
   protected void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     super.addRequest(successFactor, request, alwaysWait);
-    if(!alwaysWait) { // dont send any notification when we wont be forwarding to card
+    if(!alwaysWait && successFactor != -1) { // dont send any notification when we wont be forwarding to card
       request.setArbiterNumber(null); // remove any arbitration marker
       sendMessage(request, null); // tell all proxy peers that we're now processing this request
       if(System.currentTimeMillis() - pingSent > 4000) sendPing();
@@ -581,7 +581,10 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
             reply.setOriginAddress(packet.getAddress().getHostAddress());
             if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());
             if(!this.contains(request)) super.processReply(request, reply);
-            else receivedDiscarded++;
+            else {
+              receivedDiscarded++;
+              if(monitor != null) monitor.onReply(request, reply); // allow plugin to track discards
+            }
             if(debug) logger.fine("Cache reply received for: " + request.hashCodeStr() + " -> " + reply.hashCodeStr() +
               " (from: " + reply.getOriginAddress() + ") " + packet.getLength() + " bytes");
             break;

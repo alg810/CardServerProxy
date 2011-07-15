@@ -16,7 +16,7 @@ public class DefaultCache implements CacheHandler {
   protected ProxyLogger logger;
   protected MessageCacheMap pendingEcms;
   protected MessageCacheMap ecmMap;
-  protected CacheListener listener, forwarder;
+  protected CacheListener listener, monitor;
 
   protected long maxAge;
   private long maxCacheWait;
@@ -141,11 +141,11 @@ public class DefaultCache implements CacheHandler {
   }
 
   public synchronized boolean processReply(CamdNetMessage request, CamdNetMessage reply) {
+    if(monitor != null) monitor.onReply(request, reply);
     if(reply == null || reply.isEmpty()) {
       removeRequest(request);
       notifyAll();
     } else {
-      if(forwarder != null) forwarder.onReply(request, reply);
       if(listener != null) listener.onReply(request, reply);
       if(pendingEcms.containsKey(request)) {
         addReply(request, reply);
@@ -186,10 +186,8 @@ public class DefaultCache implements CacheHandler {
   protected synchronized void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     CamdNetMessage oldRequest = (CamdNetMessage)pendingEcms.put(request, request);
     if(pendingEcms.size() > pendingPeak) pendingPeak = pendingEcms.size();
-    if(oldRequest == null) {
-      if(forwarder != null) forwarder.onRequest(successFactor, request);
-      if(listener != null) listener.onRequest(successFactor, request);
-    }
+    if(monitor != null) monitor.onRequest(successFactor, request);
+    if(oldRequest == null && listener != null) listener.onRequest(successFactor, request);
   }
 
   protected synchronized void addReply(CamdNetMessage request, CamdNetMessage reply) {
@@ -220,12 +218,12 @@ public class DefaultCache implements CacheHandler {
     return listener;
   }
 
-  public void setForwarder(CacheListener forwarder) {
-    this.forwarder = forwarder;
+  public void setMonitor(CacheListener monitor) {
+    this.monitor = monitor;
   }
 
-  public CacheListener getForwarder() {
-    return forwarder;
+  public CacheListener getMonitor() {
+    return monitor;
   }
 
 }
