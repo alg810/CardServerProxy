@@ -1,0 +1,29 @@
+<status-commands ver="1.0">
+
+  <!-- predefined sources: @connectors, @connected-users, @active-users, @known-users, @offline-users, @profiles -->
+  <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper -->
+
+  <command name="cache-contents" label="Show current cache contents" description="List currently cached services with aggregated stats." admin-only="true">
+    <command-param name="hide-expired" label="" optional="true">      
+      <option value="true"/>
+      <option value="false"/>
+    </command-param>
+  </command>
+
+  <command name="cache-forwarders" label="Show forwarders" description="List active cache forwarders with usage and latency stats." admin-only="true" />
+
+  <command name="service-backlog" label="Show backlog for service" description="List transaction backlog for selected service." admin-only="true">
+    <command-param name="sid" label="" optional="false"/>
+    <command-param name="onid" label="" optional="false"/>
+    <command-param name="caid" label="" optional="false"/>
+  </command>
+
+  <command name="cache-sources" label="Show cache data sources" description="List stats per cache data source address." admin-only="true">
+    <command-param name="name" label="" optional="true"/>
+    <command-param name="hide-local" label="" optional="true">
+      <option value="true"/>
+      <option value="false"/>
+    </command-param>
+  </command>
+
+</status-commands>
