@@ -116,6 +116,7 @@ with load balancing and cluster handling built in developed by bowman.
 	
 	<target name="clean.plugins" description="delete all created files created through plugins.">
 		<ant inheritAll="false" dir="${dir.plugins}/BetacryptTunnelPlugin" target="clean"/>
+		<ant inheritAll="false" dir="${dir.plugins}/CacheCoveragePlugin" target="clean"/>
 		<ant inheritAll="false" dir="${dir.plugins}/ConaxConnector" target="clean"/>
 		<ant inheritAll="false" dir="${dir.plugins}/DcwFilterPlugin" target="clean"/>
 		<ant inheritAll="false" dir="${dir.plugins}/DreamboxPlugin" target="clean"/>
@@ -236,6 +237,7 @@ with load balancing and cluster handling built in developed by bowman.
 	
 	<target name="build-plugins" unless="skip-plugins" description="build all plugins in the plugins directory.">    
 		<ant inheritAll="false" dir="${dir.plugins}/BetacryptTunnelPlugin"/>
+		<ant inheritAll="false" dir="${dir.plugins}/CacheCoveragePlugin"/>
 		<ant inheritAll="false" dir="${dir.plugins}/ConaxConnector"/>
 		<ant inheritAll="false" dir="${dir.plugins}/DcwFilterPlugin"/>
 		<ant inheritAll="false" dir="${dir.plugins}/DreamboxPlugin"/>
