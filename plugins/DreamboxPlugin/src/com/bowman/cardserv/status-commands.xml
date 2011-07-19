@@ -21,4 +21,6 @@
 
   <command name="set-operations" label="Set operations" description="Set cmdline/script to run for multiple boxes."/>
 
+  <command name="set-tag" label="Set box tag" description="Set box tag (arbitrary string label to identify selected boxes)."/>
+
 </status-commands>

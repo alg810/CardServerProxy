@@ -74,8 +74,9 @@
                 <a>
                   <xsl:attribute name="href">javascript:selectBox('<xsl:value-of select="@id"/>');</xsl:attribute>
                   <xsl:value-of select="@type"/>
-                  <xsl:if test="@cpu-warn = 'true'"> (!)</xsl:if>
                 </a>
+                <xsl:if test="@tag">:<xsl:value-of select="@tag"/></xsl:if>
+                <xsl:if test="@cpu-warn = 'true'"> (!)</xsl:if>
               </td>
               <td><xsl:value-of select="@image-guess"/></td>
               <td><xsl:value-of select="@external-ip"/></td>
@@ -139,6 +140,7 @@
     <strong>HWAddr: </strong><xsl:value-of select="@mac"/><br />
     <strong>Created: </strong><xsl:value-of select="@created"/><br />
     <strong>Last checkin: </strong><xsl:value-of select="@last-checkin"/><br />
+    <xsl:if test="@tag"><strong>Box tagged as: </strong><xsl:value-of select="@tag"/><br /></xsl:if>
     <xsl:if test="@tunnel-port"><form action="" id="close-tunnel">
       <strong>Ssh tunnel-port: </strong><xsl:value-of select="@tunnel-port"/>&#160;
       <input name="id" type="hidden"><xsl:attribute name="value"><xsl:value-of select="@id"/></xsl:attribute></input>
@@ -240,6 +242,15 @@
       </td><td>
         <input value="OK" id="cmdlineBtn" type="button"/>
       </td><td colspan="2">
+        &#160;
+      </td></tr>
+      <tr><td>
+        Set tag on selected boxes:
+      </td><td>
+        <input name="tag" id="tagInput" type="text"/>
+      </td><td>
+        <input value="OK" id="tagBtn" type="button"/>
+      </td><td colspan="3">
         &#160;
       </td></tr>
       <tr><td>

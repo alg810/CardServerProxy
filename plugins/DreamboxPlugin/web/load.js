@@ -3,7 +3,7 @@
 //var xsltTrDbp = new BowWeb.XsltTransformer("/plugin/dreamboxplugin/open/xslt/cws-status-resp.xsl", postProcessHook);
 var xsltTrDbp = new BowWeb.XsltTransformer("/plugin/dreamboxplugin/open/xslt/cws-status-resp.xsl", postProcess);
 var hideInactiveBoxes = true;
-var selectedScript, scriptSelectedFilename, cmdSelectedFilename, cmdlineText, paramsText;
+var selectedScript, scriptSelectedFilename, cmdSelectedFilename, cmdlineText, paramsText, tagText;
 
 //add the postProcess function to cs-status.js
 pluginsPostProcess.push("dreamboxPluginPostProcess()");
@@ -44,7 +44,7 @@ sections['maintenance'] = {
 
     // handle the task form, if visible
     if(getById('scriptSelector')) {
-      var fields = ['scriptSelector', 'paramsInput', 'cmdlineInput', 'scriptFilenameSelector', 'cmdFilenameSelector'];
+      var fields = ['scriptSelector', 'paramsInput', 'cmdlineInput', 'tagInput', 'scriptFilenameSelector', 'cmdFilenameSelector'];
       for(i = 0; i < fields.length; i++) setupInputField(fields[i]);
       getById('scriptSelector').onchange = function() {
         selectedScript = this.value;
@@ -52,15 +52,18 @@ sections['maintenance'] = {
       };
       getById('paramsInput').onblur = function() { paramsText = this.value; busy = false; };
       getById("cmdlineInput").onblur = function() { cmdlineText = this.value; busy = false; };
+      getById("tagInput").onblur = function() { tagText = this.value; busy = false; };
 
       if(selectedScript) getById('scriptSelector').value = selectedScript;
       if(cmdlineText) getById('cmdlineInput').value = cmdlineText;
       if(paramsText) getById('paramsInput').value = paramsText;
+      if(tagText) getById('tagInput').value = tagText;
 
       getById('scriptBtn').onclick = executeScript;
       getById('cmdlineBtn').onclick = executeCmdline;
       getById('abortBtn').onclick = executeAbort;
       getById('clearBtn').onclick = executeClear;
+      getById('tagBtn').onclick = executeTag;
 
       if(getById('scriptFilenameSelector')) {
         getById('scriptFilenameSelector').onchange = function() {
@@ -175,6 +178,14 @@ function executeSetOperations(cmd, params, boxes, filename) {
   executeStatusCmd(xml, processOperationsResult);
 }
 
+function executeSetTag(boxes, tag) {
+  if(!tag) tag = '';
+  var xml = '<set-tag tag="' + tag + '" include="true">\n';
+  for(var i = 0; i < boxes.length; i++) xml += '<box id="' + boxes[i] + '"/>\n';
+  xml += '</set-tag>\n';
+  executeStatusCmd(xml, processOperationsResult);
+}
+
 function processOperationsResult(xmlReply) {
   uncheckAllBoxes();
   selectSection();
@@ -197,6 +208,11 @@ function executeCmdline() {
     if(confirm('Run command line "' + cmdlineText + "' on " + boxes.length + " box(es)?"))
       executeSetOperations('cmd:' + cmdlineText, '', boxes, cmdSelectedFilename);
   }
+}
+
+function executeTag() {
+  var boxes = getSelectedBoxes();
+  if(boxes.length > 0) executeSetTag(boxes, tagText);
 }
 
 function executeAbort() {

@@ -362,6 +362,7 @@ public class DreamboxPlugin implements ProxyPlugin {
       String p = (String)params.get("params");
       String of = (String)params.get("filename");
       String id = (String)params.get("boxid");
+
       BoxMetaData box;
 
       if(id == null) { // no boxid specified, assume this a xml post with multiple boxes
@@ -381,6 +382,27 @@ public class DreamboxPlugin implements ProxyPlugin {
           if("".equals(op) || op == null) box.setPendingOperation(null);
           else box.setPendingOperation(new BoxOperation(op, p, of));
         }
+      }
+    }
+  }
+
+  public void runStatusCmdSetTag(XmlStringBuffer xb, Map params, String user) throws RemoteException {
+    if(!proxy.isAdmin(user)) xb.appendElement("error", "description", "Admin user required.", true);
+    else {
+      String id = (String)params.get("boxid");
+      String bt = (String)params.get("tag");
+      if("".equals(bt) || "null".equals(bt)) bt = null;
+      BoxMetaData box;
+
+      if(id == null) { // no boxid specified, assume this a xml post with multiple boxes
+        XMLConfig xml = (XMLConfig)params.get("xml");
+        for(Enumeration e = xml.getMultipleSubConfigs("box"); e.hasMoreElements(); ) {
+          box = registry.getBox(((XMLConfig)e.nextElement()).getString("id"));
+          if(box != null) box.setTag(bt);
+        }
+      } else {
+        box = registry.getBox(id);
+        if(box != null) box.setTag(bt);
       }
     }
   }
@@ -468,6 +490,7 @@ public class DreamboxPlugin implements ProxyPlugin {
     else xb.appendElement("box", "id", box.getBoxId());
     xb.appendAttr("user", box.getUser());
     xb.appendAttr("active", box.isActive());
+    if(box.getTag() != null) xb.appendAttr("tag", box.getTag());
     if(box.getTunnelPort() > 0) xb.appendAttr("tunnel-port", box.getTunnelPort());
     if(box.getPendingOperation() != null) xb.appendAttr("pending-operation", box.getPendingOperation().toString());
     if(box.getOperationCount() > 0) {

@@ -13,7 +13,7 @@ import java.util.*;
 public class BoxMetaData implements Serializable {
     
   private String macAddr, user;
-  private String boxId;
+  private String boxId, tag;
   private int interval;
   private long createTimeStamp, lastCheckinTimeStamp;
 
@@ -50,6 +50,14 @@ public class BoxMetaData implements Serializable {
 
   public void setTunnelPort(int tunnelPort) {
     this.tunnelPort = tunnelPort;
+  }
+
+  public String getTag() {
+    return tag;
+  }
+
+  public void setTag(String tag) {
+    this.tag = tag;
   }
 
   public BoxOperation getPendingOperation() {
