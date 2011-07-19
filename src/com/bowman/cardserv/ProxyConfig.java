@@ -264,7 +264,7 @@ public class ProxyConfig implements FileChangeListener {
   }
 
   public TvService getService(String profileName, int serviceId) {
-    if(serviceId == 0 || connManager.isServiceUnknown(profileName, serviceId))
+    if(serviceId == 0 || profileName == null || connManager.isServiceUnknown(profileName, serviceId))
       return TvService.getUnknownService(profileName, serviceId);
 
     Integer id = new Integer(serviceId);
