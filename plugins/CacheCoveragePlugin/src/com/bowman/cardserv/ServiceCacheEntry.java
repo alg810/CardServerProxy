@@ -160,7 +160,7 @@ public class ServiceCacheEntry implements Comparable {
     if(continuityCount * expectedInterval > 3600000) { // reset error counter if continous for 1h
       if(continuityErrors > 0) {
         resetContinuityErrors();
-        System.out.println(this + " Continous for " + continuityCount * expectedInterval);
+        // System.out.println(this + " Continous for " + continuityCount * expectedInterval);
       }
       continuityCount = 0;
     }

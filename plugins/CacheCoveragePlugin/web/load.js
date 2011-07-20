@@ -3,6 +3,7 @@
 var xsltTrCcp = new BowWeb.XsltTransformer("/plugin/cachecoverageplugin/open/xslt/cws-status-resp.xsl", postProcess);
 
 var hideExpiredEntries = true, hideLocalSources = false;
+var sourceFilter = '';
 
 //add the postProcess function to cs-status.js
 pluginsPostProcess.push("cacheCoveragePluginPostProcess()");
@@ -18,6 +19,7 @@ sections['cache'] = {
   handler: function(xml) {
     if(hideExpiredEntries) getFirstByTag('cache-contents', xml).setAttribute('hide-expired', 'true');
     if(hideLocalSources) getFirstByTag('cache-sources', xml).setAttribute('hide-local', 'true');
+    if(sourceFilter != '') getFirstByTag('cache-contents', xml).setAttribute('source-filter', sourceFilter);
 
     var services = xml.getElementsByTagName('service');
     for(var i = 0; i < services.length; i++) { // convert dec to hex for display, too messy for xslt
@@ -37,6 +39,8 @@ sections['cache'] = {
           var layerId = anchors[i].href;
           layerId = 'toggle-' + layerId.substring(layerId.lastIndexOf('/') + 1);
           anchors[i].href = 'javascript:BowWeb.toggleVisibility("' + layerId + '");';
+        } else if(anchors[i].id == 'filterhref') {
+          anchors[i].href = 'javascript:toggleFilter("' + anchors[i].href.toUpperCase() + '");';
         }
       }
 
@@ -44,7 +48,7 @@ sections['cache'] = {
     if(getById('hideExpiredCb')) {
       getById('hideExpiredCb').onclick = function() {
         if(isBusy()) return false;
-        sections.cache.queries[2] = 'cache-contents hide-expired="' + this.checked + '"';
+        sections.cache.queries[2] = 'cache-contents hide-expired="' + this.checked + '" source-filter="' + sourceFilter + '"';
         hideExpiredEntries = this.checked;
         selectSection();
       };
@@ -66,6 +70,13 @@ function setupInputField(idStr) {
     getById(idStr).onfocus = function() { busy = true; };
     getById(idStr).onblur = function() { busy = false; };
   }
+}
+
+function toggleFilter(sourceStr) {
+  if(sourceFilter == sourceStr) sourceFilter = '';
+  else sourceFilter = sourceStr;
+  sections.cache.queries[2] = 'cache-contents hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
+  selectSection();
 }
 
 function cacheCoveragePluginPostProcess() {

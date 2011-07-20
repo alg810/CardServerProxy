@@ -4,6 +4,7 @@
   <!-- default command-handler class: com.bowman.cardserv.web.XmlHelper -->
 
   <command name="cache-contents" label="Show current cache contents" description="List currently cached services with aggregated stats." admin-only="true">
+    <command-param name="source-filter" label="" optional="true"/>
     <command-param name="hide-expired" label="" optional="true">      
       <option value="true"/>
       <option value="false"/>
@@ -25,5 +26,11 @@
       <option value="false"/>
     </command-param>
   </command>
+
+  <command name="list-transponders" label="Show transponder details" description="List services per transponder (as parsed from services file)" admin-only="true">
+    <command-param name="tid" label="" optional="true"/>
+    <command-param name="profile" label="" optional="false"/>
+  </command>
+
 
 </status-commands>

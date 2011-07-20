@@ -8,7 +8,6 @@ import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.web.*;
 
 import java.io.*;
-import java.nio.channels.Pipe;
 import java.util.*;
 
 /**
@@ -191,7 +190,11 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
 
   public void runStatusCmdCacheContents(XmlStringBuffer xb, Map params) {
     boolean hideExpired = "true".equals(params.get("hide-expired"));
-    xmlFormatCacheContents(xb, hideExpired);
+    String sourceStr = (String)params.get("source-filter");
+    if("".equals(sourceStr)) sourceStr = null;
+    SourceCacheEntry source = null;
+    if(sourceStr != null) source = (SourceCacheEntry)sources.get(sourceStr.toUpperCase());
+    xmlFormatCacheContents(xb, hideExpired, source);
   }
 
   public void runStatusCmdServiceBacklog(XmlStringBuffer xb, Map params) {
@@ -214,7 +217,55 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     xmlFormatCacheSources(xb, hideLocal, name);
   }
 
-  public void xmlFormatCacheContents(XmlStringBuffer xb, boolean hideExpired) {
+  public void runStatusCmdListTransponders(XmlStringBuffer xb, Map params) {
+    String profile = (String)params.get("profile");
+    String tidStr = (String)params.get("tid");
+    int tid = -1;
+    if(tidStr != null) tid = Integer.parseInt(tidStr, 16);
+    if(profile != null) xmlFormatTransponderList(xb, profile, tid);
+  }
+
+  public void xmlFormatTransponderList(XmlStringBuffer xb, String profileName, int tidFilter) {
+    xb.appendElement("transponder-list", "profile", profileName);
+    CaProfile profile = config.getProfile(profileName);
+    if(profile != null) {
+      Map allServices = profile.getServices();
+      Map tpMap = new TreeMap();
+      TransponderEntry entry;
+      TvService ts; String key;
+      for(Iterator iter = allServices.values().iterator(); iter.hasNext(); ) {
+        ts = (TvService)iter.next();
+        key = profileName + "-" + Long.toHexString(ts.getTransponder());
+        entry = (TransponderEntry)tpMap.get(key);
+        if(entry == null) {
+          entry = new TransponderEntry(ts.getTransponder(), profileName);
+          tpMap.put(key, entry);
+        }
+        entry.addService(ts);
+      }
+      xb.appendAttr("count", tpMap.size());
+      xb.endElement(false);
+      for(Iterator iter = tpMap.values().iterator(); iter.hasNext(); ) {
+        entry = (TransponderEntry)iter.next();
+        if(tidFilter == -1) xmlFormatTransponder(xb, entry);
+        else if(tidFilter == entry.tid) xmlFormatTransponder(xb, entry);
+      }
+    }
+    xb.closeElement("transponder-list");
+  }
+
+  public void xmlFormatTransponder(XmlStringBuffer xb, TransponderEntry entry) {
+    xb.appendElement("transponder", "id", (int)entry.tid);
+    xb.appendAttr("service-count", entry.services.size());
+    xb.appendAttr("sd-count", entry.sd);
+    xb.appendAttr("hd-count", entry.hd);
+    xb.appendAttr("radio-count", entry.radio);
+    xb.endElement(false);
+    XmlHelper.xmlFormatServices((TvService[])entry.services.toArray(new TvService[entry.services.size()]), xb, false, false, null);
+    xb.closeElement("transponder");
+  }
+
+  public void xmlFormatCacheContents(XmlStringBuffer xb, boolean hideExpired, SourceCacheEntry filter) {
     xb.appendElement("cache-contents", "contexts", cacheMaps.size());
     xb.appendAttr("sources", sources.size());
     xb.endElement(false);
@@ -231,7 +282,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       xb.appendAttr("expected-interval", getCwValidityTime(key));
       xb.appendAttr("total-seen", map.size());
       xb.endElement(false);
-      xmlFormatCacheContext(xb, new TreeSet(map.values()), hideExpired);
+      xmlFormatCacheContext(xb, new TreeSet(map.values()), hideExpired, filter);
       xb.closeElement("cache-context");
     }
     xb.closeElement("cache-contents");
@@ -315,11 +366,13 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     return config.getProfileById(Integer.parseInt(pair[0], 16), Integer.parseInt(pair[1], 16));
   }
 
-  public static void xmlFormatCacheContext(XmlStringBuffer xb, Set entries, boolean hideExpired) {
+  public static void xmlFormatCacheContext(XmlStringBuffer xb, Set entries, boolean hideExpired, SourceCacheEntry filter) {
     ServiceCacheEntry sce;
+
     for(Iterator iter = entries.iterator(); iter.hasNext(); ) {
       sce = (ServiceCacheEntry)iter.next();
       if(hideExpired && sce.isExpired()) continue;
+      if(filter != null && !sce.getSources(false).contains(filter)) continue;
       int avgInterval = sce.getAvgInterval();
       int avgVariance = sce.getAvgVariance();
       xb.appendElement("service");
@@ -363,6 +416,36 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
 
   public byte[] getResource(String path, byte[] inData, boolean admin) {
     return null;
+  }
+
+  static class TransponderEntry {
+
+    long tid;
+    String profile;
+    int radio, sd, hd;
+
+    Set services = new TreeSet();
+
+    TransponderEntry(long tid, String profile) {
+      this.tid = tid;
+      this.profile = profile;
+    }
+
+    void addService(TvService ts) {
+      switch(ts.getType()) {
+        case TvService.TYPE_TV:
+          sd++;
+          break;
+        case TvService.TYPE_HDTV_MPEG2:
+        case TvService.TYPE_HDTV_MPEG4:
+          hd++;
+          break;
+        case TvService.TYPE_RADIO:
+          radio++;
+          break;
+      }
+      services.add(ts);
+    }
   }
 
 }

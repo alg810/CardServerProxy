@@ -56,6 +56,17 @@ public class SourceCacheEntry implements Comparable {
     return sourceStr.compareTo(((SourceCacheEntry)o).sourceStr);
   }
 
+  public boolean equals(Object o) {
+    if(this == o) return true;
+    if(o == null || getClass() != o.getClass()) return false;
+    SourceCacheEntry that = (SourceCacheEntry)o;
+    if(!sourceStr.equals(that.sourceStr)) return false;
+    return true;
+  }
+
+  public int hashCode() {
+    return sourceStr.hashCode();
+  }
 
   static class ReplyTuple {
     CamdNetMessage newReply, oldReply;

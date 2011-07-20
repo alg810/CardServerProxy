@@ -35,8 +35,14 @@
     <br />
     <xsl:call-template name="cache-sources"/>
     <br />
-    <xsl:if test="count(//service) > 0">
       <strong>Services: </strong><xsl:value-of select="count(//service)"/><br />
+      <xsl:if test="@source-filter"><strong>Filter: </strong><xsl:value-of select="@source-filter"/>&#160;
+        <a id="filterhref">
+          <xsl:attribute name="href"><xsl:value-of select="@source-filter"/></xsl:attribute>
+          <xsl:attribute name="title">Remove source filter</xsl:attribute>(show all)
+        </a>
+        <br />
+      </xsl:if>
       <br />
       <div style="width: 750px;">
       <input type="checkbox" name="hideExpiredCb" id="hideExpiredCb">
@@ -55,7 +61,7 @@
           <td title="Multiple (number of detected continuities)"><strong>#</strong></td>
           <td title="Update count"><strong>Uc</strong></td><td title="Current age"><strong>Age</strong></td>
           <td title="Average interval (measured)"><strong>Iv</strong></td><td title="Average variance (from expected interval)"><strong>Var</strong></td>
-          <td title="Continuity errors (gaps)"><strong>Ce</strong></td><td title="Total continuity errors"><strong>CeT</strong></td>
+          <td title="Continuity errors (within last hour)"><strong>Ce</strong></td><td title="Total continuity errors"><strong>CeT</strong></td>
           <td title="Overwrites (with different dcw)"><strong>Ow</strong></td><td title="Duplicates"><strong>Du</strong></td>
           <td title="Aborted requests (cancelled locks)"><strong>Ab</strong></td>
           <td title="Time offset (from earliest dcw in window)"><strong>Offs</strong></td>
@@ -66,7 +72,13 @@
           <tr>
             <td colspan="15" align="left" bgcolor="#dddddd">
               <div><xsl:value-of select="@key"/>
-                (<xsl:if test="@local-name">local-name: <strong><xsl:value-of select="@local-name"/></strong>, </xsl:if>
+                (<xsl:if test="@local-name">local-name: <strong>
+                  <a target="_blank">
+                    <xsl:attribute name="href">/xmlHandler?command=list-transponders&amp;profile=<xsl:value-of select="@local-name"/></xsl:attribute>
+                    <xsl:attribute name="title">Show transponder details (from local services file)</xsl:attribute>
+                    <xsl:value-of select="@local-name"/>
+                  </a></strong>,
+                </xsl:if>
                 expected-interval: <xsl:value-of select="@expected-interval"/>,
                 total-seen: <xsl:value-of select="@total-seen"/>, current-count: <xsl:value-of select="count(service)"/>)</div>
             </td>
@@ -87,7 +99,13 @@
                 </a>
               </td>
               <td><xsl:value-of select="@id"/></td>
-              <td><xsl:if test="@tid"><xsl:value-of select="@tid"/></xsl:if></td>
+              <td><xsl:if test="@tid">
+                <a target="_blank">
+                  <xsl:attribute name="href">/xmlHandler?command=list-transponders&amp;profile=<xsl:value-of select="../@local-name"/>&amp;tid=<xsl:value-of select="@tid"/></xsl:attribute>
+                  <xsl:attribute name="title">Show transponder details (from local services file)</xsl:attribute>
+                <xsl:value-of select="@tid"/>
+                </a>
+              </xsl:if></td>
               <td>
                 <xsl:choose>
                   <xsl:when test="@multiple &gt; 0">
@@ -135,7 +153,6 @@
         </xsl:for-each>
       </tbody></table>
       </div><br />
-    </xsl:if>
   </xsl:template>
 
   <xsl:template name="cache-sources">
@@ -163,7 +180,14 @@
             <xsl:if test="position() mod 2 = 0">
               <xsl:attribute name="bgcolor">#ffffff</xsl:attribute>
             </xsl:if>
-            <td>&#160;&#160;<xsl:value-of select="@name"/></td>
+            <td>
+              &#160;&#160;
+              <a id="filterhref">
+                <xsl:attribute name="href"><xsl:value-of select="@name"/></xsl:attribute>
+                <xsl:attribute name="title">Toggle filtering service entries for this source</xsl:attribute>
+                <xsl:value-of select="@name"/>
+              </a>
+            </td>
             <td><xsl:value-of select="@label"/></td>
             <td><xsl:value-of select="@update-count"/></td>
             <td>

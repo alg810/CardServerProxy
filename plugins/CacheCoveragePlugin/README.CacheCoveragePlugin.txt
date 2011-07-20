@@ -49,11 +49,16 @@ Status commands:
 ----------------
 - cache-contents: Show aggregated cache stats for all known contexts (services in cache, per context).
     optional parameters: hide-expired (true/false, exclude service entries that are older than their context cw validity).
+                         source-filter (only display entries which have this reported source address string)
 
 - cache-sources: Show stats per cache data source address.
     optional parameters: hide-local (true/false, exclude local sources).
 
 - service-backlog: Show transaction backlog and current sources for selected service (last 60s).
+
+- transponder-list: Show services per transponder for locally known profiles (as parsed from services file).
+    mandatory parameters: profile (name of local profile)
+    optional parameters: tid (transponder id, in hex)
 
 Usage example
 -------------
