@@ -2,7 +2,7 @@
 // make a new xsltransformer for this plugin
 var xsltTrCcp = new BowWeb.XsltTransformer("/plugin/cachecoverageplugin/open/xslt/cws-status-resp.xsl", postProcess);
 
-var hideExpiredEntries = true, hideLocalSources = false;
+var hideExpiredEntries = true, hideLocalSources = false, showMissingEntries = false;
 var sourceFilter = '';
 
 //add the postProcess function to cs-status.js
@@ -18,6 +18,7 @@ sections['cache'] = {
   repeat: true,
   handler: function(xml) {
     if(hideExpiredEntries) getFirstByTag('cache-contents', xml).setAttribute('hide-expired', 'true');
+    if(showMissingEntries) getFirstByTag('cache-contents', xml).setAttribute('show-missing', 'true');
     if(hideLocalSources) getFirstByTag('cache-sources', xml).setAttribute('hide-local', 'true');
     if(sourceFilter != '') getFirstByTag('cache-contents', xml).setAttribute('source-filter', sourceFilter);
 
@@ -48,8 +49,16 @@ sections['cache'] = {
     if(getById('hideExpiredCb')) {
       getById('hideExpiredCb').onclick = function() {
         if(isBusy()) return false;
-        sections.cache.queries[2] = 'cache-contents hide-expired="' + this.checked + '" source-filter="' + sourceFilter + '"';
+        sections.cache.queries[2] = 'cache-contents show-missing="' + showMissingEntries + '" hide-expired="' + this.checked + '" source-filter="' + sourceFilter + '"';
         hideExpiredEntries = this.checked;
+        selectSection();
+      };
+    }
+    if(getById('showMissingCb')) {
+      getById('showMissingCb').onclick = function() {
+        if(isBusy()) return false;
+        sections.cache.queries[2] = 'cache-contents show-missing="' + this.checked + '" hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
+        showMissingEntries = this.checked;
         selectSection();
       };
     }
@@ -75,7 +84,7 @@ function setupInputField(idStr) {
 function toggleFilter(sourceStr) {
   if(sourceFilter == sourceStr) sourceFilter = '';
   else sourceFilter = sourceStr;
-  sections.cache.queries[2] = 'cache-contents hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
+  sections.cache.queries[2] = 'cache-contents show-missing="' + showMissingEntries + '" hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
   selectSection();
 }
 

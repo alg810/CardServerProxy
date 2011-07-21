@@ -39,7 +39,7 @@ public class ServiceCacheEntry implements Comparable {
   }
 
   public long getAge() {
-    return System.currentTimeMillis() - request.getTimeStamp();
+    return request==null?-1:System.currentTimeMillis() - request.getTimeStamp();
   }
 
   public int getContinuityErrors() {

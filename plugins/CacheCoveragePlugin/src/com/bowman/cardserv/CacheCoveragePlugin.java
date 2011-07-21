@@ -190,11 +190,12 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
 
   public void runStatusCmdCacheContents(XmlStringBuffer xb, Map params) {
     boolean hideExpired = "true".equals(params.get("hide-expired"));
+    boolean showMissing = "true".equals(params.get("show-missing"));
     String sourceStr = (String)params.get("source-filter");
     if("".equals(sourceStr)) sourceStr = null;
     SourceCacheEntry source = null;
     if(sourceStr != null) source = (SourceCacheEntry)sources.get(sourceStr.toUpperCase());
-    xmlFormatCacheContents(xb, hideExpired, source);
+    xmlFormatCacheContents(xb, hideExpired, showMissing, source);
   }
 
   public void runStatusCmdServiceBacklog(XmlStringBuffer xb, Map params) {
@@ -205,7 +206,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     String profileKey = CaProfile.getKeyStr(onid, caid);
     Map map = (Map)cacheMaps.get(profileKey);
     CaProfile profile = config.getProfileById(onid, caid);
-    String profileName = profile==null?profileKey:profile.getName();
+    String profileName = profile==null?null:profile.getName();
     TvService ts = config.getService(profileName, sid);
     if(ts.getProfileName() == null || "*".equals(ts.getProfileName())) ts = new TvService(ts, 0, profileKey);
     xmlFormatServiceBacklog(xb, (ServiceCacheEntry)map.get(ts));
@@ -265,7 +266,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     xb.closeElement("transponder");
   }
 
-  public void xmlFormatCacheContents(XmlStringBuffer xb, boolean hideExpired, SourceCacheEntry filter) {
+  public void xmlFormatCacheContents(XmlStringBuffer xb, boolean hideExpired, boolean showMissing, SourceCacheEntry filter) {
     xb.appendElement("cache-contents", "contexts", cacheMaps.size());
     xb.appendAttr("sources", sources.size());
     xb.endElement(false);
@@ -282,7 +283,16 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       xb.appendAttr("expected-interval", getCwValidityTime(key));
       xb.appendAttr("total-seen", map.size());
       xb.endElement(false);
-      xmlFormatCacheContext(xb, new TreeSet(map.values()), hideExpired, filter);
+      Set set = new TreeSet(map.values());
+      if(profile != null && showMissing) {
+        TvService ts;
+        for(Iterator i = profile.getServices().values().iterator(); i.hasNext(); ) {
+          ts = (TvService)i.next();
+          if(ts.isTv() && ts.getType() != TvService.TYPE_RADIO)
+            if(!map.containsKey(ts)) set.add(new ServiceCacheEntry(ts, null, getCwValidityTime(key), map));
+        }
+      }
+      xmlFormatCacheContext(xb, set, hideExpired, filter);
       xb.closeElement("cache-context");
     }
     xb.closeElement("cache-contents");
@@ -372,7 +382,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     for(Iterator iter = entries.iterator(); iter.hasNext(); ) {
       sce = (ServiceCacheEntry)iter.next();
       if(hideExpired && sce.isExpired()) continue;
-      if(filter != null && !sce.getSources(false).contains(filter)) continue;
+      if(sce.request != null && filter != null && !sce.getSources(false).contains(filter)) continue;
       int avgInterval = sce.getAvgInterval();
       int avgVariance = sce.getAvgVariance();
       xb.appendElement("service");
@@ -385,7 +395,8 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       xb.appendAttr("total-continuity-errors", sce.getContinuityErrorsTotal());
       xb.appendAttr("avg-interval", avgInterval==-1?"?":String.valueOf(avgInterval));
       xb.appendAttr("avg-variance", avgVariance==-1?"?":String.valueOf(avgVariance));
-      xb.appendAttr("age", sce.getAge());
+      if(sce.request != null) xb.appendAttr("age", sce.getAge());
+      else xb.appendAttr("missing", "true");
       if(sce.getMultiple() > 0 ) xb.appendAttr("multiple", sce.getMultiple());
       if(sce.getOverwriteCount() > 0) xb.appendAttr("overwrites", sce.getOverwriteCount());
       if(sce.getDuplicateCount() > 0) xb.appendAttr("duplicates", sce.getDuplicateCount());

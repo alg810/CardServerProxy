@@ -51,6 +51,13 @@
         </xsl:if>
       </input>
       <label for="hideExpiredCb">Hide expired entries</label>
+      &#160;&#160;
+      <input type="checkbox" name="showMissingCb" id="showMissingCb">
+        <xsl:if test="@show-missing">
+          <xsl:attribute name="checked">checked</xsl:attribute>
+        </xsl:if>
+      </input>
+      <label for="showMissingCb">Show missing services (parsed from file, where available)</label>
       </div>
       <br />
       <div class="cwsheader" style="width: 750px;">
@@ -92,11 +99,22 @@
                 <xsl:attribute name="bgcolor">#ffffff</xsl:attribute>
               </xsl:if>
               <td>&#160;&#160;
-                <a target="_blank">
-                  <xsl:attribute name="href">/xmlHandler?command=service-backlog&amp;sid=<xsl:value-of select="@id"/>&amp;onid=<xsl:value-of select="../@onid"/>&amp;caid=<xsl:value-of select="../@caid"/></xsl:attribute>
-                  <xsl:attribute name="title">Show service transaction backlog</xsl:attribute>
-                <xsl:value-of select="@name"/>
-                </a>
+                <xsl:choose>
+                  <xsl:when test="@missing = 'true'">
+                    <span>
+                      <xsl:attribute name="style">text-decoration: line-through</xsl:attribute>
+                      <xsl:value-of select="@name"/>
+                    </span>
+                  </xsl:when>
+                  <xsl:otherwise>
+                    <a target="_blank">
+                      <xsl:attribute name="href">/xmlHandler?command=service-backlog&amp;sid=<xsl:value-of select="@id"/>&amp;onid=<xsl:value-of select="../@onid"/>&amp;caid=<xsl:value-of select="../@caid"/></xsl:attribute>
+                      <xsl:attribute name="title">Show service transaction backlog</xsl:attribute>
+                      <xsl:value-of select="@name"/>
+                    </a>
+                  </xsl:otherwise>
+                </xsl:choose>
+
               </td>
               <td><xsl:value-of select="@id"/></td>
               <td><xsl:if test="@tid">
