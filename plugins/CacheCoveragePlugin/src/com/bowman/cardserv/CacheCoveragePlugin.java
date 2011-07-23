@@ -192,10 +192,12 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     boolean hideExpired = "true".equals(params.get("hide-expired"));
     boolean showMissing = "true".equals(params.get("show-missing"));
     String sourceStr = (String)params.get("source-filter");
+    String excludeStr = (String)params.get("exclude-keys");
+    Set excludedKeys = excludeStr==null?Collections.EMPTY_SET:new HashSet(Arrays.asList(excludeStr.split(",")));
     if("".equals(sourceStr)) sourceStr = null;
     SourceCacheEntry source = null;
     if(sourceStr != null) source = (SourceCacheEntry)sources.get(sourceStr.toUpperCase());
-    xmlFormatCacheContents(xb, hideExpired, showMissing, source);
+    xmlFormatCacheContents(xb, hideExpired, showMissing, source, excludedKeys);
   }
 
   public void runStatusCmdServiceBacklog(XmlStringBuffer xb, Map params) {
@@ -266,7 +268,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     xb.closeElement("transponder");
   }
 
-  public void xmlFormatCacheContents(XmlStringBuffer xb, boolean hideExpired, boolean showMissing, SourceCacheEntry filter) {
+  public void xmlFormatCacheContents(XmlStringBuffer xb, boolean hideExpired, boolean showMissing, SourceCacheEntry filter, Set excludedKeys) {
     xb.appendElement("cache-contents", "contexts", cacheMaps.size());
     xb.appendAttr("sources", sources.size());
     xb.endElement(false);
@@ -283,16 +285,18 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       xb.appendAttr("expected-interval", getCwValidityTime(key));
       xb.appendAttr("total-seen", map.size());
       xb.endElement(false);
-      Set set = new TreeSet(map.values());
-      if(profile != null && showMissing) {
-        TvService ts;
-        for(Iterator i = profile.getServices().values().iterator(); i.hasNext(); ) {
-          ts = (TvService)i.next();
-          if(ts.isTv() && ts.getType() != TvService.TYPE_RADIO)
-            if(!map.containsKey(ts)) set.add(new ServiceCacheEntry(ts, null, getCwValidityTime(key), map));
+      if(!excludedKeys.contains(key)) {
+        Set set = new TreeSet(map.values());
+        if(profile != null && showMissing) {
+          TvService ts;
+          for(Iterator i = profile.getServices().values().iterator(); i.hasNext(); ) {
+            ts = (TvService)i.next();
+            if(ts.isTv() && ts.getType() != TvService.TYPE_RADIO)
+              if(!map.containsKey(ts)) set.add(new ServiceCacheEntry(ts, null, getCwValidityTime(key), map));
+          }
         }
+        xmlFormatCacheContext(xb, set, hideExpired, filter);
       }
-      xmlFormatCacheContext(xb, set, hideExpired, filter);
       xb.closeElement("cache-context");
     }
     xb.closeElement("cache-contents");

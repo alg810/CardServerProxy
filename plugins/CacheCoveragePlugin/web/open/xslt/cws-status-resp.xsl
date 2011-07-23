@@ -87,10 +87,18 @@
                   </a></strong>,
                 </xsl:if>
                 expected-interval: <xsl:value-of select="@expected-interval"/>,
-                total-seen: <xsl:value-of select="@total-seen"/>, current-count: <xsl:value-of select="count(service)"/>)</div>
+                total-seen: <xsl:value-of select="@total-seen"/>, current-count: <xsl:value-of select="count(service)"/>)
+                <span style="float: right;">
+                  <input type="checkbox" id="toggleCb">
+                    <xsl:attribute name="name"><xsl:value-of select="@key"/></xsl:attribute>
+                    <xsl:if test="not(@excluded)"><xsl:attribute name="checked">true</xsl:attribute></xsl:if>
+                  </input>
+                </span>
+              </div>
             </td>
           </tr>
           <xsl:for-each select="service">
+            <xsl:sort select="@tid"/>
             <tr>
               <xsl:if test="@expired = 'true'">
                 <xsl:attribute name="style">font-style: italic</xsl:attribute>

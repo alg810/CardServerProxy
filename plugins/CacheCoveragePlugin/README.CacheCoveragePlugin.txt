@@ -19,7 +19,7 @@ allowing the cw change distribution over time within one period to be estimated.
 switchovers at the same time.
 
 NOTE:
-- Adds a 'Cache' page to the status web (admin users only).
+- Adds a 'Cache' page to the status web (admin users only). Mouseover column titles for explanations.
 - Requires CSP 0.9.1RC r192 or newer.
 
 - Default cw validity is assumed at 10 secs, for profiles/contexts that have something else manual config is required.
@@ -48,8 +48,10 @@ Example config:
 Status commands:
 ----------------
 - cache-contents: Show aggregated cache stats for all known contexts (services in cache, per context).
-    optional parameters: hide-expired (true/false, exclude service entries that are older than their context cw validity).
+    optional parameters: hide-expired (true/false, exclude service entries that are older than their context cw validity)
+                         show-missing (true/false, include service entries parsed from e1/e2 files, that aren't in cache)
                          source-filter (only display entries which have this reported source address string)
+                         exclude-keys (exclude contents of selected cache contexts, comma separated list of keys)
 
 - cache-sources: Show stats per cache data source address.
     optional parameters: hide-local (true/false, exclude local sources).
@@ -62,5 +64,5 @@ Status commands:
 
 Usage example
 -------------
-http://proxy.host.com/xmlHandler?command=cache-contents&hide-expired=false
+http://proxy.host.com/xmlHandler?command=cache-contents&hide-expired=false&show-missing=true
                              

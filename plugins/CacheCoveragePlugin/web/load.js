@@ -4,6 +4,7 @@ var xsltTrCcp = new BowWeb.XsltTransformer("/plugin/cachecoverageplugin/open/xsl
 
 var hideExpiredEntries = true, hideLocalSources = false, showMissingEntries = false;
 var sourceFilter = '';
+var excludedKeys = {};
 
 //add the postProcess function to cs-status.js
 pluginsPostProcess.push("cacheCoveragePluginPostProcess()");
@@ -28,37 +29,58 @@ sections['cache'] = {
       if(services[i].getAttribute('tid')) services[i].setAttribute('tid', (new Number(services[i].getAttribute('tid')).toString(16)));
     }
 
+    var contexts = xml.getElementsByTagName('cache-context');
+    for(i = 0; i < contexts.length; i++) {
+      if(excludedKeys[contexts[i].getAttribute('key')]) {
+        contexts[i].setAttribute("excluded", 'true');
+      }
+    }
+
     var cache = getFirstByTag('cache-status', xml);
     cache.setAttribute('display', BowWeb.getLayerVis('toggle-' + cache.getAttribute('type'), 'none'));
 
     xsltTrCcp.transform(xml);
 
-      // attach visibility handlers to links
-      var anchors = getAllByTag('a');
-      for(i = 0; i < anchors.length; i++) {
-        if(anchors[i].id == 'openhref') {
-          var layerId = anchors[i].href;
-          layerId = 'toggle-' + layerId.substring(layerId.lastIndexOf('/') + 1);
-          anchors[i].href = 'javascript:BowWeb.toggleVisibility("' + layerId + '");';
-        } else if(anchors[i].id == 'filterhref') {
-          anchors[i].href = 'javascript:toggleFilter("' + anchors[i].href.toUpperCase() + '");';
-        }
+    // attach visibility handlers to links
+    var anchors = getAllByTag('a');
+    for(i = 0; i < anchors.length; i++) {
+      if(anchors[i].id == 'openhref') {
+        var layerId = anchors[i].href;
+        layerId = 'toggle-' + layerId.substring(layerId.lastIndexOf('/') + 1);
+        anchors[i].href = 'javascript:BowWeb.toggleVisibility("' + layerId + '");';
+      } else if(anchors[i].id == 'filterhref') {
+        anchors[i].href = 'javascript:toggleFilter("' + anchors[i].href.toUpperCase() + '");';
       }
+    }
+
+    var inputs = getAllByTag('input');
+    for(i = 0; i < inputs.length; i++) {
+      if(inputs[i].id == 'toggleCb') {
+        inputs[i].onchange = function() {
+          if(isBusy()) return false;
+          var key = this.name;
+          if(!this.checked) excludedKeys[key] = 'true';
+          else delete excludedKeys[key];
+          updateCacheQuery();
+          selectSection();
+        };
+      }
+    }
 
     // add handler for the hide-inactive checkbox
     if(getById('hideExpiredCb')) {
       getById('hideExpiredCb').onclick = function() {
         if(isBusy()) return false;
-        sections.cache.queries[2] = 'cache-contents show-missing="' + showMissingEntries + '" hide-expired="' + this.checked + '" source-filter="' + sourceFilter + '"';
         hideExpiredEntries = this.checked;
+        updateCacheQuery();
         selectSection();
       };
     }
     if(getById('showMissingCb')) {
       getById('showMissingCb').onclick = function() {
         if(isBusy()) return false;
-        sections.cache.queries[2] = 'cache-contents show-missing="' + this.checked + '" hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
         showMissingEntries = this.checked;
+        updateCacheQuery();
         selectSection();
       };
     }
@@ -84,8 +106,15 @@ function setupInputField(idStr) {
 function toggleFilter(sourceStr) {
   if(sourceFilter == sourceStr) sourceFilter = '';
   else sourceFilter = sourceStr;
-  sections.cache.queries[2] = 'cache-contents show-missing="' + showMissingEntries + '" hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
+  updateCacheQuery();
   selectSection();
+}
+
+function updateCacheQuery() {
+  var keys = new Array();
+  for(var key in excludedKeys) keys.push(key);
+  sections.cache.queries[2] = 'cache-contents show-missing="' + showMissingEntries + '" hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
+  if(keys.length > 0) sections.cache.queries[2] += ' exclude-keys="' + keys.join(",") + '"';
 }
 
 function cacheCoveragePluginPostProcess() {
