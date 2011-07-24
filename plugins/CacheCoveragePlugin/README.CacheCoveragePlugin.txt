@@ -60,7 +60,7 @@ Status commands:
 
 - transponder-list: Show services per transponder for locally known profiles (as parsed from services file).
     mandatory parameters: profile (name of local profile)
-    optional parameters: tid (transponder id, in hex)
+    optional parameters: tid (transponder id)
 
 Usage example
 -------------

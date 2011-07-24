@@ -201,7 +201,10 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
   }
 
   public void runStatusCmdServiceBacklog(XmlStringBuffer xb, Map params) {
-    int sid = Integer.parseInt((String)params.get("sid"), 16);
+    int sid = -1;
+    String sidStr = (String)params.get("sid");
+    if(sidStr.startsWith("0x")) sid = Integer.parseInt(sidStr.substring(2), 16);
+    else sid = Integer.parseInt(sidStr);
     int onid = Integer.parseInt((String)params.get("onid"), 16);
     int caid = Integer.parseInt((String)params.get("caid"), 16);
 
@@ -224,7 +227,10 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     String profile = (String)params.get("profile");
     String tidStr = (String)params.get("tid");
     int tid = -1;
-    if(tidStr != null) tid = Integer.parseInt(tidStr, 16);
+    if(tidStr != null) {
+      if(tidStr.startsWith("0x")) tid = Integer.parseInt(tidStr.substring(2), 16);
+      else tid = Integer.parseInt(tidStr);
+    }
     if(profile != null) xmlFormatTransponderList(xb, profile, tid);
   }
 

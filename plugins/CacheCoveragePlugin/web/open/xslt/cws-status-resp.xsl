@@ -63,8 +63,12 @@
       <div class="cwsheader" style="width: 750px;">
         <table id="services" border="0" width="100%"><tbody>
         <tr>
-          <td>&#160;&#160;<strong>Service name</strong></td><td title="Service id (from cache metadata)"><strong>SID</strong></td>
-          <td title="Transport stream id (assumed, from services file)"><strong>TID</strong></td>
+          <td>&#160;&#160;<strong>Service name</strong></td><td title="Service id (from cache metadata)">
+            <a href="javascript:toggleSidDisplay();"><strong>SID</strong></a>
+          </td>
+          <td title="Transport stream id (assumed, from services file): Toggle hex/dec">
+            <a href="javascript:toggleTidDisplay();"><strong>TID</strong></a>
+          </td>
           <td title="Multiple (number of detected continuities)"><strong>#</strong></td>
           <td title="Update count"><strong>Uc</strong></td><td title="Current age"><strong>Age</strong></td>
           <td title="Average interval (measured)"><strong>Iv</strong></td><td title="Average variance (from expected interval)"><strong>Var</strong></td>

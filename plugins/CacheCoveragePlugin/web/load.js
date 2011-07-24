@@ -2,7 +2,7 @@
 // make a new xsltransformer for this plugin
 var xsltTrCcp = new BowWeb.XsltTransformer("/plugin/cachecoverageplugin/open/xslt/cws-status-resp.xsl", postProcess);
 
-var hideExpiredEntries = true, hideLocalSources = false, showMissingEntries = false;
+var hideExpiredEntries = true, hideLocalSources = false, showMissingEntries = false, sidInHex = true, tidInHex = true;
 var sourceFilter = '';
 var excludedKeys = {};
 
@@ -25,8 +25,10 @@ sections['cache'] = {
 
     var services = xml.getElementsByTagName('service');
     for(var i = 0; i < services.length; i++) { // convert dec to hex for display, too messy for xslt
-      if(services[i].getAttribute('id') != 'N/A') services[i].setAttribute('id', (new Number(services[i].getAttribute('id')).toString(16)));
-      if(services[i].getAttribute('tid')) services[i].setAttribute('tid', (new Number(services[i].getAttribute('tid')).toString(16)));
+      if(sidInHex)
+        if(services[i].getAttribute('id') != 'N/A') services[i].setAttribute('id', '0x' + (new Number(services[i].getAttribute('id')).toString(16)));
+      if(tidInHex)
+        if(services[i].getAttribute('tid')) services[i].setAttribute('tid', '0x' + (new Number(services[i].getAttribute('tid')).toString(16)));
     }
 
     var contexts = xml.getElementsByTagName('cache-context');
@@ -107,6 +109,16 @@ function toggleFilter(sourceStr) {
   if(sourceFilter == sourceStr) sourceFilter = '';
   else sourceFilter = sourceStr;
   updateCacheQuery();
+  selectSection();
+}
+
+function toggleTidDisplay() {
+  tidInHex = !tidInHex;
+  selectSection();
+}
+
+function toggleSidDisplay() {
+  sidInHex = !sidInHex;
   selectSection();
 }
 
