@@ -31,6 +31,7 @@ public interface RemoteProxy extends Remote {
   TvService[] getServices(String cwsName, boolean merge) throws RemoteException;
   TvService[] getCannotDecodeServices(String cwsName) throws RemoteException;
   TvService[] getWatchedServices(String[] profiles) throws RemoteException;
+  TvService[] getParsedServices(String[] profiles) throws RemoteException;
   ProfileStatus[] getProfiles() throws RemoteException;
   CacheStatus getCacheStatus() throws RemoteException;
   PluginStatus[] getPlugins() throws RemoteException;

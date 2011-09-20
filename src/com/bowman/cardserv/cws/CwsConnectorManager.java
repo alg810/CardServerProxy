@@ -289,7 +289,7 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
   }
 
   void updateDecodeMaps(ProxyXmlConfig xml, String name, String profileName) throws ConfigException {
-    CwsServiceMapper mapper;
+    CwsServiceMapper mapper, m = null;
     if(CaProfile.MULTIPLE.getName().equals(profileName)) {
       mapper = null;
       for(Iterator i = new ArrayList(serviceMappers.values()).iterator(); i.hasNext(); )
@@ -310,16 +310,17 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
           exclusive = "true".equalsIgnoreCase(cds.getStringValue("exclusive", "false"));
           if(mapper == null) { // multi context connector, profile must be specified per can-decode-services element
             profile = cds.getStringValue("profile");
-            mapper = getServiceMapper(profile);
-            if(mapper == null)
+            m = getServiceMapper(profile);
+            if(m == null)
               throw new ConfigException(cds.getFullName(), "Unknown/disabled profile for can-decode-services: " + profile);
           } else {
             if(cds.getStringValue("profile", "").length() > 0)
               throw new ConfigException(cds.getFullName(), "Profile not allowed for can-decode-services for this connector type.");
           }
-          storeDecodeState(name, ProxyConfig.getServiceTokens("can-decode-services", canDecodeList, false), mapper.overrideCanDecodeMap);
-          if(exclusive) mapper.exclusiveConnectors.add(name);
-          else mapper.exclusiveConnectors.remove(name);
+          if(m == null) m = mapper;
+          storeDecodeState(name, ProxyConfig.getServiceTokens("can-decode-services", canDecodeList, false), m.overrideCanDecodeMap);
+          if(exclusive) m.exclusiveConnectors.add(name);
+          else m.exclusiveConnectors.remove(name);
         }
       }
     }

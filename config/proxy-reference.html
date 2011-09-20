@@ -234,7 +234,7 @@ Contents (element paths in <strong>bold</strong> represent common changes, anyth
   </ul>
 </ul>
 <br />  
-<li><a href="#cache-handler">cache-handler</a></li>
+<li><a href="#cache-handler">cache-handler (attributes: *class, jar-file, enable-service-linking)</a></li>
 <ul>
   <li><a href="#cache-handler/cache-config">cache-handler/cache-config</a></li>
   <ul>
@@ -1299,10 +1299,19 @@ This is the arbitrary configuration that is supplied to the plugin, it may conta
 </a>
 
 <a name="cache-handler">
-<div class='indent'>cache-handler (attributes: *class, jar-file)</div><br />
+<div class='indent'>cache-handler (attributes: *class, jar-file, enable-service-linking)</div><br />
 The cache handler is responsible for keeping track of which ECM's have been sent to cards and are currently awaiting CW, and for which ECM's the CW is already known. Exactly how to achieve this with maximum efficiency and error-handling is non-trivial so the entire cache implementation can be replaced with a customized version.<br />
-- <strong class='bold'>class</strong>: Java class name for the cache class. It must implement the interface com.bowman.cardserv.interfaces.CacheHandler.<br />
+- <strong class='bold'>class</strong>: Java class name for the cache class. It must implement the interface com.bowman.cardserv.interfaces.CacheHandler. Unless a jar file is specified, the internal options are: <strong class='bold'>com.bowman.cardserv.DefaultCache</strong> or <strong class='bold'>com.bowman.cardserv.ClusteredCache</strong> (see below for details).<br />
 - <strong class='bold'>jar-file</strong>: Allows loading the cache class via a separate classloader, from an external jar file in the "plugins" dir. This should make it easier to handle custom implementations. If jar-file is omitted, the system classloader is used (as in all versions before 0.8.10).<br />
+- <strong class='bold'>enable-service-linking</strong>: true/false (default: false). Enables the experimental SidCacheLinker (as of 0.9.1). This allows cache hits based on ecm metadata rather than contents, i.e: sid + caid combinations can be linked together, indicating that the cw for one service may also be used to unscramble another (even when the ecm data differs). This can reduce card traffic, and in some systems unlock services that would otherwise be entirely inaccessible. Links have to be manually specified via etc/links.cfg or http admin commands. Without an up-to-date list of valid links, this feature has no effect.<br />
+<br />
+Example: <br /><br />
+  <em class='italic'>&lt;cache-handler class="com.bowman.cardserv.MyCustomCache" jar-file="mycustomcache.jar" enable-service-linking="false"></em> <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;cache-config></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;cw-max-age>>19&lt;/cw-max-age></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;max-cache-wait>40%&lt;/max-cache-wait></em>  <br />
+  &nbsp;&nbsp;&nbsp;&nbsp;<em class='italic'>&lt;/cache-config></em>  <br />
+  <em class='italic'>&lt;/cache-handler></em> <br />
 <br />
 </a>
 

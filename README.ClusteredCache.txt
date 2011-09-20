@@ -111,6 +111,11 @@ This adds 200 ms to every single transaction, but should ensure that a cluster o
 proxy, once, for the same ecm. Probably only usable in a cluster where all nodes are fully trusted, and where the
 network is reliable with fairly fixed ping times and no congestion.
 
+  <auto-add-peers>false</auto-add-peers>
+
+- Added in 0.9.1. Set to true to automatically add any remote peer that is sending updates to this cache (so updates
+will be sent there from this node).
+
 </cache-config>
 
 ------------------------------------------------------

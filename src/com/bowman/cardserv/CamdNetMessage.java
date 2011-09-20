@@ -3,6 +3,7 @@ package com.bowman.cardserv;
 import com.bowman.cardserv.interfaces.CamdConstants;
 import com.bowman.cardserv.crypto.DESUtil;
 
+import java.awt.image.ImagingOpException;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.io.*;
@@ -160,6 +161,27 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return msg;
   }
 
+  public static CamdNetMessage parseGHttpReq(DataInputStream dais, String remoteAddr, boolean full) throws IOException {
+    CamdNetMessage msg = new CamdNetMessage(dais.readUnsignedByte());
+    msg.type = TYPE_RECEIVED;
+    msg.protocol = "GHttp";
+    msg.remoteAddress = remoteAddr;
+    if(full) {
+      msg.networkId = dais.readUnsignedShort();
+      msg.tid = dais.readUnsignedShort();
+      msg.pid = dais.readUnsignedShort();
+    }
+    msg.caId = dais.readUnsignedShort();
+    msg.providerIdent = dais.readInt();
+    msg.setServiceId(dais.readUnsignedShort());
+    msg.dataLength = dais.readUnsignedShort();
+    msg.customData = new byte[msg.dataLength];
+    dais.readFully(msg.customData);
+    msg.refreshDataHash();
+    msg.rawIn = msg.customData; // todo
+    if(!msg.isEcm()) throw new IOException("bad command byte: " + msg.getCommandName());
+    return msg;
+  }
 
   private long timeStamp;
   private int commandTag;
@@ -170,6 +192,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   private String[] stringData;
   private Set providerContext = new HashSet();
   private int caId, networkId, providerIdent = -1;
+  private int tid, pid;
   private int customId;
   private int dataHash;
   private int type;
@@ -244,6 +267,17 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     this.stringData = new String[0];
     this.fixedData = new byte[10];
     this.type = TYPE_RECEIVED;
+  }
+
+  public CamdNetMessage(int commandTag, byte[] customData) {
+    this();
+    this.commandTag = commandTag;
+    this.dataLength = customData.length;
+    this.customData = customData;
+    this.stringData = new String[0];
+    this.fixedData = new byte[10];
+    this.type = TYPE_RECEIVED;
+    refreshDataHash();
   }
 
   public int getCommandTag() {
@@ -541,6 +575,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return dataHash;
   }
 
+
   public String hashCodeStr() {
     StringBuffer sb = new StringBuffer(Integer.toHexString(hashCode()));
     while(sb.length() < 8) sb.insert(0, '0');
@@ -646,6 +681,22 @@ public class CamdNetMessage implements CamdConstants, Serializable {
 
   public void setNetworkId(int networkId) {
     this.networkId = networkId;
+  }
+
+  public int getTid() {
+    return tid;
+  }
+
+  public void setTid(int tid) {
+    this.tid = tid;
+  }
+
+  public int getPid() {
+    return pid;
+  }
+
+  public void setPid(int pid) {
+    this.pid = pid;
   }
 
   public int getProviderIdent() {

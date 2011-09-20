@@ -364,7 +364,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     return super.processRequest(successFactor, request, alwaysWait, maxCwWait); // call the default processing
   }
 
-  protected void delayAlert(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxWait) {
+  public void delayAlert(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxWait) {
     // only ask for help if there is no local resource
     if(successFactor == -1 || alwaysWait || successFactor > maxWait) sendResendRequest(request);
   }

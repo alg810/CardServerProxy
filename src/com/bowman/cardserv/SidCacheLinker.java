@@ -111,6 +111,9 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
         logger.info("Loaded sid links file, " + linkStrs.size() + " collections: " + linkStrs);
         refreshAddedSet();
         linksChanged = false;
+      } catch(NullPointerException e) {
+        logger.throwing(e);
+        logger.fine("Unable to read sid links file, retrying...");
       } catch(Exception e) {
         logger.throwing(e);
         logger.warning("Unable to read sid links file: "+ e);

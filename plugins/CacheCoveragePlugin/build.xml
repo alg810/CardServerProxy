@@ -7,6 +7,7 @@
   <property name="dir.web" value="web"/>
 	
 	<property name="dir.cardservproxy.dist" value="../../dist"/>
+  <property name="dir.cardservproxy.lib" value="../../lib"/>
 	
 	<!-- build-folder -->
 	<property name="dir.build" value="build"/>
@@ -20,6 +21,7 @@
 	<!-- lib files -->
 	<patternset id="files.csp.lib">  
 		<include name="cardservproxy.jar"/>
+		<include name="bowman.jar"/>
 	</patternset>
 	<patternset id="files.lib">  
 		<include name="*.jar"/>
@@ -56,6 +58,7 @@
 		<delete>
 			<fileset dir="${dir.lib}">
 				<include name="cardservproxy.jar"/>
+        <include name="bowman.jar"/>
 			</fileset>      
 		</delete>
 		<delete>
@@ -76,6 +79,7 @@
 		<mkdir dir="${dir.classes.web}"/>
 		
 		<copy-fileset destination-dir="${dir.lib}" source-dir="${dir.cardservproxy.dist}" path-id="files.csp.lib"/>
+    <copy-fileset destination-dir="${dir.lib}" source-dir="${dir.cardservproxy.lib}" path-id="files.csp.lib"/>
 		<copy-fileset destination-dir="${dir.lib}" source-dir="${dir.lib}" path-id="files.lib"/>
 		<copy-fileset destination-dir="${dir.classes}" source-dir="${dir.src}" path-id="files.classes"/>
     <copy-fileset destination-dir="${dir.classes}" source-dir="${dir.src}" path-id="files.classes"/>
@@ -113,7 +117,7 @@
 			</fileset>
 		</jar>
 		<copy todir="${dir.dist}" file="${dir.build.lib}/${ant.project.name}.jar"/>
-    <!-- copy todir=".." file="${dir.build.lib}/${ant.project.name}.jar"/ -->
+    <copy todir=".." file="${dir.build.lib}/${ant.project.name}.jar"/>
 	</target>
 	
 	<target name="tar-src" depends="prepare" description="compress the source files as .tar.gz.">

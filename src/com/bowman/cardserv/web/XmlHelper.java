@@ -22,7 +22,7 @@ import java.util.*;
  */
 public class XmlHelper implements CommandManager {
 
-  private static final SimpleDateFormat rfc822fmt = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);  
+  private static final SimpleDateFormat rfc822fmt = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
   private static final String[] CWS_STATES = {"disconnected", "connected", "connecting", "", "unresponsive", "disabled"};
   private static boolean checkFileDescriptors = true;
 
@@ -78,14 +78,44 @@ public class XmlHelper implements CommandManager {
   }  
 
   Set getServices(String[] profiles) throws RemoteException {
+    return getServices(profiles, false);
+  }
+
+  Set getServices(String[] profiles, boolean includeParsed) throws RemoteException {
     CwsStatus[] connectors = proxy.getMultiCwsStatus(profiles);
-    Set all = new HashSet();
+    Set canDecode = new HashSet(), cannotDecode = new HashSet();
     TvService[] services;
     for(int i = 0; i < connectors.length; i++) {
       services = proxy.getServices(connectors[i].getName(), false);
-      if(services != null) all.addAll(Arrays.asList(services));
+      if(services != null) canDecode.addAll(Arrays.asList(services));
+      if(includeParsed) {
+        services = proxy.getCannotDecodeServices(connectors[i].getName());
+        if(services != null) cannotDecode.addAll(Arrays.asList(services));
+      }
     }
-    return all;
+    if(includeParsed) {
+      cannotDecode.removeAll(canDecode);
+      services = proxy.getParsedServices(profiles);
+      if(services != null) {
+        Set open = new HashSet(Arrays.asList(services));
+        TvService srv;
+        for(Iterator iter = open.iterator(); iter.hasNext(); ) {
+          srv = (TvService)iter.next();
+          switch(srv.getType()) {
+            case TvService.TYPE_HDTV_MPEG2:
+            case TvService.TYPE_HDTV_MPEG4:
+            case TvService.TYPE_TV:
+              continue;
+            default:
+              iter.remove();
+          }
+        }
+        open.removeAll(cannotDecode);
+        open.removeAll(canDecode);
+        canDecode.addAll(open);
+      }
+    }
+    return canDecode;
   }
 
   public String onQryStatusCommand(String cmd, Map params, String authUser) throws RemoteException {
@@ -448,7 +478,8 @@ public class XmlHelper implements CommandManager {
 
   public void runStatusCmdAllServices(XmlStringBuffer xb, Map params) throws RemoteException {
     String[] profiles = (String[])params.get("profiles");
-    Set all = getServices(profiles);
+    boolean includeParsed = "true".equalsIgnoreCase((String)params.get("include-parsed"));
+    Set all = getServices(profiles, includeParsed);
     List sorted = new ArrayList(all);
     Collections.sort(sorted);
     xb.appendElement("all-services", "count", sorted.size());
@@ -551,31 +582,35 @@ public class XmlHelper implements CommandManager {
 
   public void runStatusCmdCwsBouquet(XmlStringBuffer xb, Map params) throws RemoteException {
     if(!params.containsKey("xml")) return;
-    Set all = getServices((String[])params.get("profiles"));
+    Set all = getServices((String[])params.get("profiles"), true);
     Map serviceMap = new HashMap();
     TvService service;
     for(Iterator iter = all.iterator(); iter.hasNext();) {
       service = (TvService)iter.next();
-      serviceMap.put(new Integer(service.getId()), service);
+      serviceMap.put(service.getId() + ":" + service.getProfileName(), service);
     }
-    StringBuffer bqFile = new StringBuffer();
+    StringBuffer bqFile = new StringBuffer(), bqLine = new StringBuffer();
     bqFile.append("#NAME Favourites (TV)\n");
-    int srvId;
     XMLConfig bqXml = (XMLConfig)params.get("xml");
     XMLConfig fileXml = bqXml.getSubConfig("file");
-    boolean enigma2 = false;
+    XMLConfig includeNamesXml = bqXml.getSubConfig("include-names");
+    boolean enigma2 = false, includeNames = false;
     if(fileXml != null) enigma2 = "enigma2".equalsIgnoreCase(fileXml.getString("format"));
+    if(includeNamesXml != null) includeNames = "true".equalsIgnoreCase(includeNamesXml.getString("value"));
     String prefix = enigma2?"#SERVICE 1:0:":"#SERVICE: 1:0:";
+    String namePrefix = enigma2?"#DESCRIPTION ":"#DESCRIPTION: ";
     for(Enumeration en = bqXml.getMultipleSubConfigs("service"); en.hasMoreElements(); ) {
       try {
-        srvId = Integer.parseInt(((XMLConfig)en.nextElement()).getString("id"));
-        service = (TvService)serviceMap.get(new Integer(srvId));
-        if(service != null && service.getTransponder() != -1) {                   
-          bqFile.append(prefix).append(Integer.toHexString(service.getType())).append(":");
-          bqFile.append(Integer.toHexString(srvId)).append(":");
-          bqFile.append(Integer.toHexString((int)service.getTransponder())).append(":");
-          bqFile.append(Integer.toHexString((int)service.getNetworkId())).append(":");
-          bqFile.append(Long.toHexString(service.getNamespace())).append(":0:0:0:\n");
+        service = (TvService)serviceMap.get(((XMLConfig)en.nextElement()).getString("id"));
+        if(service != null && service.getTransponder() != -1) {
+          bqLine.append(prefix).append(Integer.toHexString(service.getType())).append(":");
+          bqLine.append(Integer.toHexString(service.getId())).append(":");
+          bqLine.append(Integer.toHexString((int)service.getTransponder())).append(":");
+          bqLine.append(Integer.toHexString((int)service.getNetworkId())).append(":");
+          bqLine.append(Long.toHexString(service.getNamespace())).append(":0:0:0:\n");
+          bqFile.append(enigma2?bqLine.toString().toUpperCase():bqLine.toString());
+          if(includeNames) bqFile.append(namePrefix).append(service.getName()).append("\n");
+          bqLine = new StringBuffer();
         }
       } catch (NumberFormatException e) {
         // e.printStackTrace();
@@ -584,7 +619,6 @@ public class XmlHelper implements CommandManager {
     String id = enigma2?"favourites":Long.toString(System.currentTimeMillis(), Character.MAX_RADIX);
     String fileName = "/userbouquet." + id  + ".tv";
     String data = bqFile.toString();
-    if(enigma2) data = data.toUpperCase();
     webBackend.bouquets.put(fileName, data);
     xb.appendElement("cws-bouquet", "url", fileName, true);
   }

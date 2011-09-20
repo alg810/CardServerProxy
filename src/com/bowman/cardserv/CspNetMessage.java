@@ -79,8 +79,6 @@ public class CspNetMessage implements Serializable {
   }
 
   public static int statusHashCode(List updates) {
-    String s = updates.toString();
-    // System.out.println(s.hashCode() + " -> " + s);
     return updates.toString().hashCode();
   }
 

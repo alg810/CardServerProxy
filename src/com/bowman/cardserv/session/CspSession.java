@@ -129,13 +129,17 @@ public class CspSession extends AbstractSession implements CwsListener {
       List updates; CspNetMessage.ProfileKey key;
       for(Iterator iter = profiles.iterator(); iter.hasNext(); ) {
         profile = (CaProfile)iter.next();
+        key = new CspNetMessage.ProfileKey(profile);
         if(profile.getNetworkId() > 0) { // only present those profiles that have onid set
-          key = new CspNetMessage.ProfileKey(profile);
           if(profileAllowed(profile)) { // and only if the user has access to them
             updates = CspNetMessage.buildProfileUpdate(profile, sendExtra);
             sentState.put(key, updates);
             if(stateChanged(key, updates)) statusMsg.addStatusUpdates(key, updates);
+          } else {
+            if(stateHashes.containsKey(key)) statusMsg.addDeleteUpdate(key); // client no longer has access to profile
           }
+        } else {
+          if(stateHashes.containsKey(key)) statusMsg.addDeleteUpdate(key); // profile no longer has onid set
         }
       }
 

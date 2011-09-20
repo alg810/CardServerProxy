@@ -20,11 +20,12 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
 
   protected static final int DEFAULT_CW_VALIDITY = 10000;
   protected ProxyLogger logger;
+  protected CacheHandler cache;
+  protected CardServProxy proxy;
 
   private Map cacheMaps = new TreeMap();
   private Map dcwIntervals = new HashMap();
   private ProxyConfig config = ProxyConfig.getInstance();
-  private CacheHandler cache;
   private Set commands = new HashSet();
 
   private Map forwarders = new TreeMap();
@@ -120,6 +121,10 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
   }
 
   public void forwardReply(CamdNetMessage request, CamdNetMessage reply) {
+    if(request.getProfileName() == null) {
+      CaProfile profile = config.getProfileById(request.getNetworkId(), request.getCaId());
+      if(profile != null) request.setProfileName(profile.getName());
+    }
     CacheForwarder forwarder;
     for(Iterator iter = forwarders.values().iterator(); iter.hasNext(); ) {
       forwarder = (CacheForwarder)iter.next();
@@ -131,6 +136,8 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     cache = config.getCacheHandler();
     if(cache != null) cache.setMonitor(this);
     if(commands.isEmpty()) registerCommands();
+
+    this.proxy = proxy;
   }
 
   public void stop() {
@@ -315,16 +322,57 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       forwarder = (CacheForwarder)iter.next();
       xb.appendElement("forwarder", "name", forwarder.getName());
       xb.appendAttr("connected", forwarder.isConnected());
+      xb.appendAttr("max-delay", forwarder.getMaxDelay());
       xb.appendAttr("avg-latency", forwarder.getAvgLatency());
       xb.appendAttr("peak-latency", forwarder.getPeakLatency());
-      xb.appendAttr("avg-rsize", forwarder.getAvgRecordSize());
-      xb.appendAttr("peak-rsize", forwarder.getPeakRecordSize());
+      xb.appendAttr("avg-msize", forwarder.getAvgMsgSize());
+      xb.appendAttr("peak-msize", forwarder.getPeakMsgSize());
+      xb.appendAttr("cur-qsize", forwarder.getSendQSize());
       xb.appendAttr("msg-count", forwarder.getCount());
+      xb.appendAttr("filtered", forwarder.getFiltered());
+      xb.appendAttr("avg-sent-rate", forwarder.getSentAvg());
+      xb.appendAttr("avg-recv-rate", forwarder.getRecvAvg());
+      xb.appendAttr("ecms", forwarder.getEcmForwards());
+      xb.appendAttr("delay-alerts", forwarder.getDelayAlerts());
       xb.appendAttr("reconnects", forwarder.getReconnects());
       xb.appendAttr("errors", forwarder.getErrors());
-      xb.endElement(true);
+      Map ri = forwarder.getRemoteInstances();
+      if(!ri.isEmpty()) {
+        xb.endElement(false);
+        xmlFormatRemoteInstances(xb, ri);
+        xb.closeElement("forwarder");
+      } else xb.endElement(true);
+      /*
+      if(forwarder.getLastError() != null) {
+        xb.endElement(false);
+        xb.appendElement("last-error", "message", forwarder.getLastError());
+        xb.appendAttr("time", XmlHelper.formatTimeStamp(forwarder.getLastErrorTime()));
+        if(forwarder.getLastErrorInterval() > 0)
+          xb.appendAttr("interval", XmlHelper.formatDuration(forwarder.getLastErrorInterval()));
+        xb.appendAttr("msize", forwarder.getLastErrorMsgSize());
+        xb.endElement(true);
+        xb.closeElement("forwarder");
+      } else xb.endElement(true);
+      */
     }
     xb.closeElement("cache-forwarders");
+  }
+
+  public void xmlFormatRemoteInstances(XmlStringBuffer xb, Map ri) {
+    String instance, name; Properties p; long timeStamp;
+    for(Iterator iter = ri.keySet().iterator(); iter.hasNext(); ) {
+      instance = (String)iter.next();
+      p = (Properties)ri.get(instance);
+      xb.appendElement("remote-instance", "id", instance);
+      for(Enumeration e = p.propertyNames(); e.hasMoreElements(); ) {
+        name = (String)e.nextElement();
+        if("tstamp".equals(name)) {
+          timeStamp = Long.parseLong(p.getProperty(name));
+          xb.appendAttr("last-update", XmlHelper.formatDurationFrom(timeStamp));
+        } else xb.appendAttr(name, p.getProperty(name));
+      }
+      xb.endElement(true);
+    }
   }
 
   public void xmlFormatCacheSources(XmlStringBuffer xb, boolean hideLocal, String name) {

@@ -118,7 +118,7 @@ var sections = {
         getById('checkAllCb').onchange = function() {
           var inputs = getById('content').getElementsByTagName('input'); // all input elements in content div
           for(var i = 0; i < inputs.length; i++) {
-            if(inputs[i].id == 'checkAllCb' || inputs[i].id == 'enigma2Cb') continue;
+            if(inputs[i].id == 'checkAllCb' || inputs[i].id == 'enigma2Cb' || inputs[i].id == 'includeNamesCb') continue;
             if(inputs[i].type == 'checkbox') inputs[i].checked = getById('checkAllCb').checked;
           }
         }
@@ -127,7 +127,7 @@ var sections = {
 
       if(getById('showAllServices')) {
         getById('showAllServices').onclick = function() {
-          sections.channels.queries = ['proxy-status', 'ca-profiles', 'watched-services', 'all-services', 'profile'];
+          sections.channels.queries = ['proxy-status', 'ca-profiles', 'watched-services', 'all-services include-parsed="true"', 'profile'];
           selectSection();
           sections.channels.queries = ['proxy-status', 'ca-profiles', 'watched-services', 'profile'];
         }
@@ -296,7 +296,7 @@ function postProcess() { // always executed after each xslt transform
   setHref(getById('viewXml'), 'javascript:viewXml();');
 
   var menu = getById('subheader').getElementsByTagName('a');
-  for(var i = 0; i < menu.length; i++) {
+  for(i = 0; i < menu.length; i++) {
     if(sections[menu[i].id]) {
       menu[i].href = 'javascript:clickSection("' + menu[i].id + '");';
     }
@@ -538,6 +538,11 @@ function createBouquetFile() {
     if(items[i].id == 'enigma2Cb') {
       if(items[i].checked) xml += '<file format="enigma2"/>\n';
       else xml += '<file format="enigma1"/>\n';
+      continue;
+    }
+    if(items[i].id == 'includeNamesCb') {
+      if(items[i].checked) xml += '<include-names value="true"/>\n';
+      else xml += '<include-names value="false"/>\n';
       continue;
     }
     if((items[i].type == 'checkbox' && items[i].checked)) {

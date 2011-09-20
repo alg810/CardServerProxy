@@ -63,7 +63,7 @@
       <div class="cwsheader" style="width: 750px;">
         <table id="services" border="0" width="100%"><tbody>
         <tr>
-          <td>&#160;&#160;<strong>Service name</strong></td><td title="Service id (from cache metadata)">
+          <td>&#160;&#160;<strong>Service name</strong></td><td title="Service id (from cache metadata): Toggle hex/dec">
             <a href="javascript:toggleSidDisplay();"><strong>SID</strong></a>
           </td>
           <td title="Transport stream id (assumed, from services file): Toggle hex/dec">

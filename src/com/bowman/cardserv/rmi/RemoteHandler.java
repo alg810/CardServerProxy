@@ -279,6 +279,19 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
     }
   }
 
+  public TvService[] getParsedServices(String[] profiles) {
+    if(profiles == null) {
+      Set names = config.getProfiles().keySet();
+      profiles = (String[])names.toArray(new String[names.size()]);
+    }
+    CaProfile profile; Set all = new TreeSet();
+    for(int i = 0; i < profiles.length; i++) {
+      profile = config.getProfile(profiles[i]);
+      all.addAll(profile.getServices().values());
+    }
+    return (TvService[])all.toArray(new TvService[all.size()]);
+  }
+
   public TvService[] getCannotDecodeServices(String name) {
     List services = config.getConnManager().getServicesForConnector(name, false, false);
     if(services == null) return null;
@@ -515,8 +528,10 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
   }
 
   public void cwsLostService(CwsConnector cws, TvService service, boolean show) {
-    if(service != null && show)
-      fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_LOST_SERVICE, cws.getLabel(), service.toString(), service.getProfileName()));
+    if(service != null && show) {
+      String label = cws==null?"Internal[SidCacheLinker]":cws.getLabel();
+      fireRemoteEvent(new RemoteEvent(RemoteEvent.CWS_LOST_SERVICE, label, service.toString(), service.getProfileName()));
+    }
   }
 
   public void cwsFoundService(CwsConnector cws, TvService service, boolean show) {

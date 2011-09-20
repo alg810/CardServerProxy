@@ -281,7 +281,7 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
         if(id.length == 3) {
           try {
             TvService chan = new TvService(Integer.parseInt(id[0]), id[1]);
-            List services = new ArrayList(helper.getServices(null));
+            List services = new ArrayList(helper.getServices(null, true));
             int idx = services.indexOf(chan);
             if(idx > -1) chan = (TvService)services.get(idx);
             else return null;

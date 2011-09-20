@@ -2,7 +2,7 @@
 // make a new xsltransformer for this plugin
 var xsltTrCcp = new BowWeb.XsltTransformer("/plugin/cachecoverageplugin/open/xslt/cws-status-resp.xsl", postProcess);
 
-var hideExpiredEntries = true, hideLocalSources = false, showMissingEntries = false, sidInHex = true, tidInHex = true;
+var hideExpiredEntries = true, hideLocalSources = true, showMissingEntries = false, sidInHex = true, tidInHex = true;
 var sourceFilter = '';
 var excludedKeys = {};
 
@@ -15,7 +15,7 @@ pluginsLogout.push("cacheCoveragePluginLogout()");
 // add maintenance section
 sections['cache'] = {
   label: 'Cache',
-  queries: ['proxy-status', 'cache-status', 'cache-contents hide-expired="true"', 'cache-sources hide-local="false"'],
+  queries: ['proxy-status', 'cache-status', 'cache-contents hide-expired="true"', 'cache-sources hide-local="true"'],
   repeat: true,
   handler: function(xml) {
     if(hideExpiredEntries) getFirstByTag('cache-contents', xml).setAttribute('hide-expired', 'true');

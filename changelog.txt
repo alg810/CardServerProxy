@@ -1,7 +1,7 @@
 Cardservproxy changelog:
 ------------------------
 
-0.9.1 - RC2 (see README.0.9.0.txt for conceptual changes and tips)
+0.9.1 - RC3 (see README.0.9.0.txt for conceptual changes and tips)
 
 - Fixed: Handling for unknown sid (0 or a dummy sid listed in dummy-services) was broken in 0.9.0.
 - Fixed: Incoming requests for dummy sids should not retain the dummy when forwarded, now changed to 0.
@@ -15,19 +15,24 @@ Cardservproxy changelog:
 - Fixed: The default-deny-list wasn't checked for CspConnect connection attempts.
 - Fixed: Closing of old sessions (on new login) wasn't working for ExtNewcamd.
 - Fixed: Debug mode for the "*" pseudo profile (Csp, ExtNewcamd) couldn't be turned off via config (attribute ignored).
+- Fixed: Enigma1/2 bouquet file generator in status web now works for multi-profile setups. Additionally, it will
+  include services for which no mapping data exist (unscrambled, or never watched). Still requires enigma service files.
 - Fixed: Using manual service mapping (can-decode list) for one connector would affect discovery of the listed services
   for other connectors in the same profile.
+- Fixed: It was not possible to specify manual service mapping lists for csp and chameleon connectors, for more than
+  one profile at a time.
 - Fixed: Removing a profile from a user that had used csp-connect had no effect, as it remained locally cached at the
   client proxy, and no mechanism existed for removing it or blocking the now disallowed requests.
+- Fixed: Missing log warning and cws event for csp-connector login failure (on bad credentials).
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
   now considered identical by the proxy. Implications unknown.
 - Changed: ClusteredCache transport format now includes meta-data such as ca-id and network-id.
   NOTE: This breaks compatibility with previous versions. If one node has the new format, all nodes must be upgraded.
-  The source ip's of any received incompatible updates are listed in the property 'version-mismatch'.
+  The source ip's of any received incompatible updates are listed in the property 'version-mismatch' (when possible).
 - Changed: Enabling debug for a user now also enables web transaction logs for that user (same as profile debug).
   NOTE: Kicking the users sessions may be required before this takes effect (both after enabling and disabling).
 - Added: Experimental resend/broadcast mechanism for ClusteredCache, to make cache-only nodes slightly more feasible.
-  This allows a node to ask peers for a cw that doesn't exist locally and is taking more than max-cache-wait / 2.
+  This allows a node to ask all peers for a cw that doesn't exist locally and is taking more than max-cache-wait / 2.
 - Added: Option to automatically add any peers that are sending updates to ClusteredCache.
 - Added: Cws event for found service now shown in the status-web (despite the command being called error-log).
 - Added: Experimental sid cache linking feature, allows cache hits based on meta-data like sid rather than ecm payload.
@@ -35,6 +40,7 @@ Cardservproxy changelog:
 - Added: More sanity checks to DcwFilterPlugin (checksums, length and an option to monitor all replies for duplicates).
 - Added: DreamboxPlugin (csp-agent) support for more/older dm500 images. Basic (unsecured) file upload support.
 - Added: proxy-reference.html updated with highlighting for important elements and additional examples.
+- Added: CacheCoveragePlugin, for visualizing the contents and show coverage per transponder/mux.
 - Added: New AdvXmlUserManager to show how to add um-specific functionality without changing the core or existing um's
 
 - Changes to proxy.xml:
@@ -52,6 +58,7 @@ Cardservproxy changelog:
   Added: New ctrl command 'set-au-user', forces a specified user to au status for a connector (kicking existing sessions)
   Added: Attributes 'reset-services', 'blocked-services', 'allowed-services' to <profile> (ca-profiles output). Shows
   the currently configured lists resolved with service names (but only if they're shorter than 25 entries).
+  Added: Attribute 'include-parsed' to <all-services>. Includes services with no mapping data (info parsed from file only).
 
 
 0.9.0 - 2010-08-15 (see README.0.9.0.txt for conceptual changes and tips)

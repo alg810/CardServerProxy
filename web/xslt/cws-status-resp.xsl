@@ -319,13 +319,14 @@
       <legend><strong>All mapped channels (<xsl:value-of select="@count"/>)</strong></legend><br />
       <ul id="chanList">
         <xsl:for-each select="service">
+          <xsl:if test="not(starts-with(@name, 'Unknown '))">
           <li class="channel">
             <xsl:attribute name="id"><xsl:value-of select="concat('channel', @id)"/></xsl:attribute>
             <img width="40">
               <xsl:attribute name="src"><xsl:value-of select="concat('picon/', @id, '.', @profile, '.png')"/></xsl:attribute>
             </img>
             <input name="chanId" type="checkbox">
-              <xsl:attribute name="name"><xsl:value-of select="@id"/></xsl:attribute>
+              <xsl:attribute name="name"><xsl:value-of select="@id"/>:<xsl:value-of select="@profile"/></xsl:attribute>
               <xsl:attribute name="id"><xsl:value-of select="concat('chan', @id)"/></xsl:attribute>
             </input>
             <label>
@@ -333,6 +334,7 @@
               <strong><xsl:value-of select="@name"/></strong> (<xsl:value-of select="@profile"/>:<xsl:value-of select="@hex-id"/>)
             </label>
           </li>
+          </xsl:if>
         </xsl:for-each>
       </ul><br />
       <xsl:if test="count(service) > 0">
@@ -340,6 +342,8 @@
         <label for="checkAllCb">Check all</label>&#160;
         <input name="enigma2Cb" id="enigma2Cb" type="checkbox"/>
         <label for="enigma2Cb">Use enigma2 format</label>&#160;
+        <input name="includeNamesCb" id="includeNamesCb" type="checkbox"/>
+        <label for="includeNamesCb">Include names</label>&#160;
         <input value="Create bouquet file" type="button" id="createChannelFileBtn"/><br />
       </xsl:if>
       <xsl:if test="count(service) = 0">

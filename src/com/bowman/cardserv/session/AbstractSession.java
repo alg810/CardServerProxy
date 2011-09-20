@@ -44,7 +44,7 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
 
   boolean alive;
 
-  AbstractSession(ListenPort listenPort, CamdMessageListener listener) {
+  public AbstractSession(ListenPort listenPort, CamdMessageListener listener) {
     this.listenPort = listenPort;
     this.sessionId = SessionManager.getInstance().getNewSessionId();
     if(listener != null) addCamdMessageListener(listener);
