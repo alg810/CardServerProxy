@@ -36,6 +36,9 @@ if [ ! -e /root/plugin/bin/busybox ] && [ -e /root/spark/ywapp.exe ]; then
 		/root/plugin/bin/busybox ash $0
 		exit
 	fi
+elif [ -e /root/plugin/bin/busybox ] && [ -e /root/spark/ywapp.exe ]; then
+	echo "output: starting up installer in new shell ..."
+	/root/plugin/bin/busybox ash $0
 fi
 
 # make some symlinks if /var was tmpfs
