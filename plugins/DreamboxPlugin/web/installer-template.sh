@@ -89,7 +89,7 @@ OSDUSER=root
 #Osd httpauth password" >> /var/etc/cspagent.conf
 
 if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]; then
-  if [ $(uname -m | grep ppc | wc -l) ge 1 ]; then
+  if [ $(uname -m | grep ppc | wc -l) -ge 1 ]; then
     echo "OSDPASS=dbox2" >> /var/etc/cspagent.conf
   else
     echo "OSDPASS=neutrino" >> /var/etc/cspagent.conf
