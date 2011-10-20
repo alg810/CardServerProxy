@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DROPBEARBINS="dropbearmulti.ppc dropbearmulti.static.ppc dropbearmulti.04x.ppc dropbearmulti.mips dropbearmulti.static.mips dropbearmulti.sh4 dropbearmulti.static.sh4"
+DROPBEARBINS="dropbearmulti.ppc dropbearmulti.static.ppc dropbearmulti.04x.ppc dropbearmulti.mips dropbearmulti.arm dropbearmulti.static.mips dropbearmulti.sh4 dropbearmulti.static.sh4"
 BUSYBOXBINS="busybox.sh4"
 
 get_bin_from_trac() {
