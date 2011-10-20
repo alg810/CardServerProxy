@@ -29,7 +29,7 @@ get_osd_manager()
   if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]                                               
   then                                                                                                    
     OSDTYPE="neutrino"                                                                                    
-    if [ $(uname -m | grep ppc | wc -l) ge 1 ]; then                                                      
+    if [ $(uname -m | grep ppc | wc -l) -ge 1 ]; then                                                      
       OSDVER=1                                                                                    
       echo "OSDVER=1" >> /var/etc/cspagent.conf            
     else                                                                                                  
