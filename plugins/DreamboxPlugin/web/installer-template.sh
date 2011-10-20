@@ -49,6 +49,11 @@ if [ $(mount | grep /var | grep tmpfs | wc -l) -ge 1 ]; then
 	fi
 fi
 
+# create /var/bin if it not exists
+if [ ! -d /var/bin ]; then
+  mkdir /var/bin
+fi
+
 check_running_agent()
 {
 
@@ -84,7 +89,11 @@ OSDUSER=root
 #Osd httpauth password" >> /var/etc/cspagent.conf
 
 if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]; then
-  echo "OSDPASS=dbox2" >> /var/etc/cspagent.conf
+  if [ $(uname -m | grep ppc | wc -l) ge 1 ]; then
+    echo "OSDPASS=dbox2" >> /var/etc/cspagent.conf
+  else
+    echo "OSDPASS=neutrino" >> /var/etc/cspagent.conf
+  fi
 else
   echo "OSDPASS=dreambox" >> /var/etc/cspagent.conf
 fi
@@ -138,7 +147,7 @@ fi
 
 case $1 in
 start)
-	start-stop-daemon -S -b -x /var/bin/cspagent.sh
+	/var/bin/cspagent.sh &
 	echo "Starting cspagent..."
 	;;
 stop)
@@ -159,6 +168,10 @@ exit 0' > /etc/init.d/cspagent
 	            echo "output: AAF Image detected."
         	    echo "output: Using AAF method..."
 	            aaf_image
+                elif [ $(cat /etc/issue.net | grep -i bluepeer | wc -l) -ge 1 ]; then
+	            echo "output: BluePeer Image detected."
+        	    echo "output: Using BluePeer method..."
+                    blue_peer
 		else
 		    RUNLEVELS="2 3 4"
 		    echo "output: Linking start script to runlevel $RUNLEVELS"
@@ -219,6 +232,20 @@ dbox2_sportster()
 		check_running_agent
 	else
 		echo "output: Error: user.start_script not found. Skipping ..."
+	fi
+}
+
+blue_peer()
+{
+	if [ -e /etc/init.d/cspagent ]; then
+		if [ -e /etc/init.d/S99cspagent ]; then
+			echo "output: /etc/init.d/S99cspagent allready exists ... Skipping ..."
+		else
+			ln -sf /etc/init.d/cspagent /etc/init.d/S99cspagent
+			echo "output: CSP Agent start script now active at system startup ..."
+		fi
+	else
+        	echo "output: Error: /etc/init.d/cspagent not found. Skipping ..."
 	fi
 }
 

@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.0.9
+AGENTV=1.1.0
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 TIMEOUT=10
@@ -26,12 +26,17 @@ fi
 # Get OSD manager version and type, set the env variable to correct version and echo variable to conf-file
 get_osd_manager()
 {
-  if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
-  then
-    OSDTYPE="neutrino"
-    OSDVER=1
+  if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]                                               
+  then                                                                                                    
+    OSDTYPE="neutrino"                                                                                    
+    if [ $(uname -m | grep ppc | wc -l) ge 1 ]; then                                                      
+      OSDVER=1                                                                                    
+      echo "OSDVER=1" >> /var/etc/cspagent.conf            
+    else                                                                                                  
+      OSDVER=2                                                                                    
+      echo "OSDVER=2" >> /var/etc/cspagent.conf                                                           
+    fi                                                                                            
     echo "OSDTYPE=neutrino" >> /var/etc/cspagent.conf
-    echo "OSDVER=1" >> /var/etc/cspagent.conf
   elif [ $(which enigma2 | wc -l) -ge 1 ]
   then
     OSDTYPE="enigma"
@@ -77,19 +82,19 @@ get_service()
       fi
       ;;
 
-    "neutrino")
-      if [ $OSDVER -eq 1 ]; then
+    "neutrino")                                                                                           
+      if [ $OSDVER -eq 1 ] || [ $OSDVER -eq 2 ]; then                                                     
         SIDONID="$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/getonidsid)"
-        if [ $? != "0" ]; then
+        if [ $? != "0" ]; then                             
           echo "$(date): cannot get current sid from neutrino yweb webinterface" >> /tmp/csperr
-        fi
-        SID=$(echo $SIDONID | cut -c 8-11)
-        ONID=$(echo $SIDONID | cut -c 4-7)
+        fi                                           
+        SID=$(echo $SIDONID | cut -c 8-11)          
+        ONID=$(echo $SIDONID | cut -c 4-7)          
         # Neutrino returns hex values - csp needs enigma like dec values
-        SID=$(printf "%d" 0x$SID)
-        ONID=$(printf "%d" 0x$ONID)
-      fi
-      ;;
+        SID=$(printf "%d" 0x$SID)                  
+        ONID=$(printf "%d" 0x$ONID)                  
+      fi                                           
+      ;;                  
 
     "spark")                            
         ONID=0
@@ -102,27 +107,29 @@ get_service()
   fi
 }
 
-get_boxtype()
-{
-  if [ "$(hostname)" = "dreambox" ]
-  then
-    if [ -e /proc/bus/dreambox ]
-    then
-      BOXTYPE=$(cat /proc/bus/dreambox | sed 'q' | sed 's/type=//')
-    else
-      BOXTYPE="Unknown"
-    fi
-  elif [ -e /root/spark/ywapp.exe ]; then 
-    BOXTYPE="spark"
-  else
-    if [ -d /proc/bus/tuxbox/dbox2 ]; then
-      BOXTYPE="dbox2"
-    elif [ -e /etc/model ]; then
-      BOXTYPE=$(cat /etc/model)
-    else
-      BOXTYPE=$(hostname)
-    fi
-  fi
+get_boxtype()                                                      
+{                                                                  
+  if [ "$(hostname)" = "dreambox" ]          
+  then                                                             
+    if [ -e /proc/bus/dreambox ]                                   
+    then                                                            
+      BOXTYPE=$(cat /proc/bus/dreambox | sed 'q' | sed 's/type=//') 
+    else                                                                                
+      BOXTYPE="Unknown"                      
+    fi                                                                                         
+  elif [ -e /root/spark/ywapp.exe ]; then                           
+    BOXTYPE="spark"                       
+  elif [ $( grep -i coolstream /proc/cpuinfo | wc -l ) -ge 1 ]; then
+    BOXTYPE="coolstream"                                                                          
+  elif [ -d /proc/bus/tuxbox/dbox2 ]; then   
+    BOXTYPE="dbox2"                       
+  else                                    
+    if [ -e /etc/model ]; then            
+      BOXTYPE=$(cat /etc/model) 
+    else                        
+      BOXTYPE=$(hostname)                                                                                 
+    fi                   
+  fi                                                                             
 }
 
 get_cputype()
@@ -140,6 +147,10 @@ get_cputype()
         CPUTYPE="sh4"
     ;;
 
+    "armv6l")
+        CPUTYPE="arm"
+    ;;
+
     *)
         # mips boxes reporting cpu id instead of architecture. e.g. dm800 returns 7401c0
         CPUTYPE="mips"
@@ -150,19 +161,25 @@ get_cputype()
 get_imginfo()
 {
   case $OSDTYPE in
-    "neutrino")
-      if [ $OSDVER -eq 1 ]; then
-        YWEBOUT=$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/version)
-        if [ $? != "0" ]; then
+    "neutrino")                                                                                
+      if [ $OSDVER -eq 1 ] || [ $OSDVER -eq 2 ]; then                                          
+        YWEBOUT=$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/version)            
+        if [ $? != "0" ]; then                                                                 
           echo "$(date): cannot get image infos from neutrino yweb webinterface" >> /tmp/csperr
-        fi
-
-        OIFS=$IFS
-        IFS=" "
-        IMGGUESS=$(echo $YWEBOUT | grep imagename | sed 's/imagename=//g')
-        IMGINFO=$(echo $YWEBOUT | grep version | sed 's/version=//g')
-        IFS=$OIFS
-      fi
+        fi                                                                                     
+                                                                          
+        OIFS=$IFS                                                                              
+        IFS=" "                                                                    
+        IMGGUESS=$(echo $YWEBOUT | grep imagename | sed 's/imagename=//g')   
+        IMGINFO=$(echo $YWEBOUT | grep version | sed 's/version=//g')                          
+        IFS=$OIFS                                                                                 
+                                                                                               
+        if [ $OSDVER -eq 2 ] && [ -z $IMGGUESS ]; then                       
+          if [ $(cat /etc/issue.net | grep -i bluepeer | wc -l) -ge 1 ]; then                  
+            IMGGUESS="BluePeer"                                                         
+          fi                                                                                               
+        fi                                                                                                 
+      fi                                                                                                   
       ;;
 
     "enigma")
