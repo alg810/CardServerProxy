@@ -82,19 +82,19 @@ get_service()
       fi
       ;;
 
-    "neutrino")                                                                                           
-      if [ $OSDVER -eq 1 ] || [ $OSDVER -eq 2 ]; then                                                     
+    "neutrino")
+      if [ $OSDVER -eq 1 ] || [ $OSDVER -eq 2 ]; then
         SIDONID="$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/getonidsid)"
-        if [ $? != "0" ]; then                             
+        if [ $? != "0" ]; then 
           echo "$(date): cannot get current sid from neutrino yweb webinterface" >> /tmp/csperr
-        fi                                           
-        SID=$(echo $SIDONID | cut -c 8-11)          
-        ONID=$(echo $SIDONID | cut -c 4-7)          
+        fi 
+        SID=$(echo $SIDONID | cut -c 8-11)
+        ONID=$(echo $SIDONID | cut -c 4-7)
         # Neutrino returns hex values - csp needs enigma like dec values
-        SID=$(printf "%d" 0x$SID)                  
-        ONID=$(printf "%d" 0x$ONID)                  
-      fi                                           
-      ;;                  
+        SID=$(printf "%d" 0x$SID)
+        ONID=$(printf "%d" 0x$ONID)
+      fi
+      ;;
 
     "spark")                            
         ONID=0
@@ -161,25 +161,25 @@ get_cputype()
 get_imginfo()
 {
   case $OSDTYPE in
-    "neutrino")                                                                                
-      if [ $OSDVER -eq 1 ] || [ $OSDVER -eq 2 ]; then                                          
-        YWEBOUT=$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/version)            
-        if [ $? != "0" ]; then                                                                 
+    "neutrino")
+      if [ $OSDVER -eq 1 ] || [ $OSDVER -eq 2 ]; then
+        YWEBOUT=$($WGET -q -O - http://$OSDUSER:$OSDPASS@127.0.0.1/control/version)
+        if [ $? != "0" ]; then
           echo "$(date): cannot get image infos from neutrino yweb webinterface" >> /tmp/csperr
-        fi                                                                                     
+        fi
                                                                           
-        OIFS=$IFS                                                                              
-        IFS=" "                                                                    
-        IMGGUESS=$(echo $YWEBOUT | grep imagename | sed 's/imagename=//g')   
-        IMGINFO=$(echo $YWEBOUT | grep version | sed 's/version=//g')                          
-        IFS=$OIFS                                                                                 
+        OIFS=$IFS
+        IFS=" "
+        IMGGUESS=$(echo $YWEBOUT | grep imagename | sed 's/imagename=//g')
+        IMGINFO=$(echo $YWEBOUT | grep version | sed 's/version=//g')
+        IFS=$OIFS
                                                                                                
-        if [ $OSDVER -eq 2 ] && [ -z $IMGGUESS ]; then                       
-          if [ $(cat /etc/issue.net | grep -i bluepeer | wc -l) -ge 1 ]; then                  
-            IMGGUESS="BluePeer"                                                         
-          fi                                                                                               
-        fi                                                                                                 
-      fi                                                                                                   
+        if [ $OSDVER -eq 2 ] && [ -z $IMGGUESS ]; then
+          if [ $(cat /etc/issue.net | grep -i bluepeer | wc -l) -ge 1 ]; then
+            IMGGUESS="BluePeer"
+          fi
+        fi
+      fi
       ;;
 
     "enigma")
