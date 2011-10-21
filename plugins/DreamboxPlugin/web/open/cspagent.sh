@@ -196,7 +196,7 @@ get_imginfo()
         IMGGUESS="Dreamelite"
       elif [ $(grep -i newnigma /etc/image-version | wc -l) -ge 1 ]; then
         IMGGUESS="Newnigma2"
-      elif [ $(grep -i aaf /etc/imageinfo | wc -l) -ge 1 ]; then
+      elif [ $(grep -i aaf /etc/motd | wc -l) -ge 1 ]; then
         IMGGUESS="AAF"
       elif [ $(grep -i vti /etc/image-version | wc -l) -ge 1 ]; then
         IMGGUESS="VTi"
