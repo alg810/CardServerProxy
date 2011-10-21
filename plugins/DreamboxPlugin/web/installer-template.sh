@@ -187,7 +187,7 @@ exit 0' > /etc/init.d/cspagent
 		fi
 
 		echo "output: CSP Agent installed. Starting service..."
-		check_running_agent
+		/etc/init.d/cspagent start
 
 	elif [ $(grep "Sportster Pro" /etc/issue.net | wc -l) -ge 1 ]; then
 		echo "output: Sportster Image detected."
