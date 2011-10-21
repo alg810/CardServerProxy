@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.1.0
+AGENTV=1.1.2
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 TIMEOUT=10
@@ -26,7 +26,8 @@ fi
 # Get OSD manager version and type, set the env variable to correct version and echo variable to conf-file
 get_osd_manager()
 {
-  if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]                                               
+  # some images have busybox that recognized the x parameter for ps, some other dont know about this parameter 
+  if [ $(ps x | grep neutrino | grep -v grep | wc -l) -ge 1 ] || [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
   then                                                                                                    
     OSDTYPE="neutrino"                                                                                    
     if [ $(uname -m | grep ppc | wc -l) -ge 1 ]; then                                                      
@@ -173,7 +174,8 @@ get_imginfo()
         IMGGUESS=$(echo $YWEBOUT | grep imagename | sed 's/imagename=//g')
         IMGINFO=$(echo $YWEBOUT | grep version | sed 's/version=//g')
         IFS=$OIFS
-                                                                                               
+
+        # some images dont have imagename set in yweb version page, so list such images here
         if [ $OSDVER -eq 2 ] && [ -z $IMGGUESS ]; then
           if [ $(cat /etc/issue.net | grep -i bluepeer | wc -l) -ge 1 ]; then
             IMGGUESS="BluePeer"
@@ -188,7 +190,7 @@ get_imginfo()
         IMGGUESS="iCVS"
       elif [ $(ps | grep gdaemon | grep -v grep | wc -l) -ge 1 ] || [ -e /etc/gemini_dissociation.txt ]; then
         IMGGUESS="Gemini"
-      elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ]; then
+      elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ] || $(ps x | grep plimgr | grep -v grep | wc -l) -ge 1 ]; then
         IMGGUESS="PLi"
       elif [ -e /usr/bin/blackholesocker ] || [ $(grep -i dream-elite /etc/image-version | wc -l) -ge 1 ]; then
         IMGGUESS="Dreamelite"
@@ -200,11 +202,6 @@ get_imginfo()
         IMGGUESS="VTi"
       elif [ -e /etc/image-version ]; then
         IMGGUESS=$(grep comment /etc/image-version | sed 's/comment=//g')
-      fi
-
-      # Check if GP3 Plugin exists and add marker to Image Guess
-      if [ -e /etc/enigma2/gemini_plugin.conf ]; then
-        IMGGUESS=$IMGGUESS"+GP3"
       fi
 
       if [ -e /etc/issue.net ]; then

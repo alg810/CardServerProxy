@@ -57,7 +57,7 @@ fi
 check_running_agent()
 {
 
-	if [ $(ps | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ]; then
+	if [ $(ps | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ] || [ $(ps x | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ]; then
 		echo "output: CSP Agent allready running. Skipping ..."
 	else
 		echo "output: CSP Agent not running. Trying to start ..."
@@ -88,7 +88,7 @@ OSDUSER=root
 
 #Osd httpauth password" >> /var/etc/cspagent.conf
 
-if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]; then
+if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ] || [ $(ps x | grep neutrino | grep -v grep | wc -l) -ge 1 ]; then
   if [ $(uname -m | grep ppc | wc -l) -ge 1 ]; then
     echo "OSDPASS=dbox2" >> /var/etc/cspagent.conf
   else
@@ -168,10 +168,10 @@ exit 0' > /etc/init.d/cspagent
 	            echo "output: AAF Image detected."
         	    echo "output: Using AAF method..."
 	            aaf_image
-                elif [ $(cat /etc/issue.net | grep -i bluepeer | wc -l) -ge 1 ]; then
-	            echo "output: BluePeer Image detected."
-        	    echo "output: Using BluePeer method..."
-                    blue_peer
+                elif [ $(cat /proc/cpuinfo | grep -i coolstream | wc -l) -ge 1 ]; then
+	            echo "output: Coolstream detected."
+        	    echo "output: Using Coolstream method..."
+                    coolstream
 		else
 		    RUNLEVELS="2 3 4"
 		    echo "output: Linking start script to runlevel $RUNLEVELS"
@@ -187,7 +187,7 @@ exit 0' > /etc/init.d/cspagent
 		fi
 
 		echo "output: CSP Agent installed. Starting service..."
-		/etc/init.d/cspagent start
+		check_running_agent
 
 	elif [ $(grep "Sportster Pro" /etc/issue.net | wc -l) -ge 1 ]; then
 		echo "output: Sportster Image detected."
@@ -235,7 +235,7 @@ dbox2_sportster()
 	fi
 }
 
-blue_peer()
+coolstream()
 {
 	if [ -e /etc/init.d/cspagent ]; then
 		if [ -e /etc/init.d/S99cspagent ]; then
@@ -244,6 +244,7 @@ blue_peer()
 			ln -sf /etc/init.d/cspagent /etc/init.d/S99cspagent
 			echo "output: CSP Agent start script now active at system startup ..."
 		fi
+		check_running_agent
 	else
         	echo "output: Error: /etc/init.d/cspagent not found. Skipping ..."
 	fi
@@ -260,6 +261,7 @@ aaf_image()
 		else
                 	echo "output: CSP Agent allready installed. Skipping ..."
             	fi
+		check_running_agent
         else
         	echo "output: Error: /etc/init.d/autostart/start.sh not found. Skipping ..."
         fi
