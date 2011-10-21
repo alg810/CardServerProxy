@@ -57,12 +57,16 @@ fi
 check_running_agent()
 {
 
-	if [ $(ps | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ] || [ $(ps x | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ]; then
+	if [ $(ps | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ]; then
 		echo "output: CSP Agent allready running. Skipping ..."
 	else
-		echo "output: CSP Agent not running. Trying to start ..."
-		/var/bin/cspagent.sh &
-		echo "output: Done."
+		if [ -e /tmp/cspagent.pid ] && [ $(grep -i cspagent /proc/$(cat /tmp/cspagent.pid)/cmdline 2> /dev/null | wc -l) -ge 1 ]; then
+			echo "output: oops ... seems that cspagent was running ..."
+		else
+			echo "output: CSP Agent not running. Trying to start ..."
+			/var/bin/cspagent.sh &
+			echo "output: Done."
+		fi
 	fi
 
 }
@@ -88,7 +92,7 @@ OSDUSER=root
 
 #Osd httpauth password" >> /var/etc/cspagent.conf
 
-if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ] || [ $(ps x | grep neutrino | grep -v grep | wc -l) -ge 1 ]; then
+if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ] || [ -e /bin/neutrino ]; then
   if [ $(uname -m | grep ppc | wc -l) -ge 1 ]; then
     echo "OSDPASS=dbox2" >> /var/etc/cspagent.conf
   else
@@ -147,12 +151,20 @@ fi
 
 case $1 in
 start)
-	/var/bin/cspagent.sh &
-	echo "Starting cspagent..."
+	if [ $(ps | grep cspagent.sh | grep -v grep | wc -l) -ge 1 ]; then
+		echo "cspagent allready runnung..."
+	else
+		if [ -e /tmp/cspagent.pid ] && [ $(grep -i cspagent /proc/$(cat /tmp/cspagent.pid)/cmdline 2> /dev/null | wc -l) -ge 1 ]; then
+			echo "oops ... seems that cspagent was running ..."
+		else
+			echo "Starting cspagent ..."
+			/var/bin/cspagent.sh &
+		fi
+	fi
 	;;
 stop)
 	killall cspagent.sh
-	echo "Stopping cspagent..."
+	echo "Stopping cspagent ..."
 	;;
 *)
 	echo "$1 not found. Try start/stop."
@@ -186,8 +198,8 @@ exit 0' > /etc/init.d/cspagent
 		    done
 		fi
 
-		echo "output: CSP Agent installed. Starting service..."
-		/etc/init.d/cspagent start
+		echo "output: CSP Agent installed..."
+		check_running_agent
 
 	elif [ $(grep "Sportster Pro" /etc/issue.net | wc -l) -ge 1 ]; then
 		echo "output: Sportster Image detected."

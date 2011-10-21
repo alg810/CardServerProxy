@@ -1,9 +1,9 @@
 #!/bin/ash
 
-AGENTV=1.1.2
+AGENTV=1.1.3
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
-TIMEOUT=10
+TIMEOUT=15
 
 # Source conf-file
 . /var/etc/cspagent.conf
@@ -27,7 +27,7 @@ fi
 get_osd_manager()
 {
   # some images have busybox that recognized the x parameter for ps, some other dont know about this parameter 
-  if [ $(ps x | grep neutrino | grep -v grep | wc -l) -ge 1 ] || [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ]
+  if [ $(ps | grep neutrino | grep -v grep | wc -l) -ge 1 ] || [ -e /bin/neutrino ]
   then                                                                                                    
     OSDTYPE="neutrino"                                                                                    
     if [ $(uname -m | grep ppc | wc -l) -ge 1 ]; then                                                      
@@ -190,7 +190,7 @@ get_imginfo()
         IMGGUESS="iCVS"
       elif [ $(ps | grep gdaemon | grep -v grep | wc -l) -ge 1 ] || [ -e /etc/gemini_dissociation.txt ]; then
         IMGGUESS="Gemini"
-      elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ] || $(ps x | grep plimgr | grep -v grep | wc -l) -ge 1 ]; then
+      elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ]; then
         IMGGUESS="PLi"
       elif [ -e /usr/bin/blackholesocker ] || [ $(grep -i dream-elite /etc/image-version | wc -l) -ge 1 ]; then
         IMGGUESS="Dreamelite"
