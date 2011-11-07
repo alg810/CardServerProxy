@@ -43,6 +43,10 @@ public class AdvXmlUserManager extends XmlUserManager {
     } catch(ConfigException e) {
       aue.ecmRate = -1;
     }
+    
+    try {
+      aue.displayName = xml.getStringValue("display-name");
+    } catch (ConfigException e) {}
 
     return aue;
   }
