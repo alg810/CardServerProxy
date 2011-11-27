@@ -267,7 +267,8 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
       String vendorUrl = System.getProperty("java.vendor.url");
       String vmName = System.getProperty("java.vm.name");
       if(vendorUrl != null)
-        if(!vendorUrl.startsWith("http://java.sun.com")) start = false;        
+        if(!vendorUrl.startsWith("http://java.sun.com")) start = false; 
+        if(vendorUrl.startsWith("http://java.oracle.com/")) start = true;     // Support Oracle Sun Java Ver 1.7 
       if(vmName != null)
         if(vmName.startsWith("OpenJDK")) start = false;
       if(!start) {
