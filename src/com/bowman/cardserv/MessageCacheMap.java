@@ -20,10 +20,14 @@ public class MessageCacheMap extends LinkedHashMap {
   }
 
   protected boolean removeEldestEntry(Map.Entry eldest) {
-    CamdNetMessage msg;
+    CamdNetMessage msg = null;
     if(eldest.getKey() instanceof CamdNetMessage) msg = (CamdNetMessage)eldest.getKey();
     else if(eldest.getValue() instanceof CamdNetMessage) msg = (CamdNetMessage)eldest.getValue();
-    else msg = (CamdNetMessage)((Set)eldest.getValue()).iterator().next();
+    else {
+      Set s = (Set)eldest.getValue();
+      if(s != null && s.iterator() != null) msg = (CamdNetMessage)s.iterator().next();
+    }
+    if(msg == null) return true;
     if(System.currentTimeMillis() - msg.getTimeStamp() > maxAge) {
       if(listener != null) listener.onRemoveStale(msg);
       return true;

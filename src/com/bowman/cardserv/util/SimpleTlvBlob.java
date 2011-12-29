@@ -23,9 +23,9 @@ public class SimpleTlvBlob {
     int numRecords = buf[pos++], type, length, count;
     byte[] value;
     for(int i = 0; i < numRecords; i++) {
-      type = buf[pos++];
-      count = buf[pos++];
-      length = buf[pos++];
+      type = buf[pos++] & 0xFF;
+      count = buf[pos++] & 0xFF;
+      length = buf[pos++] & 0xFF;
       for(int n = 0; n < count; n++) {
         value = new byte[length];
         System.arraycopy(buf, pos, value, 0, length);
