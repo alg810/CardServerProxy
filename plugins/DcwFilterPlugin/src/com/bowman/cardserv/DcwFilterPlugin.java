@@ -18,7 +18,6 @@ import java.util.*;
 public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
 
   private static final byte[] badDcw1 = DESUtil.stringToBytes("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00");
-  private static final byte[] badDcw2 = DESUtil.stringToBytes("00 00 00 00 00 00 3C 3C 00 00 00 00 00 00 3C 3C");
 
   private ProxyLogger logger;
   private Set badDcws = new HashSet();
@@ -33,7 +32,7 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
 
   private Map zeroedReplyMap = Collections.synchronizedMap(new MessageCacheMap(20000));
 
-  private boolean detectLinks = true, verifyReplies = false, forceContinuity = false;
+  private boolean detectLinks = false, verifyReplies = false, forceContinuity = false, zeroCounting = true;
   private int verifiedCount = 0, badLengthCount = 0, filteredCount = 0, checksumFailCount = 0, mergeCount = 0;
   private String badDcwStr;
   private File mapFile;
@@ -53,9 +52,9 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
       else badDcws.add(bd);
     }
     badDcws.add(badDcw1);
-    badDcws.add(badDcw2);
 
     detectLinks = "true".equalsIgnoreCase(xml.getStringValue("detect-links", "false"));
+    zeroCounting = "true".equalsIgnoreCase(xml.getStringValue("zero-counting", "true"));
     verifyReplies = "true".equalsIgnoreCase(xml.getStringValue("verify-replies", "false"));
     forceContinuity = "true".equalsIgnoreCase(xml.getStringValue("force-continuity", "false"));
 
@@ -186,13 +185,13 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
             msg.setCustomData(new byte[0]); // turn bad length dcws into cannot-decodes
             badLengthCount++;
 
-          } else if(!checksumDcw(msg.getCustomData())) { // verify dcw checksums
+          } else if(!msg.checksumDcw()) { // verify dcw checksums
             logger.warning("Bad DCW checksum in reply from '" + connector.getName() + "': " +
                 DESUtil.bytesToString(msg.getCustomData()));
             msg.setCustomData(new byte[0]); // turn bad checksum dcws into cannot-decodes
             checksumFailCount++;
 
-          } else if(isBadDcw(msg, badDcws)) { // verify against list of preconfigured bad replies
+          } else if(isBadDcw(msg, badDcws, zeroCounting)) { // verify against list of preconfigured bad replies
             logger.warning("Bad DCW reply from '" + connector.getName() + "': " +
                 DESUtil.bytesToString(msg.getCustomData()));
             msg.setCustomData(new byte[0]); // turn preconfigured bad dcws into cannot-decodes
@@ -236,22 +235,15 @@ public class DcwFilterPlugin implements ProxyPlugin, ReplyFilter {
     for(int i = 0; i < curr.length; i++) curr[i] |= prev[i];
   }
 
-  private static boolean checksumDcw(byte[] cw) {
-    for (int i = 0; i < 16; i+=4) {
-      if (cw[i+3] != (byte)((cw[i] + cw[i+1] + cw[i+2]) & 0xFF))
-        return false;
-    }
-    return true;
-  }
-
-  private static boolean isBadDcw(CamdNetMessage msg, Set badDcws) {
-    byte[] badDcw;
+  private static boolean isBadDcw(CamdNetMessage msg, Set badDcws, boolean zeroCounting) {
+    byte[] badDcw; byte[] data = msg.getCustomData();
     for(Iterator iter = badDcws.iterator(); iter.hasNext();) {
       badDcw = (byte[])iter.next();
-      if(Arrays.equals(msg.getCustomData(), badDcw)) {
+      if(Arrays.equals(data, badDcw)) {
         return true;
       }
     }
+    if(zeroCounting) return msg.hasFiveZeroes();
     return false;
   }
 

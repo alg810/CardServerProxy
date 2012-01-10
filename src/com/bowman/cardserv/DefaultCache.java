@@ -195,13 +195,20 @@ public class DefaultCache implements CacheHandler {
     if(reply.getProfileName() == null) reply.setProfileName(request.getProfileName());
     if(reply.getNetworkId() == 0) reply.setNetworkId(request.getNetworkId());
     CamdNetMessage oldReply = (CamdNetMessage)ecmMap.put(request, reply);
-    if(oldReply != null) {
-      logger.finer("Overwrote existing cached reply with: " + reply.hashCodeStr());
+    if(oldReply != null) { // overwrite
       if(reply.getOriginAddress() != null) logger.fine("Cache reply " + reply.hashCodeStr() + " late by: " +
         (reply.getTimeStamp() - oldReply.getTimeStamp()) + " ms");      
       if(!oldReply.equals(reply)) {
-        logger.warning("Overwrote cache reply with different DCW! - Previous: " + oldReply.toDebugString() +
-            " Current: " + reply.toDebugString());
+        if(!oldReply.equalsSingleDcw(reply)) // completely different reply
+          logger.warning("Overwrote cache reply with different DCW! - Previous: " + oldReply.toDebugString() +
+              " Current: " + reply.toDebugString() + " (time difference: " + (reply.getTimeStamp() - oldReply.getTimeStamp()) + "ms)");
+        else { // one cw matches
+          if(oldReply.hasZeroDcw() || reply.hasZeroDcw()) // one was zeroes only, probably harmless so avoid logging warning in this case
+            logger.info("Overwrote cache reply with reply that has a different opposing DCW - Previous: " + oldReply.toDebugString() +
+              " Current: " + reply.toDebugString());
+          else logger.warning("Overwrote cache reply with reply that has a different opposing DCW - Previous: " + oldReply.toDebugString() +
+              " Current: " + reply.toDebugString());
+        }
       }
     } // else if(listener != null) listener.onReply(request, reply);
   }

@@ -3,6 +3,8 @@ package com.bowman.cardserv;
 import com.bowman.cardserv.crypto.DESUtil;
 import com.bowman.cardserv.util.TimedAverageList;
 
+import java.util.*;
+
 /**
  * Created by IntelliJ IDEA.
  * User: bowman
@@ -10,6 +12,9 @@ import com.bowman.cardserv.util.TimedAverageList;
  * Time: 06:38
  */
 public class SourceCacheEntry implements Comparable {
+
+  static final Map owCw = Collections.synchronizedMap(new LinkedHashMap());
+  static final Map recurringOwCw = Collections.synchronizedMap(new LinkedHashMap());
 
   int updateCount, abortCount, duplicateCount, overwriteCount;
   String sourceStr, ipStr, label;
@@ -36,10 +41,35 @@ public class SourceCacheEntry implements Comparable {
     return sourceStr.startsWith("L");
   }
 
-  public void reportOverWrite(ServiceCacheEntry entry, CamdNetMessage newRequest, CamdNetMessage oldReply, CamdNetMessage newReply) {
+  public boolean reportOverWrite(ServiceCacheEntry entry, CamdNetMessage newRequest, CamdNetMessage oldReply, CamdNetMessage newReply) {
+    if(oldReply.hasZeroDcw() || newReply.hasZeroDcw()) {
+      if(oldReply.equalsSingleDcw(newReply)) return false; // don't consider these overwrites
+    }
     overwriteCount++;
     overwrites.put(newRequest, new ReplyTuple(newReply, oldReply));
-    System.out.println(entry + " " + overwrites);
+
+    if(countOwCw(newReply) ||  countOwCw(oldReply)) {
+      System.out.println("ecm: " + newRequest.hashCodeStr() + " " + DESUtil.bytesToString(newRequest.getCustomData()));
+      System.out.println(entry + " " + overwrites.get(newRequest) + "\n");
+    }
+
+    return true;
+  }
+
+  static boolean countOwCw(CamdNetMessage rep) {
+    Integer i = (Integer)owCw.get(rep);
+    if(i == null) owCw.put(rep, new Integer(1));
+    else {
+      i = new Integer(i.intValue() + 1);
+      owCw.put(rep, i);
+      if(i.intValue() > 2) {
+        recurringOwCw.put(rep, i);
+
+        System.out.println("Recurring overwrite cw: [" + CaProfile.getKeyStr(rep.getNetworkId(), rep.getCaId()) + "] "  + DESUtil.bytesToString(rep.getCustomData()) + " (" + i + ")");
+        return true;
+      }
+    }
+    return false;
   }
 
   public void reportDuplicate(ServiceCacheEntry entry, CamdNetMessage newRequest, CamdNetMessage oldReply) {
@@ -77,7 +107,7 @@ public class SourceCacheEntry implements Comparable {
     }
 
     public String toString() {
-      return "\n" + DESUtil.bytesToString(oldReply.getCustomData()) + "\n" + DESUtil.bytesToString(newReply.getCustomData());
+      return "\nold: " + oldReply.toDebugString() + "\nnew: " + newReply.toDebugString();
     }
   }
 }

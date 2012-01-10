@@ -643,11 +643,18 @@ public class XmlHelper implements CommandManager {
     if(!webBackend.isSuperUser(user)) {
       xb.appendElement("error", "description", "Super-user required.", true);
     } else {
+
       Thread[] threads = new Thread[Thread.activeCount()];
       Thread.enumerate(threads);
       xb.appendElement("system-threads", "count", threads.length);
       for(int i = 0; i < threads.length; i++) {
-        if(threads[i] != null) xb.appendElement("thread", "name", threads[i].toString(), true);
+        if(threads[i] != null) {
+          xb.appendElement("thread", "name", threads[i].toString());
+          if(checkFileDescriptors) {
+            xb.appendAttr("cpu-time", UnixUtil.getThreadCpuTime(threads[i].getId()));
+            xb.appendAttr("user-time", UnixUtil.getThreadUserTime(threads[i].getId())).endElement(true);
+          } else xb.appendAttr("cpu-time", "?").endElement(true);
+        }
       }
       xb.closeElement("system-threads");
     }

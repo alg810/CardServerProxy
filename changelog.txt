@@ -24,6 +24,8 @@ Cardservproxy changelog:
 - Fixed: Removing a profile from a user that had used csp-connect had no effect, as it remained locally cached at the
   client proxy, and no mechanism existed for removing it or blocking the now disallowed requests.
 - Fixed: Missing log warning and cws event for csp-connector login failure (on bad credentials).
+- Fixed: Massive memory leaks when using high volumes of ClusteredCache udp updates in broken/assymetric clusters, or
+  when using third party relayers (probably still a bad idea to do this however).
 - Changed: Two ecms (or dcw replies) with the same payload data but different dvb table ids (even/0x80 vs odd/0x81) are
   now considered identical by the proxy. Implications unknown.
 - Changed: ClusteredCache transport format now includes meta-data such as ca-id and network-id.
@@ -41,11 +43,15 @@ Cardservproxy changelog:
 - Added: DreamboxPlugin (csp-agent) support for more/older dm500 images. Basic (unsecured) file upload support.
 - Added: proxy-reference.html updated with highlighting for important elements and additional examples.
 - Added: CacheCoveragePlugin, for visualizing the contents and show coverage per transponder/mux.
-- Added: New AdvXmlUserManager to show how to add um-specific functionality without changing the core or existing um's
+- Added: New AdvXmlUserManager to show how to add um-specific functionality without changing the core or existing um's.
+- Added: Some basic sanity checks for incoming ClusteredCache udp updates (DCW checksum, zero counting). Default enabled.
 
 - Changes to proxy.xml:
   Added: Element <auto-add-peers> to ClusteredCache <cache-config> (true/false, default: false). Add peers automatically
   if they send you traffic (adding them as targets for outgoing packets).
+  Added: Element <cw-validation> to ClusteredCache <cache-config>. Attributes 'checksum', 'zero-counting', 'log-warnings'
+  (true/false, default true). Determines whether to drop remote-origin cw's with bad checksum, and more than 4 zeroes
+  (but less than 8, so intentionally blanked out cw's will not be affected by this check).
   Added: Attribute 'enable-service-linking' to <cache-handler> (true/false, default: false). Enables sid cache linker.
   Added: Attribute 'allow-different-ip' to <user-manager>, allows newcamd connections from different ip sources
   for the same user.

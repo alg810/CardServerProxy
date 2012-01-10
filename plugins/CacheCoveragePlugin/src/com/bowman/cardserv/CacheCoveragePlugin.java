@@ -321,21 +321,11 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     for(Iterator iter = forwarders.values().iterator(); iter.hasNext(); ) {
       forwarder = (CacheForwarder)iter.next();
       xb.appendElement("forwarder", "name", forwarder.getName());
-      xb.appendAttr("connected", forwarder.isConnected());
-      xb.appendAttr("max-delay", forwarder.getMaxDelay());
-      xb.appendAttr("avg-latency", forwarder.getAvgLatency());
-      xb.appendAttr("peak-latency", forwarder.getPeakLatency());
-      xb.appendAttr("avg-msize", forwarder.getAvgMsgSize());
-      xb.appendAttr("peak-msize", forwarder.getPeakMsgSize());
-      xb.appendAttr("cur-qsize", forwarder.getSendQSize());
-      xb.appendAttr("msg-count", forwarder.getCount());
-      xb.appendAttr("filtered", forwarder.getFiltered());
-      xb.appendAttr("avg-sent-rate", forwarder.getSentAvg());
-      xb.appendAttr("avg-recv-rate", forwarder.getRecvAvg());
-      xb.appendAttr("ecms", forwarder.getEcmForwards());
-      xb.appendAttr("delay-alerts", forwarder.getDelayAlerts());
-      xb.appendAttr("reconnects", forwarder.getReconnects());
-      xb.appendAttr("errors", forwarder.getErrors());
+      Properties p = forwarder.getProperties(); String key;
+      for(Enumeration e = p.propertyNames(); e.hasMoreElements();) {
+        key = (String)e.nextElement();
+        xb.appendAttr(key, p.getProperty(key));
+      }
       Map ri = forwarder.getRemoteInstances();
       if(!ri.isEmpty()) {
         xb.endElement(false);
@@ -443,14 +433,15 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       if(sce.request != null && filter != null && !sce.getSources(false).contains(filter)) continue;
       int avgInterval = sce.getAvgInterval();
       int avgVariance = sce.getAvgVariance();
+      int ce = sce.getContinuityErrors();
       xb.appendElement("service");
       xb.appendAttr("name", sce.ts.getName());
       xb.appendAttr("id", sce.ts.getId());
       if(sce.ts.getTransponder() != -1) xb.appendAttr("tid", sce.ts.getTransponder());
       xb.appendAttr("expired", sce.isExpired());
       xb.appendAttr("update-count", sce.getUpdateCount());
-      xb.appendAttr("continuity-errors", sce.getContinuityErrors());
-      xb.appendAttr("total-continuity-errors", sce.getContinuityErrorsTotal());
+      xb.appendAttr("continuity-errors", ce==-1?"?":String.valueOf(ce));
+      xb.appendAttr("total-continuity-errors", ce==-1?"?":String.valueOf(sce.getContinuityErrorsTotal()));
       xb.appendAttr("avg-interval", avgInterval==-1?"?":String.valueOf(avgInterval));
       xb.appendAttr("avg-variance", avgVariance==-1?"?":String.valueOf(avgVariance));
       if(sce.request != null) xb.appendAttr("age", sce.getAge());

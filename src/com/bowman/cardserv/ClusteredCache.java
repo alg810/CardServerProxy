@@ -24,7 +24,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private InetAddress mcGroup;
   private String trackerKey, localHost;
   private URL trackerUrl;
-  private Set peerList = new HashSet();
+  private Set peerList = new HashSet(), badDcws = new HashSet();
   private Map hostPings = new HashMap(), hostReceives = new HashMap();
   private long trackerInterval, syncPeriod, pingSent;
   private int remotePort, localPort;
@@ -33,9 +33,11 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private Thread clusterThread, trackerThread;
 
   private boolean useMulticast, debug, hideNames, autoAddPeers;
+  private boolean checksumCws, zeroCounting, logWarnings;
 
   private int trackerFailures, receivedEntries, receivedPending, receivedDiscarded;
   private int sentPending, sentEntries, reSentEntries, receivedResendReqs, sentResendReqs;
+  private int receivedBadChecksum, receivedZeroCw, receivedBadCw;
 
   private TimedAverageList sentAvg = new TimedAverageList(10), recvAvg = new TimedAverageList(10);
   private RequestArbiter arbiter = new RequestArbiter();
@@ -159,6 +161,30 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
       }
     }
 
+    ProxyXmlConfig cwvXml = null;
+    try {
+      cwvXml = xml.getSubConfig("cw-validation");
+    } catch(ConfigException e) {}
+    if(cwvXml == null) {
+      checksumCws = true;
+      zeroCounting = true;
+      logWarnings = true;
+    } else {
+      checksumCws = "true".equalsIgnoreCase(cwvXml.getStringValue("checksum", "true"));
+      zeroCounting = "true".equalsIgnoreCase(cwvXml.getStringValue("zero-counting", "true"));
+      logWarnings = "true".equalsIgnoreCase(cwvXml.getStringValue("log-warnings", "true"));
+
+      badDcws.clear();
+      Iterator iter = cwvXml.getMultipleStrings("bad-dcw");
+      byte[] bd;
+      if(iter != null) while(iter.hasNext()) {
+        bd = DESUtil.stringToBytes((String)iter.next());
+        if(bd.length != 16)
+          throw new ConfigException(xml.getFullName(), "bad-dcw not 16 bytes: " + DESUtil.bytesToString(bd));
+        else badDcws.add(bd);
+      }
+    }
+
     registerCtrlCommands();
   }
 
@@ -275,6 +301,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     receivedPending = 0; // # of received pending ecm notifications
     receivedEntries = 0; // # of received ecm -> cw mappings
     receivedDiscarded = 0; // # of received mappings that already existed in local cache
+    receivedBadChecksum = 0; // # of received cws with incorrect checksum (dropped if cw-validation is enabled)
+    receivedZeroCw = 0; // # of received cws with more than 5 but less than 8 zeroes (dropped if cw-validation is enabled)
     sentPending = 0;
     sentEntries = 0;
     sentAvg.clear();
@@ -374,15 +402,17 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     if(!alwaysWait && successFactor != -1) { // dont send any notification when we wont be forwarding to card
       request.setArbiterNumber(null); // remove any arbitration marker
       sendMessage(request, null); // tell all proxy peers that we're now processing this request
+      request.setLockSent(true);
       if(System.currentTimeMillis() - pingSent > 4000) sendPing();
     }
   }
 
   public synchronized boolean processReply(CamdNetMessage request, CamdNetMessage reply) {
     if(reply == null || reply.isEmpty()) {
-      if(pendingEcms.containsKey(request)) { // only send null replies for requests that were actually locked
+      if(pendingEcms.containsKey(request) && request.isLockSent()) { // only send null replies for requests that were actually communicated as locked
         if(reply == null) reply = request.getEmptyReply();
         sendMessage(request, reply);
+        request.setLockSent(false);
       }
     } else sendMessage(request, reply);
     return super.processReply(request, reply);
@@ -554,6 +584,31 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     else if(Thread.currentThread() == trackerThread) startTrackerUpdates();
   }
 
+  private boolean isValidCw(CamdNetMessage msg) {
+    if(msg.isEmpty()) return true;
+    if(!badDcws.isEmpty()) {
+      byte[] badDcw; byte[] data = msg.getCustomData();
+      for(Iterator iter = badDcws.iterator(); iter.hasNext();) {
+        badDcw = (byte[])iter.next();
+        if(Arrays.equals(data, badDcw)) {
+          receivedBadCw++;
+          return false;
+        }
+      }
+    }
+    if(checksumCws && !msg.checksumDcw()) {
+      if(logWarnings) logger.warning("Bad checksum in DCW, dropping: " + msg.toDebugString());
+      receivedBadChecksum++;
+      return false;
+    }
+    if(zeroCounting && msg.hasFiveZeroes()) {
+      if(logWarnings) logger.warning("Bad DCW (>5 zeroes), dropping: " + msg.toDebugString());
+      receivedZeroCw++;
+      return false;
+    }
+    return true;
+  }
+
   private void startReceiving() {
     boolean alive = true;
 
@@ -580,13 +635,15 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
             CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request, true);
             reply.setOriginAddress(packet.getAddress().getHostAddress());
             if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());
-            if(!this.contains(request)) super.processReply(request, reply);
-            else {
-              receivedDiscarded++;
-              if(monitor != null) monitor.onReply(request, reply); // allow plugin to track discards
+            if(isValidCw(reply)) {
+              if(!this.contains(request)) super.processReply(request, reply);
+              else {
+                receivedDiscarded++;
+                if(monitor != null) monitor.onReply(request, reply); // allow plugin to track discards
+              }
+              if(debug) logger.fine("Cache reply received for: " + request.hashCodeStr() + " -> " + reply.hashCodeStr() +
+                " (from: " + reply.getOriginAddress() + ") " + packet.getLength() + " bytes");
             }
-            if(debug) logger.fine("Cache reply received for: " + request.hashCodeStr() + " -> " + reply.hashCodeStr() +
-              " (from: " + reply.getOriginAddress() + ") " + packet.getLength() + " bytes");
             break;
 
           case TYPE_REQUEST:
@@ -697,6 +754,9 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     p.setProperty("received-cached", String.valueOf(receivedEntries));
     p.setProperty("received-discarded", String.valueOf(receivedDiscarded));
     p.setProperty("received-resendreqs", String.valueOf(receivedResendReqs));
+    if(receivedBadChecksum > 0) p.setProperty("received-bad-checksum", String.valueOf(receivedBadChecksum));
+    if(receivedZeroCw > 0) p.setProperty("received-zero-cw", String.valueOf(receivedZeroCw));
+    if(receivedBadCw > 0) p.setProperty("received-bad-cw", String.valueOf(receivedBadCw));
     p.setProperty("sent-resends", String.valueOf(reSentEntries));
     p.setProperty("sent-resendreqs", String.valueOf(sentResendReqs));
     p.setProperty("sent-pending", String.valueOf(sentPending));
@@ -747,8 +807,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
 
   static class RequestArbiter {
 
-    Map prePendingMine = Collections.synchronizedMap(new HashMap());
-    Map prePendingAll = Collections.synchronizedMap(new HashMap());
+    Map prePendingMine = Collections.synchronizedMap(new MessageCacheMap(9000));
+    Map prePendingAll = Collections.synchronizedMap(new MessageCacheMap(9000));
 
     boolean addForArbitration(int baseValue, CamdNetMessage request) {
       if(prePendingMine.containsKey(request)) return false;

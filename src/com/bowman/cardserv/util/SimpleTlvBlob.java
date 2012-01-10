@@ -27,6 +27,7 @@ public class SimpleTlvBlob {
       count = buf[pos++] & 0xFF;
       length = buf[pos++] & 0xFF;
       for(int n = 0; n < count; n++) {
+        if(n > 0 && length > 8) length = buf[pos++] & 0xFF;
         value = new byte[length];
         System.arraycopy(buf, pos, value, 0, length);
         add(type, value);
@@ -86,11 +87,11 @@ public class SimpleTlvBlob {
       values = (List)contents.get(key);
       baos.write(key.intValue());
       baos.write(values.size());
-      value = (byte[])values.get(0);
-      baos.write(value.length);
       for(int i = 0; i < values.size(); i++) {
         try {
-          baos.write((byte[])values.get(i));
+          value = (byte[])values.get(i);
+          if(i == 0 || value.length > 8) baos.write(value.length);
+          baos.write(value);
         } catch(IOException ignored) {}
       }
     }

@@ -43,11 +43,13 @@ public class ServiceCacheEntry implements Comparable {
   }
 
   public int getContinuityErrors() {
-    return continuityErrors;
+    if(continuityCount == -1) return -1;
+    else return continuityErrors;
   }
 
   public int getContinuityErrorsTotal() {
-    return continuityErrorsTotal + continuityErrors;
+    if(continuityCount == -1) return -1;
+    else return continuityErrorsTotal + continuityErrors;
   }
 
   public int getDuplicateCount() {
@@ -114,8 +116,8 @@ public class ServiceCacheEntry implements Comparable {
     updateCount++;
     source.updateCount++;
     if(backLog.containsKey(newRequest) && !newReply.equals(backLog.get(newRequest))) {
-      overwriteCount++; // overwritten with different dcw
-      source.reportOverWrite(this, newRequest, (CamdNetMessage)backLog.get(newRequest), newReply);
+      // overwritten with different dcw
+      if(source.reportOverWrite(this, newRequest, (CamdNetMessage)backLog.get(newRequest), newReply)) overwriteCount++;
       return false;
     }
     if(backLog.containsKey(newRequest)) {
@@ -125,7 +127,11 @@ public class ServiceCacheEntry implements Comparable {
     }
 
     if(reply != null) {
-      if(isOverlapping(reply.getCustomData(), newReply.getCustomData())) {
+      if(reply.hasZeroDcw() || newReply.hasZeroDcw()) { // no continuity/overlap checking possible with zeroed out cws
+        setLastInterval(newRequest.getTimeStamp() - request.getTimeStamp());
+        multiple = 0;
+        continuityCount = -1;
+      } else if(isOverlapping(reply.getCustomData(), newReply.getCustomData())) {
         setLastInterval(newRequest.getTimeStamp() - request.getTimeStamp());
         multiple = 0;
         continuityCount++;
@@ -157,12 +163,14 @@ public class ServiceCacheEntry implements Comparable {
       }
     }
 
-    if(continuityCount * expectedInterval > 3600000) { // reset error counter if continous for 1h
-      if(continuityErrors > 0) {
-        resetContinuityErrors();
-        // System.out.println(this + " Continous for " + continuityCount * expectedInterval);
+    if(continuityCount != -1) {
+      if(continuityCount * expectedInterval > 3600000) { // reset error counter if continous for 1h
+        if(continuityErrors > 0) {
+          resetContinuityErrors();
+          // System.out.println(this + " Continous for " + continuityCount * expectedInterval);
+        }
+        continuityCount = 0;
       }
-      continuityCount = 0;
     }
 
     request = newRequest;
@@ -229,7 +237,6 @@ public class ServiceCacheEntry implements Comparable {
     System.arraycopy(other, 8, cw4, 0, 8);
     return Arrays.equals(cw1, cw3) || Arrays.equals(cw2, cw4);
   }
-
 
   public String toString() {
     return ts.getName() + ":" + getAvgInterval() + ":" + getAge() + ":" + continuityErrors;

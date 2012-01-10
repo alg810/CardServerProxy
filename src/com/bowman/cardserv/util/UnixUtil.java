@@ -12,6 +12,8 @@ import java.io.IOException;
  */
 public class UnixUtil {
 
+  private static java.lang.management.ThreadMXBean tmxb;
+
   public static long getOpenFileDescriptorCount() {
     Object o = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
     if(o instanceof UnixOperatingSystemMXBean) return ((UnixOperatingSystemMXBean)o).getOpenFileDescriptorCount();
@@ -24,6 +26,7 @@ public class UnixUtil {
     else return -1;
   }
 
+
   /*
   public static void dumpHeap(String fileName, boolean live) throws IOException {
     HotSpotDiagnosticMXBean mb = sun.management.ManagementFactory.getDiagnosticMXBean();
@@ -31,4 +34,15 @@ public class UnixUtil {
   }
   */
 
+  public static long getThreadCpuTime(long id) {
+    if(tmxb == null) tmxb = java.lang.management.ManagementFactory.getThreadMXBean();
+    if(tmxb != null) return tmxb.getThreadCpuTime(id) / 1000000;
+    else return -1;
+  }
+
+  public static long getThreadUserTime(long id) {
+    if(tmxb == null) tmxb = java.lang.management.ManagementFactory.getThreadMXBean();
+    if(tmxb != null) return tmxb.getThreadCpuTime(id) / 1000000;
+    else return -1;
+  }
 }

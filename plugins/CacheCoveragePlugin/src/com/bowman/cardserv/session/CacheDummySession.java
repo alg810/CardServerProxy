@@ -44,7 +44,6 @@ public class CacheDummySession extends AbstractSession {
   }
 
   public void setFlag(CamdNetMessage request, char f) {
-    System.out.println("Flag: " + f);
   }
 
   public void run() {

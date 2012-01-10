@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class MessageCacheMap extends LinkedHashMap {
 
-  private long maxAge;
+  private long maxAge, eldestAge;
   private StaleEntryListener listener;
 
   public MessageCacheMap(long maxAge) {
@@ -27,8 +27,12 @@ public class MessageCacheMap extends LinkedHashMap {
       Set s = (Set)eldest.getValue();
       if(s != null && s.iterator() != null) msg = (CamdNetMessage)s.iterator().next();
     }
-    if(msg == null) return true;
-    if(System.currentTimeMillis() - msg.getTimeStamp() > maxAge) {
+    if(msg == null) {
+      eldestAge = -1;
+      return true;
+    }
+    eldestAge = System.currentTimeMillis() - msg.getTimeStamp();
+    if(eldestAge > maxAge) {
       if(listener != null) listener.onRemoveStale(msg);
       return true;
     } else return false;
@@ -36,6 +40,14 @@ public class MessageCacheMap extends LinkedHashMap {
 
   public void setStaleEntryListener(StaleEntryListener listener) {
     this.listener = listener;
+  }
+
+  public long getMaxAge() {
+    return maxAge;
+  }
+
+  public long getEldestAge() {
+    return eldestAge;
   }
 
   public void setMaxAge(long maxAge) {

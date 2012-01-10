@@ -32,12 +32,13 @@ Example config:
 ---------------
   <plugin class="com.bowman.cardserv.DcwFilterPlugin" enabled="true" jar-file="dcwfilterplugin.jar">
     <plugin-config>
-      <bad-dcw>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01</bad-dcw> <!-- add more 16 byte sequences that are to be considered bad, optional -->
-      <bad-dcw>01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16</bad-dcw>
+      <bad-dcw>01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16</bad-dcw>  <!-- add more 16 byte sequences that are to be considered bad, optional -->
 
-      <detect-links>true</detect-links> <!-- keep a 20 sec backlog of all received replies and check for services that share the same dcw sequence -->
+      <detect-links>false</detect-links> <!-- keep a 20 sec backlog of all received replies and check for services that share the same dcw sequence -->
       <verify-replies>false</verify-replies> <!-- block and hold all replies until they've been received from at least 2 different connectors (experimental) -->
       <force-continuity>false</force-continuity> <!-- detect and attempt to reassemble replies where one of the two dcws have been zeroed out (experimental) -->
+
+      <zero-counting>true</zero-counting> <!-- consider any dcw with 5 or more zeroes to be bad, thus eliminating the need to blacklist them manually -->
     </plugin-config>
   </plugin>
   

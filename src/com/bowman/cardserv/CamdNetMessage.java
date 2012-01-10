@@ -201,7 +201,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   private String linkedService;
 
   // cache metadata
-  private boolean instant, timeOut;
+  private boolean instant, timeOut, lockSent;
   private Double arbiterNumber;
 
   // original unparsed protocol-specific data
@@ -567,6 +567,58 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return hashCode() == that.hashCode();
   }
 
+  public boolean equalsSingleDcw(CamdNetMessage msg) {
+    if(dataLength != 16 || msg.dataLength != 16) return false;
+    if(msg == null) return false;
+    boolean cw1eq = true, cw2eq = true;
+    int cz = 0;
+    for(int i = 0; i < 8; i++) {
+      if(customData[i] != msg.customData[i]) {
+        cw1eq = false;
+        break;
+      } else cz += customData[i] + msg.customData[i];
+    }
+    if(cw1eq && cz == 0) cw1eq = false; // don't count match if cw is all 00
+    cz = 0;
+    for(int i = 8; i < 16; i++) {
+      if(customData[i] != msg.customData[i]) {
+        cw2eq = false;
+        break;
+      } else cz += customData[i] + msg.customData[i];
+    }
+    if(cw2eq && cz == 0) cw2eq = false; // don't count match if cw is all 00
+    return cw1eq || cw2eq;
+  }
+
+  public boolean hasFiveZeroes() {
+    if(dataLength != 16) return false;
+    int cw1c = 0, cw2c = 0;
+    for(int i = 0; i < 8; i++) if(customData[i] == 0) cw1c++;
+    if(cw1c < 8 && cw1c > 4) return true;
+    for(int i = 8; i < 16; i++) if(customData[i] == 0) cw2c++;
+    if(cw2c < 8 && cw2c > 4) return true;
+    return false;
+  }
+
+  public boolean hasZeroDcw() {
+    if(dataLength != 16) return false;
+    int c = 0;
+    for(int i = 0; i < 8; i++) c += customData[i];
+    if(c == 0) return true;
+    c = 0;
+    for(int i = 8; i < 16; i++) c += customData[i];
+    return c == 0;
+  }
+
+  public boolean checksumDcw() {
+    if(dataLength != 16) return false;
+    for(int i = 0; i < 16; i+=4) {
+      if(customData[i+3] != (byte)((customData[i] + customData[i+1] + customData[i+2]) & 0xFF))
+        return false;
+    }
+    return true;
+  }
+
   public int hashCode() {
     // int result;
     // result = commandTag;
@@ -596,6 +648,14 @@ public class CamdNetMessage implements CamdConstants, Serializable {
 
   public boolean isTimeOut() {
     return timeOut;
+  }
+
+  public boolean isLockSent() {
+    return lockSent;
+  }
+
+  public void setLockSent(boolean lockSent) {
+    this.lockSent = lockSent;
   }
 
   public void setArbiterNumber(Double arbiterNumber) {

@@ -1,5 +1,6 @@
 package com.bowman.cardserv;
 
+import com.bowman.cardserv.crypto.DESUtil;
 import com.bowman.cardserv.interfaces.*;
 import com.bowman.cardserv.session.CacheDummySession;
 import com.bowman.cardserv.util.*;
@@ -18,7 +19,7 @@ import java.util.*;
 public class CacheForwarder implements XmlConfigurable, GHttpConstants {
 
   private static final int RETRY_WAIT = 2000;
-  private static final int RECORD_SIZE = 28, MAX_QSIZE = 2000, INSTANCE_MAXAGE = 60 * 20 * 1000;
+  private static final int RECORD_SIZE = 28, MAX_QSIZE = 3000, INSTANCE_MAXAGE = 60 * 20 * 1000;
   private static final int CONNECT_TIMEOUT = 10 * 1000;
   private static final String CRLF = "" + (char)0x0D + (char)0x0A;
 
@@ -87,62 +88,33 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
     return connected;
   }
 
-  public int getAvgLatency() {
-    return latency.getAverage(true);
+  public Properties getProperties() {
+    Properties p = new Properties();
+    p.setProperty("max-delay", String.valueOf(maxDelay));
+    p.setProperty("avg-latency", String.valueOf(latency.getAverage(true)));
+    p.setProperty("peak-latency", String.valueOf(getPeakLatency()));
+    p.setProperty("avg-msize", String.valueOf(msgSize.getAverage(true)));
+    p.setProperty("peak-msize", String.valueOf(msgSize.getMaxValue()));
+    p.setProperty("cur-qsize", String.valueOf(getSendQSize()));
+    p.setProperty("msg-count", String.valueOf(counter));
+    p.setProperty("filtered", String.valueOf(filtered));
+    p.setProperty("avg-sent-rate", String.valueOf(sentAvg.getTotal(true) / 10));
+    p.setProperty("avg-recv-rate", String.valueOf(recvAvg.getTotal(true) / 10));
+    p.setProperty("ecms", String.valueOf(ecmForwards));
+    p.setProperty("delay-alerts", String.valueOf(delayAlerts));
+    p.setProperty("reconnects", String.valueOf(reconnects));
+    p.setProperty("errors", String.valueOf(errors));
+    return p;
   }
 
-  public int getPeakLatency() {
+  private int getPeakLatency() {
     if(redundant) return Math.min(threads[0].peakLatency, threads[1].peakLatency);
     else return Math.max(threads[0].peakLatency, threads[1].peakLatency);
   }
 
-  public int getAvgMsgSize() {
-    return msgSize.getAverage(true);
-  }
-
-  public int getPeakMsgSize() {
-    return msgSize.getMaxValue();
-  }
-
-  public int getCount() {
-    return counter;
-  }
-
-  public int getReconnects() {
-    return reconnects;
-  }
-
-  public int getErrors() {
-    return errors;
-  }
-
-  public int getSendQSize() {
+  private int getSendQSize() {
     if(redundant) return threads[0].localQ.size() + threads[1].localQ.size();
     else return singleQ.size();
-  }
-
-  public int getMaxDelay() {
-    return maxDelay;
-  }
-
-  public long getSentAvg() {
-    return sentAvg.getTotal(true) / 10;
-  }
-
-  public long getRecvAvg() {
-    return recvAvg.getTotal(true) / 10;
-  }
-
-  public int getEcmForwards() {
-    return ecmForwards;
-  }
-
-  public int getDelayAlerts() {
-    return delayAlerts;
-  }
-
-  public int getFiltered() {
-    return filtered;
   }
 
   public Map getRemoteInstances() {
@@ -268,10 +240,18 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
     }
 
     SimpleTlvBlob getContentAsTlv() {
+      byte[] buf = null;
       try {
-        return new SimpleTlvBlob(getContentAsString().getBytes("ISO-8859-1"));
+        buf = getContentAsString().getBytes("ISO-8859-1");
+        return new SimpleTlvBlob(buf);
       } catch(UnsupportedEncodingException e) {
         e.printStackTrace();
+        return null;
+      } catch(Exception e) {
+        e.printStackTrace();
+        System.out.println(headers);
+        System.out.println(DESUtil.bytesToString(buf));
+        System.out.println();
         return null;
       }
     }
@@ -324,6 +304,7 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
       RequestReplyPair pair;
       for(Iterator iter = sendQ.iterator(); iter.hasNext(); ) {
         pair = (RequestReplyPair)iter.next();
+
         ClusteredCache.writeCacheReq(dos, pair.request, false);
         ClusteredCache.writeCacheRpl(dos, pair.reply, false);
       }
@@ -353,7 +334,9 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
         reply.body = sb.toString().toCharArray();
       } else {
         reply.body = new char[reply.getContentLength()];
-        if(br.read(reply.body) != reply.body.length) throw new IOException("Assertation failed");
+        if(br.read(reply.body) != reply.body.length) {
+          throw new IOException("Assertation failed"); // todo
+        }
       }
 
       recvBytes(reply.getSize());
@@ -383,14 +366,28 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
           parent.logger.warning("CacheForwarder[" + name + "] invalid password, disabling.");
           close();
           return;
-        default: // all 5xx errors
+        case 503:
+          // possibly over quota
+          if(reply.getContentAsString().indexOf("quota") != -1)
+            parent.logger.warning("CacheForwarder[" + name + "] backend temporarily over quota.");
+          else {
+            parent.logger.warning("CacheForwarder[" + name + "] backend temporarily unavailable: " + resp);
+            System.out.println(reply.getContentAsString());
+          }
+          try {
+            Thread.sleep(5000);
+          } catch(InterruptedException ignored) {}
+          return;
+        default: // all other 5xx errors
           parent.logger.warning("CacheForwarder[" + name + "] received error reply: " + resp);
+          System.out.println(reply.getContentAsString());
           handleError(sendQ, true);
           break;
       }
     }
 
     void handleReply(SimpleTlvBlob tb) {
+      if(tb == null) return;
       int key; String instance = null;
       for(Iterator iter = tb.keySet().iterator(); iter.hasNext(); ) {
         key = ((Integer)iter.next()).intValue();
@@ -415,12 +412,12 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
             for(Iterator i = ecms.iterator(); i.hasNext(); ) {
               try {
                 ecmReq = CamdNetMessage.parseGHttpReq(new DataInputStream(new ByteArrayInputStream((byte[])i.next())),
-                    conn.getInetAddress().getHostAddress(), false);
-                ecmReq.setNetworkId(0xa027); // todo
-                System.out.println(ecmReq.hashCodeStr());
+                    conn.getInetAddress().getHostAddress(), true);
+                // ecmReq.setNetworkId(0xa027); // todo
+                // System.out.println(ecmReq.hashCodeStr());
                 parent.proxy.messageReceived(dummySession, ecmReq);
                 ecmForwards++;
-              } catch(IOException e) {
+              } catch(Exception e) {
                 parent.logger.throwing(e);
               }
             }

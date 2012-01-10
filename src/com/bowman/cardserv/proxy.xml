@@ -110,7 +110,8 @@
       <cw-max-age>19</cw-max-age>
       <max-cache-wait>40%</max-cache-wait>
       <local-port>54277</local-port>
-      <sync-period>0</sync-period>
+      <sync-period>50</sync-period>
+      <cw-validation checksum="true" zero-counting="true" log-warnings="true"/>
     </cache-config>
   </cache-handler>
 

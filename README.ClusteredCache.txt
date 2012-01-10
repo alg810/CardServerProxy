@@ -116,6 +116,17 @@ network is reliable with fairly fixed ping times and no congestion.
 - Added in 0.9.1. Set to true to automatically add any remote peer that is sending updates to this cache (so updates
 will be sent there from this node).
 
+  <cw-validation checksum="true" zero-counting="true" log-warnings="true">  <!-- all default to true if omitted -->
+    <bad-dcw>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</bad-dcw>
+    <bad-dcw>01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10</bad-dcw>
+  </cw-validation>
+
+- Added in 0.9.1. Blocks incoming cache pairs where the dcw has a bad checksum, contains 5 or more zeroes (but less
+  than 8, as to not affect ca-deployments where the opposing cw is blank). Specific cw's known to be bad can also be
+  listed, but only do this if absolutely necessary and there is no way to fix it at the source.
+  Use the CacheCoveragePlugin overwrite analysis to determine if there are recurring bad cws that aren't filtered by
+  checksum or too many zeroes, and only add once it has been traced to the origin server and the cause is known.
+
 </cache-config>
 
 ------------------------------------------------------

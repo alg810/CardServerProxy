@@ -21,9 +21,7 @@ public class CacheCoverageMap extends LinkedHashMap {
 
   protected boolean removeEldestEntry(Map.Entry eldest) {
     CamdNetMessage msg = ((ServiceCacheEntry)eldest.getValue()).request;
-    if(msg != null && System.currentTimeMillis() - msg.getTimeStamp() > maxAge) {
-      return true;
-    } else return false;
+    return msg == null || System.currentTimeMillis() - msg.getTimeStamp() > maxAge;
   }
 
 }
