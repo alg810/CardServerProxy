@@ -303,6 +303,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     receivedDiscarded = 0; // # of received mappings that already existed in local cache
     receivedBadChecksum = 0; // # of received cws with incorrect checksum (dropped if cw-validation is enabled)
     receivedZeroCw = 0; // # of received cws with more than 5 but less than 8 zeroes (dropped if cw-validation is enabled)
+    receivedBadCw = 0; // # of received cws matching an entry in the bad cw list (dropped if cw-validation is enabled)
     sentPending = 0;
     sentEntries = 0;
     sentAvg.clear();

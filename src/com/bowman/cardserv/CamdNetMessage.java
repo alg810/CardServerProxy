@@ -156,6 +156,9 @@ public class CamdNetMessage implements CamdConstants, Serializable {
       try {
         if(extra && dais.available() > 0) msg.connectorName = dais.readUTF();
       } catch (EOFException e) {
+        msg.connectorName = "*truncated*";
+      } catch (UTFDataFormatException e) { // ignore and drop malformatted connector names
+        msg.connectorName = "*malformed*";
       }
     }
     return msg;
