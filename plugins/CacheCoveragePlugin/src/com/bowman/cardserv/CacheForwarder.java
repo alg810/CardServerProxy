@@ -279,6 +279,8 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
     private void initConn() throws IOException {
       conn = ssl?FileFetcher.socketFactory.createSocket():new Socket();
       conn.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT);
+      if(conn == null) return;
+      conn.setSoTimeout(CONNECT_TIMEOUT);
       dos = new DataOutputStream(new BufferedOutputStream(conn.getOutputStream()));
       br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "ISO-8859-1"));
       connected = true;
@@ -484,6 +486,10 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
               reconnects++;
             }
           }
+        } catch(SocketException e) { // probably graceful disconnect
+          parent.logger.info("CacheForwarder[" + name + "] disconnected");
+          parent.logger.throwing(e);
+          handleError(myQ, false);
         } catch(IOException e) { // abnormal disconnect
           parent.logger.warning("CacheForwarder[" + name + "] disconnected: " + e);
           parent.logger.throwing(e);

@@ -2,7 +2,7 @@ CacheCoveragePlugin
 -------------------
 
 This plugin attempts to aid in achieving 100% cache coverage for selected profiles. It monitors the cache contents and
-analyzes cw continuity for each service (so it can't currently be used with systems that always zero out one cw).
+analyzes cw continuity for each service (this can't currently be used with systems that always zero out one cw).
 Cache contributions from both local client sessions and remote ClusteredCache nodes are tracked per service.
 
 It can detect (by looking at the cw overlaps) when there a multiple ecm sources for the same service. This typically
@@ -31,6 +31,10 @@ NOTE:
   In some situations info from service files cannot be correct (e.g regionally differing transponder ids in cable or
   terrestrial networks).
 
+- If nodes in the cluster have differing onid/profile setups, cws will end up randomly distributed among them and no
+  continuity detection will be possible. Recorded remote profiles will remain forever, so any cluster where nodes do not
+  agree on profiles (or where one node has profiles with onid 0000) will cause the plugin to leak memory.
+
 ...
 
 
@@ -41,6 +45,7 @@ Example config:
 ---------------
   <plugin class="com.bowman.cardserv.CacheCoveragePlugin" enabled="true" jar-file="cachecoverageplugin.jar">
     <plugin-config>
+      <analyze-overwrites>false</analyze-overwrites> <!-- keep all contested cws in memory for manual inspection (will leak over time) -->
       <cache-context network-id="22f1" ca-id="0500" interval="20"/> <!-- context/profile has expected cw interval different from 10 secs-->
     </plugin-config>
   </plugin>

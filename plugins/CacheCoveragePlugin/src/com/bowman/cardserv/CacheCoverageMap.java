@@ -13,6 +13,7 @@ public class CacheCoverageMap extends LinkedHashMap {
   private long maxAge;
   protected long windowStart; // arbitrary point in time
   protected String key;
+  protected boolean analyzeOverwrites;
 
   public CacheCoverageMap(String key, long maxAge) {
     this.key = key;

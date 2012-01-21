@@ -19,6 +19,7 @@ import java.util.*;
 public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
 
   protected static final int DEFAULT_CW_VALIDITY = 10000;
+
   protected ProxyLogger logger;
   protected CacheHandler cache;
   protected CardServProxy proxy;
@@ -31,11 +32,16 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
   private Map forwarders = new TreeMap();
   private Map sources = new TreeMap();
 
+  private boolean analyzeOverwrites;
+
   public CacheCoveragePlugin() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
   }
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
+
+    analyzeOverwrites = "true".equalsIgnoreCase(xml.getStringValue("analyze-overwrites", "false"));
+
     ProxyXmlConfig contextXml; String key; int iv;
     for(Iterator iter = xml.getMultipleSubConfigs("cache-context"); iter.hasNext(); ) {
       contextXml = (ProxyXmlConfig)iter.next();
@@ -95,6 +101,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       map = new CacheCoverageMap(profileKey, validity * 2);
       cacheMaps.put(profileKey, map);
     }
+    map.analyzeOverwrites = analyzeOverwrites;
     ServiceCacheEntry entry = (ServiceCacheEntry)map.get(ts);
     if(entry == null) {
       entry = new ServiceCacheEntry(ts, request, validity, map);
