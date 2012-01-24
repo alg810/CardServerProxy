@@ -297,6 +297,16 @@ exit 0' > /usr/script/mgcamd_135a_em.sh
                 echo "Mgcamd installed successfully on Pingulux with Spark image ..."
                 ;;
 
+        "NG-NeutrinoHD")
+                fetch_file "mgcamd.$CPUARCH" "/var/bin/mgcamd" "1"
+                if [ $? != "0" ]; then
+                        echo "Mgcamd installation failed ..."
+                else
+                        echo "Mgcamd installed successfully on Coolstream with NG-NeutrinoHD image ..."
+                fi
+                touch /var/etc/.mgcamd
+                ;;
+
 	"SkipInstall")
 		echo "Config only parameter set ... will skip installation ..."
 		IMAGE=$OLDIMAGE
