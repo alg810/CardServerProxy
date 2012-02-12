@@ -16,7 +16,7 @@ import java.util.*;
  * Date: 2011-07-08
  * Time: 04:01
  */
-public class CacheForwarder implements XmlConfigurable, GHttpConstants {
+public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
 
   private static final int RETRY_WAIT = 2000;
   private static final int RECORD_SIZE = 28, MAX_QSIZE = 3000, INSTANCE_MAXAGE = 60 * 20 * 1000;
@@ -43,9 +43,9 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
   private long bytesOut, bytesIn;
   private TimedAverageList sentAvg = new TimedAverageList(10), recvAvg = new TimedAverageList(10);
 
-  private CacheDummySession dummySession = new CacheDummySession(this);
+  private CacheDummySession dummySession = new CacheDummySession();
 
-  public CacheForwarder(CacheCoveragePlugin parent, String name) {
+  public HttpCacheForwarder(CacheCoveragePlugin parent, String name) {
     this.parent = parent;
     this.name = name;
   }
@@ -147,6 +147,10 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
     connected = false;
   }
 
+  public void forwardRequest(CamdNetMessage req) {
+    return; // not applicable
+  }
+
   public void forwardReply(CamdNetMessage req, CamdNetMessage reply) {
     if(threads != null && connected) {
       if(reply.getDataLength() == 16) {
@@ -160,7 +164,7 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
           synchronized(singleQ) {
             if(singleQ.size() > MAX_QSIZE) {
               singleQ.clear();
-              parent.logger.warning("CacheForwarder[" + name + "] discarding sendQ, no working connections?");
+              parent.logger.warning("HttpCacheForwarder[" + name + "] discarding sendQ, no working connections?");
             }
             singleQ.add(new RequestReplyPair(req, reply));
             singleQ.notifyAll();
@@ -175,7 +179,7 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
       synchronized(threads[i].localQ) {
         if(threads[i].localQ.size() > MAX_QSIZE) {
           threads[i].localQ.clear();
-          parent.logger.warning("CacheForwarder[" + name + "] discarding sendQ, no working connections?");
+          parent.logger.warning("HttpCacheForwarder[" + name + "] discarding sendQ, no working connections?");
         }
         threads[i].localQ.add(new RequestReplyPair(req, reply));
         threads[i].localQ.notifyAll();
@@ -315,7 +319,7 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
 
       String resp = br.readLine();
       if(resp == null) {
-        parent.logger.warning("CacheForwarder[" + name + "] connection closed after post.");
+        parent.logger.warning("HttpCacheForwarder[" + name + "] connection closed after post.");
         handleError(sendQ, true);
         return;
       }
@@ -356,24 +360,24 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
           if(reply.body.length > 0) handleReply(reply.getContentAsTlv());
           break;
         case 401:
-          parent.logger.warning("CacheForwarder[" + name + "] session expired.");
+          parent.logger.warning("HttpCacheForwarder[" + name + "] session expired.");
           sessionId = null;
           break;
         case 400:
-          parent.logger.warning("CacheForwarder[" + name + "] received bad request error, disabling: " +
+          parent.logger.warning("HttpCacheForwarder[" + name + "] received bad request error, disabling: " +
               reply.getContentAsString());
           close();
           return;
         case 403:
-          parent.logger.warning("CacheForwarder[" + name + "] invalid password, disabling.");
+          parent.logger.warning("HttpCacheForwarder[" + name + "] invalid password, disabling.");
           close();
           return;
         case 503:
           // possibly over quota
           if(reply.getContentAsString().indexOf("quota") != -1)
-            parent.logger.warning("CacheForwarder[" + name + "] backend temporarily over quota.");
+            parent.logger.warning("HttpCacheForwarder[" + name + "] backend temporarily over quota.");
           else {
-            parent.logger.warning("CacheForwarder[" + name + "] backend temporarily unavailable: " + resp);
+            parent.logger.warning("HttpCacheForwarder[" + name + "] backend temporarily unavailable: " + resp);
             System.out.println(reply.getContentAsString());
           }
           try {
@@ -381,7 +385,7 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
           } catch(InterruptedException ignored) {}
           return;
         default: // all other 5xx errors
-          parent.logger.warning("CacheForwarder[" + name + "] received error reply: " + resp);
+          parent.logger.warning("HttpCacheForwarder[" + name + "] received error reply: " + resp);
           System.out.println(reply.getContentAsString());
           handleError(sendQ, true);
           break;
@@ -403,20 +407,19 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
             int[] stats = tb.getIntArray(key);
             for(int i = 0; i < stats.length; i++) p.setProperty(STAT_KEYS[i], String.valueOf(stats[i]));
             if(remoteInstances.put(instance, p) == null) {
-              parent.logger.fine("CacheForwarder[" + name + "] encountered new remote instance: " + instance +
+              parent.logger.fine("HttpCacheForwarder[" + name + "] encountered new remote instance: " + instance +
                   " (" + getRemoteInstances().size() + ")");
             }
             break;
           case T_ECM_REQ:
             List ecms = tb.get(key);
-            parent.logger.fine("CacheForwarder[" + name + "] received " + ecms.size() + " ecm requests...");
+            parent.logger.fine("HttpCacheForwarder[" + name + "] received " + ecms.size() + " ecm requests...");
             CamdNetMessage ecmReq;
             for(Iterator i = ecms.iterator(); i.hasNext(); ) {
               try {
                 ecmReq = CamdNetMessage.parseGHttpReq(new DataInputStream(new ByteArrayInputStream((byte[])i.next())),
                     conn.getInetAddress().getHostAddress(), true);
-                // ecmReq.setNetworkId(0xa027); // todo
-                // System.out.println(ecmReq.hashCodeStr());
+                if(parent.tester != null) parent.tester.testMessage(ecmReq);
                 parent.proxy.messageReceived(dummySession, ecmReq);
                 ecmForwards++;
               } catch(Exception e) {
@@ -427,7 +430,7 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
           case T_CACHE_MISS:
             if(parent.cache instanceof ClusteredCache) {
               List delayed = tb.get(key);
-              parent.logger.fine("CacheForwarder[" + name + "] received " + delayed.size() + " cache requests for resend...");
+              parent.logger.fine("HttpCacheForwarder[" + name + "] received " + delayed.size() + " cache requests for resend...");
               CamdNetMessage req;
               for(Iterator i = delayed.iterator(); i.hasNext(); ) {
                 try {
@@ -441,7 +444,7 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
             }
             break;
           default:
-            parent.logger.fine("CacheForwarder[" + name + "] received unknown TLV field in reply: " + key);
+            parent.logger.fine("HttpCacheForwarder[" + name + "] received unknown TLV field in reply: " + key);
             break;
         }
 
@@ -487,11 +490,11 @@ public class CacheForwarder implements XmlConfigurable, GHttpConstants {
             }
           }
         } catch(SocketException e) { // probably graceful disconnect
-          parent.logger.info("CacheForwarder[" + name + "] disconnected");
+          parent.logger.info("HttpCacheForwarder[" + name + "] disconnected");
           parent.logger.throwing(e);
           handleError(myQ, false);
         } catch(IOException e) { // abnormal disconnect
-          parent.logger.warning("CacheForwarder[" + name + "] disconnected: " + e);
+          parent.logger.warning("HttpCacheForwarder[" + name + "] disconnected: " + e);
           parent.logger.throwing(e);
           e.printStackTrace();
           handleError(myQ, false);

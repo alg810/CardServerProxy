@@ -1,6 +1,10 @@
 package com.bowman.cardserv.session;
 
 import com.bowman.cardserv.*;
+import com.bowman.cardserv.web.FileFetcher;
+
+import java.io.*;
+import java.net.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,11 +14,8 @@ import com.bowman.cardserv.*;
  */
 public class CacheDummySession extends AbstractSession {
 
-  private CacheForwarder parent;
-
-  public CacheDummySession(CacheForwarder parent) {
+  public CacheDummySession() {
     super((ListenPort)CaProfile.MULTIPLE.getListenPorts().get(0), ProxyConfig.getInstance().getDefaultMsgListener());
-    this.parent = parent;
   }
 
   public int sendEcmReply(CamdNetMessage ecmRequest, CamdNetMessage ecmReply) {
@@ -36,7 +37,7 @@ public class CacheDummySession extends AbstractSession {
   public void close() {}
 
   public boolean isConnected() {
-    return parent.isConnected();
+    return true;
   }
 
   public int sendMessage(CamdNetMessage msg) {
@@ -46,8 +47,7 @@ public class CacheDummySession extends AbstractSession {
   public void setFlag(CamdNetMessage request, char f) {
   }
 
-  public void run() {
-  }
+  public void run() {}
 
   public String getUser() {
     return "CacheCoveragePlugin";

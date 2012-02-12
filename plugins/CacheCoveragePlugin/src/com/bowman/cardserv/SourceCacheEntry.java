@@ -29,6 +29,7 @@ public class SourceCacheEntry implements Comparable {
   }
 
   public static String getSourceStr(CamdNetMessage request) {
+    if(request.getRemoteAddress() == null && request.getOriginAddress() == null) return null;
     if(request.getRemoteAddress() == null) return "R:" + request.getOriginAddress(); // from remote cache
     else return "L:" + request.getRemoteAddress(); // from local traffic
   }

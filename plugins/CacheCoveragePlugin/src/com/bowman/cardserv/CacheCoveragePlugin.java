@@ -23,6 +23,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
   protected ProxyLogger logger;
   protected CacheHandler cache;
   protected CardServProxy proxy;
+  protected CacheTester tester;
 
   private Map cacheMaps = new TreeMap();
   private Map dcwIntervals = new HashMap();
@@ -32,7 +33,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
   private Map forwarders = new TreeMap();
   private Map sources = new TreeMap();
 
-  private boolean analyzeOverwrites;
+  private boolean analyzeOverwrites, udpForwarders;
 
   public CacheCoveragePlugin() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -51,14 +52,19 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       dcwIntervals.put(key, new Integer(iv));
     }
 
-    ProxyXmlConfig forwarderXml; String name; CacheForwarder forwarder;
+    udpForwarders = false;
+    ProxyXmlConfig forwarderXml; String name, type; CacheForwarder forwarder;
     for(Iterator iter = xml.getMultipleSubConfigs("cache-forwarder"); iter.hasNext(); ) {
       forwarderXml = (ProxyXmlConfig)iter.next();
       name = forwarderXml.getStringValue("name");
+      type = forwarderXml.getStringValue("type", "http");
       forwarder = (CacheForwarder)forwarders.get(name);
       if(forwarder == null) {
-        forwarder = new CacheForwarder(this, name);
+        if("http".equalsIgnoreCase(type)) forwarder = new HttpCacheForwarder(this, name);
+        else if("udp".equalsIgnoreCase(type)) forwarder = new UdpCacheForwarder(this, name);
+        else throw new ConfigException(forwarderXml.getFullName(), "type", "Unknown forwarder type: " + type);
         forwarders.put(name, forwarder);
+        if(forwarder instanceof UdpCacheForwarder) udpForwarders = true;
       }
       forwarder.configUpdated(forwarderXml);
     }
@@ -69,7 +75,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
   }
 
   public void onRequest(int successFactor, CamdNetMessage request) {
-    // do nothing for now
+    if(udpForwarders) forwardRequest(request); // skip forwarding of locks if no udp forwarders are configured
   }
 
   public int getCwValidityTime(String key) {
@@ -112,6 +118,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
 
   private SourceCacheEntry getSourceEntry(CamdNetMessage request) {
     String sourceStr = SourceCacheEntry.getSourceStr(request);
+    if(sourceStr == null) return null;
     SourceCacheEntry entry = (SourceCacheEntry)sources.get(sourceStr);
     if(entry == null) {
       entry = new SourceCacheEntry(sourceStr);
@@ -127,6 +134,18 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     return entry;
   }
 
+  public void forwardRequest(CamdNetMessage request) {
+    if(request.getProfileName() == null) {
+      CaProfile profile = config.getProfileById(request.getNetworkId(), request.getCaId());
+      if(profile != null) request.setProfileName(profile.getName());
+    }
+    CacheForwarder forwarder;
+    for(Iterator iter = forwarders.values().iterator(); iter.hasNext(); ) {
+      forwarder = (CacheForwarder)iter.next();
+      if(forwarder.isConnected()) forwarder.forwardRequest(request);
+    }
+  }
+
   public void forwardReply(CamdNetMessage request, CamdNetMessage reply) {
     if(request.getProfileName() == null) {
       CaProfile profile = config.getProfileById(request.getNetworkId(), request.getCaId());
@@ -140,6 +159,8 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
   }
 
   public void start(CardServProxy proxy) {
+    if(tester == null) tester = new CacheTester(this);
+    if(!tester.isAlive()) tester = null;
     cache = config.getCacheHandler();
     if(cache != null) cache.setMonitor(this);
     if(commands.isEmpty()) registerCommands();
@@ -153,6 +174,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
     for(Iterator iter = forwarders.values().iterator(); iter.hasNext(); ) {
       ((CacheForwarder)iter.next()).close();
     }
+    if(tester != null) tester.stop();
   }
 
   private void registerCommands() {
@@ -324,16 +346,19 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
 
   public void xmlFormatCacheForwarders(XmlStringBuffer xb) {
     xb.appendElement("cache-forwarders", "count", forwarders.size());
-    CacheForwarder forwarder;
+    CacheForwarder forwarder; String typeName;
     for(Iterator iter = forwarders.values().iterator(); iter.hasNext(); ) {
       forwarder = (CacheForwarder)iter.next();
       xb.appendElement("forwarder", "name", forwarder.getName());
+      typeName = forwarder.getClass().getName();
+      typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
+      xb.appendAttr("type", typeName);
       Properties p = forwarder.getProperties(); String key;
       for(Enumeration e = p.propertyNames(); e.hasMoreElements();) {
         key = (String)e.nextElement();
         xb.appendAttr(key, p.getProperty(key));
       }
-      Map ri = forwarder.getRemoteInstances();
+      Map ri = (forwarder instanceof HttpCacheForwarder)?((HttpCacheForwarder)forwarder).getRemoteInstances():Collections.EMPTY_MAP;
       if(!ri.isEmpty()) {
         xb.endElement(false);
         xmlFormatRemoteInstances(xb, ri);
