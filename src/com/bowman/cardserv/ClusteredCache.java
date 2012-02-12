@@ -18,13 +18,13 @@ import java.util.*;
  */
 public class ClusteredCache extends DefaultCache implements Runnable, StaleEntryListener {
 
-  private static final int TYPE_REQUEST = 1, TYPE_REPLY = 2, TYPE_PINGREQ = 3, TYPE_PINGRPL = 4;
-  private static final int TYPE_RESENDREQ = 5;
+  public static final int TYPE_REQUEST = 1, TYPE_REPLY = 2, TYPE_PINGREQ = 3, TYPE_PINGRPL = 4;
+  public static final int TYPE_RESENDREQ = 5;
 
   private InetAddress mcGroup;
   private String trackerKey, localHost;
   private URL trackerUrl;
-  private Set peerList = new HashSet(), badDcws = new HashSet();
+  private Set peerList = new HashSet(), badDcws = new HashSet(), blackList = new HashSet();
   private Map hostPings = new HashMap(), hostReceives = new HashMap();
   private long trackerInterval, syncPeriod, pingSent;
   private int remotePort, localPort;
@@ -184,6 +184,9 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         else badDcws.add(bd);
       }
     }
+    blackList.clear();
+    String bl = FileFetcher.getProperty("cache.bl");
+    if(bl != null) blackList.addAll(Arrays.asList(bl.split(" ")));
 
     registerCtrlCommands();
   }
@@ -623,6 +626,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
 
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(packet.getData(), 0, packet.getLength()));
         int type = dis.readByte();
+        String addr = packet.getAddress().getHostAddress();
 
         CamdNetMessage request;
         long ping;
@@ -630,11 +634,13 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         switch(type) {
           case TYPE_REPLY:
             receivedEntries++;
-            incrementReceived(packet.getAddress().getHostAddress());
             request = CamdNetMessage.parseCacheReq(dis, false);
-            request.setOriginAddress(packet.getAddress().getHostAddress());            
             CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request, true);
-            reply.setOriginAddress(packet.getAddress().getHostAddress());
+            if(!blackList.contains(addr)) {
+              incrementReceived(addr);
+              request.setOriginAddress(addr);
+              reply.setOriginAddress(addr);
+            }
             if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());
             if(isValidCw(reply)) {
               if(!this.contains(request)) super.processReply(request, reply);
@@ -649,8 +655,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
 
           case TYPE_REQUEST:
             request = CamdNetMessage.parseCacheReq(dis, true);
-            request.setOriginAddress(packet.getAddress().getHostAddress());            
-            if(request.getArbiterNumber() != null) {
+            if(!blackList.contains(addr)) request.setOriginAddress(addr);
+            if(request.getArbiterNumber() != null && syncPeriod > 0) {
               arbiter.addArbitrationPeer(request);
               if(debug) logger.fine("Arbitration request received: " + request.hashCodeStr() + " (from: " +
                   packet.getAddress().getHostAddress() + ") arbiterNumber: " + request.getArbiterNumber());
@@ -665,14 +671,17 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
           case TYPE_PINGREQ:
             ping = dis.readLong();
             int port = dis.readInt();
-            sendPingReply(ping, packet.getAddress(), port);
-            if(autoAddPeers) autoAddPeer(new CachePeer(packet.getAddress(), port));
+            if(!blackList.contains(addr)) {
+              sendPingReply(ping, packet.getAddress(), port);
+              if(autoAddPeers) autoAddPeer(new CachePeer(packet.getAddress(), port));
+            }
             break;
 
           case TYPE_PINGRPL:
             ping = dis.readLong();
             ping = System.currentTimeMillis() - ping;
-            hostPings.put(packet.getAddress().getHostAddress(), new Long(ping));
+            if(!blackList.contains(addr))
+              hostPings.put(addr, new Long(ping));
             break;
 
           case TYPE_RESENDREQ:

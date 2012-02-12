@@ -137,12 +137,12 @@ public class FileFetcher {
     else return contentType.substring(indx + "charset=".length()).trim();
   }
 
+  public static String getProperty(String name) {
+    return props.getProperty(name);
+  }
+
   public static void main(String[] args) throws IOException {
     if(args.length != 3) System.err.println("Usage: java -jar fishenc.jar <inputfile> <outputfile> <key>");
     else encryptFile(args[0], args[1], args[2]);
   }
-
-
-
-
 }
