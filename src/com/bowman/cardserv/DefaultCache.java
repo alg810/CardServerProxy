@@ -186,8 +186,10 @@ public class DefaultCache implements CacheHandler {
   protected synchronized void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     CamdNetMessage oldRequest = (CamdNetMessage)pendingEcms.put(request, request);
     if(pendingEcms.size() > pendingPeak) pendingPeak = pendingEcms.size();
-    if(monitor != null) monitor.onRequest(successFactor, request);
-    if(oldRequest == null && listener != null) listener.onRequest(successFactor, request);
+    if(oldRequest == null) {
+      if(monitor != null) monitor.onRequest(successFactor, request);
+      if(listener != null) listener.onRequest(successFactor, request);
+    }
   }
 
   protected synchronized void addReply(CamdNetMessage request, CamdNetMessage reply) {
