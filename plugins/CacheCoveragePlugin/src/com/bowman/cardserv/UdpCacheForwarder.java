@@ -21,7 +21,7 @@ public class UdpCacheForwarder implements CacheForwarder {
   private InetAddress host;
   private int port;
   private Set profiles;
-  private boolean sendLocks;
+  private boolean sendLocks, hideNames;
 
   private int requests, replies, filtered;
   private TimedAverageList sentAvg = new TimedAverageList(10);
@@ -41,6 +41,7 @@ public class UdpCacheForwarder implements CacheForwarder {
       port = xml.getPortValue("port");
 
       sendLocks = "true".equalsIgnoreCase(xml.getStringValue("send-locks", "true"));
+      hideNames = "true".equalsIgnoreCase(xml.getStringValue("hide-names", "true"));
 
       String profileStr = xml.getStringValue("profiles", "").trim().toLowerCase();
       if(profileStr.length() > 0) profiles = new HashSet(Arrays.asList(profileStr.split(" ")));
@@ -111,7 +112,7 @@ public class UdpCacheForwarder implements CacheForwarder {
       try {
         dos.writeByte(ClusteredCache.TYPE_REPLY);
         ClusteredCache.writeCacheReq(dos, req, false);
-        ClusteredCache.writeCacheRpl(dos, reply, true);
+        ClusteredCache.writeCacheRpl(dos, reply, !hideNames);
         dos.close();
         byte[] buf = bos.toByteArray();
         DatagramPacket packet = new DatagramPacket(buf, buf.length, host, port);
