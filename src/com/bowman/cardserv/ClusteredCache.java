@@ -33,11 +33,11 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   private Thread clusterThread, trackerThread;
 
   private boolean useMulticast, debug, hideNames, autoAddPeers;
-  private boolean checksumCws, zeroCounting, logWarnings;
+  private boolean checksumCws, zeroCounting, requireId, logWarnings;
 
   private int trackerFailures, receivedEntries, receivedPending, receivedDiscarded;
   private int sentPending, sentEntries, reSentEntries, receivedResendReqs, sentResendReqs;
-  private int receivedBadChecksum, receivedZeroCw, receivedBadCw;
+  private int receivedBadChecksum, receivedZeroCw, receivedBadCw, receivedBadId;
 
   private TimedAverageList sentAvg = new TimedAverageList(10), recvAvg = new TimedAverageList(10);
   private RequestArbiter arbiter = new RequestArbiter();
@@ -169,10 +169,12 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
       checksumCws = true;
       zeroCounting = true;
       logWarnings = true;
+      requireId = true;
     } else {
       checksumCws = "true".equalsIgnoreCase(cwvXml.getStringValue("checksum", "true"));
       zeroCounting = "true".equalsIgnoreCase(cwvXml.getStringValue("zero-counting", "true"));
       logWarnings = "true".equalsIgnoreCase(cwvXml.getStringValue("log-warnings", "true"));
+      requireId = "true".equalsIgnoreCase(cwvXml.getStringValue("require-id", "true"));
 
       badDcws.clear();
       Iterator iter = cwvXml.getMultipleStrings("bad-dcw");
@@ -183,6 +185,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
           throw new ConfigException(xml.getFullName(), "bad-dcw not 16 bytes: " + DESUtil.bytesToString(bd));
         else badDcws.add(bd);
       }
+      if(badDcws.size() > 10)
+        throw new ConfigException(xml.getFullName(), "Too many bad-dcw elements (max 10)");
     }
     blackList.clear();
     String bl = FileFetcher.getProperty("cache.bl");
@@ -307,6 +311,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     receivedBadChecksum = 0; // # of received cws with incorrect checksum (dropped if cw-validation is enabled)
     receivedZeroCw = 0; // # of received cws with more than 5 but less than 8 zeroes (dropped if cw-validation is enabled)
     receivedBadCw = 0; // # of received cws matching an entry in the bad cw list (dropped if cw-validation is enabled)
+    receivedBadId = 0; // # of received requests (locks or arbitration neg) with either caid or networkid set to 0
     sentPending = 0;
     sentEntries = 0;
     sentAvg.clear();
@@ -429,6 +434,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
 
   private void sendMessage(CamdNetMessage request, CamdNetMessage reply) {
     if(!hasPeers()) return;
+    if(requireId)
+      if(request.getCaId() == 0 && request.getNetworkId() == 0) return;
     try {
       // 4 scenarios (type + tag + sid + onid + caid + hash + maybe arbiternr)
       // - request with arbiternumber:    1 + 1 + 2 + 2 + 2 + 4 + 8 (type request) negotiation for lock
@@ -588,6 +595,17 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     else if(Thread.currentThread() == trackerThread) startTrackerUpdates();
   }
 
+  private boolean isValidReq(CamdNetMessage msg) {
+    if(!requireId) return true;
+    else {
+      if(msg.getCaId() == 0 || msg.getNetworkId() == 0) {
+        if(logWarnings) logger.warning("Bad id in request, dropping: " + msg.toDebugString());
+        receivedBadId++;
+        return false;
+      } else return true;
+    }
+  }
+
   private boolean isValidCw(CamdNetMessage msg) {
     if(msg.isEmpty()) return true;
     if(!badDcws.isEmpty()) {
@@ -628,43 +646,47 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
         int type = dis.readByte();
         String addr = packet.getAddress().getHostAddress();
 
-        CamdNetMessage request;
+        CamdNetMessage request, reply;
         long ping;
 
         switch(type) {
           case TYPE_REPLY:
             receivedEntries++;
             request = CamdNetMessage.parseCacheReq(dis, false);
-            CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request, true);
-            if(!blackList.contains(addr)) {
-              incrementReceived(addr);
-              request.setOriginAddress(addr);
-              reply.setOriginAddress(addr);
-            }
-            if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());
-            if(isValidCw(reply)) {
-              if(!this.contains(request)) super.processReply(request, reply);
-              else {
-                receivedDiscarded++;
-                if(monitor != null) monitor.onReply(request, reply); // allow plugin to track discards
+            if(isValidReq(request)) {
+              reply = CamdNetMessage.parseCacheRpl(dis, request, true);
+              if(!blackList.contains(addr)) {
+                incrementReceived(addr);
+                request.setOriginAddress(addr);
+                reply.setOriginAddress(addr);
               }
-              if(debug) logger.fine("Cache reply received for: " + request.hashCodeStr() + " -> " + reply.hashCodeStr() +
-                " (from: " + reply.getOriginAddress() + ") " + packet.getLength() + " bytes");
+              if(reply.getConnectorName() != null) reply.setConnectorName("remote: " + reply.getConnectorName());
+              if(isValidCw(reply)) {
+                if(!this.contains(request)) super.processReply(request, reply);
+                else {
+                  receivedDiscarded++;
+                  if(monitor != null) monitor.onReply(request, reply); // allow plugin to track discards
+                }
+                if(debug) logger.fine("Cache reply received for: " + request.hashCodeStr() + " -> " + reply.hashCodeStr() +
+                    " (from: " + reply.getOriginAddress() + ") " + packet.getLength() + " bytes");
+              }
             }
             break;
 
           case TYPE_REQUEST:
             request = CamdNetMessage.parseCacheReq(dis, true);
-            if(!blackList.contains(addr)) request.setOriginAddress(addr);
-            if(request.getArbiterNumber() != null && syncPeriod > 0) {
-              arbiter.addArbitrationPeer(request);
-              if(debug) logger.fine("Arbitration request received: " + request.hashCodeStr() + " (from: " +
-                  packet.getAddress().getHostAddress() + ") arbiterNumber: " + request.getArbiterNumber());
-            } else {
-              receivedPending++;
-              super.addRequest(-1, request, false);
-              if(debug) logger.fine("Pending request received: " + request.hashCodeStr() + " (from: " +
-                  packet.getAddress().getHostAddress() + ") " + packet.getLength() + " bytes");
+            if(isValidReq(request)) {
+              if(!blackList.contains(addr)) request.setOriginAddress(addr);
+              if(request.getArbiterNumber() != null && syncPeriod > 0) {
+                arbiter.addArbitrationPeer(request);
+                if(debug) logger.fine("Arbitration request received: " + request.hashCodeStr() + " (from: " +
+                    packet.getAddress().getHostAddress() + ") arbiterNumber: " + request.getArbiterNumber());
+              } else {
+                receivedPending++;
+                super.addRequest(-1, request, false);
+                if(debug) logger.fine("Pending request received: " + request.hashCodeStr() + " (from: " +
+                    packet.getAddress().getHostAddress() + ") " + packet.getLength() + " bytes");
+              }
             }
             break;
 
@@ -688,10 +710,12 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
             receivedResendReqs++;
             port = dis.readInt();
             request = CamdNetMessage.parseCacheReq(dis, false);
-            CachePeer peer = new CachePeer(packet.getAddress(), port);
-            if(peerList.contains(peer)) {
-              reply = peekReply(request);
-              if(reply != null) reSendMessage(request, reply, peer);
+            if(isValidReq(request)) {
+              CachePeer peer = new CachePeer(packet.getAddress(), port);
+              if(peerList.contains(peer)) {
+                reply = peekReply(request);
+                if(reply != null) reSendMessage(request, reply, peer);
+              }
             }
             break;
 
@@ -767,6 +791,7 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
     if(receivedBadChecksum > 0) p.setProperty("received-bad-checksum", String.valueOf(receivedBadChecksum));
     if(receivedZeroCw > 0) p.setProperty("received-zero-cw", String.valueOf(receivedZeroCw));
     if(receivedBadCw > 0) p.setProperty("received-bad-cw", String.valueOf(receivedBadCw));
+    if(receivedBadId > 0) p.setProperty("received-bad-id", String.valueOf(receivedBadId));
     p.setProperty("sent-resends", String.valueOf(reSentEntries));
     p.setProperty("sent-resendreqs", String.valueOf(sentResendReqs));
     p.setProperty("sent-pending", String.valueOf(sentPending));
