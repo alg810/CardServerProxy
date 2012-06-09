@@ -1,6 +1,6 @@
 #!/bin/ash
 
-AGENTV=1.1.3
+AGENTV=1.1.4
 SKIPSLEEP=true
 PIDFILE=/tmp/cspagent.pid
 TIMEOUT=15
@@ -192,6 +192,8 @@ get_imginfo()
         IMGGUESS="Gemini"
       elif [ $(ps | grep plimgr | grep -v grep | wc -l) -ge 1 ]; then
         IMGGUESS="PLi"
+      elif [ $(grep -i openpli /etc/issue.net | wc -l) -ge 1 ]; then
+        IMGGUESS="OpenPLi"
       elif [ -e /usr/bin/blackholesocker ] || [ $(grep -i dream-elite /etc/image-version | wc -l) -ge 1 ]; then
         IMGGUESS="Dreamelite"
       elif [ $(grep -i newnigma /etc/image-version | wc -l) -ge 1 ]; then
