@@ -2,6 +2,7 @@ package com.bowman.cardserv;
 
 import com.bowman.cardserv.crypto.DESUtil;
 import com.bowman.cardserv.interfaces.*;
+import com.bowman.cardserv.tv.TvService;
 import com.bowman.cardserv.util.*;
 
 import java.security.*;
@@ -14,6 +15,8 @@ public class SoftNdsPlugin implements ProxyPlugin {
   private static final int CAID[] = {0x090F, 0x093E}; // are there other nds ca-ids where this plugin can be used?
 
   private ProxyLogger logger;
+  private ProxyConfig config;
+
   private Set profiles = new HashSet();
   private Set services = new HashSet();
   private int count;
@@ -28,6 +31,7 @@ public class SoftNdsPlugin implements ProxyPlugin {
 
   public SoftNdsPlugin() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
+    config = ProxyConfig.getInstance();
   }
 
   public void start(CardServProxy cardServProxy) {}
@@ -46,7 +50,8 @@ public class SoftNdsPlugin implements ProxyPlugin {
     Properties p = new Properties();
     String caids = "";
     for(int i = 0; i < CAID.length; i++) {
-      caids += Integer.toHexString(CAID[i]) + " ";
+      if(i != 0) caids += ", ";
+      caids += DESUtil.intToHexString(CAID[i], 4);
     }
     p.setProperty("ca-id's", caids);
     p.setProperty("decoded-count", String.valueOf(count));
@@ -74,12 +79,17 @@ public class SoftNdsPlugin implements ProxyPlugin {
               CamdNetMessage reply = handleSoftNds(msg);
               if(reply != null) {
                 count++;
-                services.add(Integer.toHexString(msg.getServiceId()) + ":" + msg.getProfileName());
+
+                StringBuffer sb = new StringBuffer();
+                TvService ts = config.getService(msg);
+                sb.append(ts.getName());
+                if(!ts.isUnknown()) sb.append(" (").append(Integer.toHexString(ts.getId())).append(')');
+                sb.append(":" + msg.getProfileName());
+                services.add(sb.toString());
+
                 msg.setFilteredBy(PLUGIN_NAME); // set filtered to exclude from normal proxy processing later
                 msg.setInstant(true);
                 session.sendEcmReply(msg, reply);
-              } else {
-                // do nothing
               }
               break;
             }
@@ -124,7 +134,7 @@ public class SoftNdsPlugin implements ProxyPlugin {
     int len = ecm.length;
 
     if(ecm[pos] != 0x00 || ecm[pos + 1] != 0x00 || ecm[pos + 2] != 0x01) return null;
-    
+
     pos += 3;
 
     int index = 0;
