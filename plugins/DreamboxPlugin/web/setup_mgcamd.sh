@@ -297,7 +297,7 @@ exit 0' > /usr/script/mgcamd_135a_em.sh
                 echo "Mgcamd installed successfully on Pingulux with Spark image ..."
                 ;;
 
-        "NG-NeutrinoHD")
+        "NG-NeutrinoHD"|"NG-Neutrino-HD")
                 fetch_file "mgcamd.$CPUARCH" "/var/bin/mgcamd" "1"
                 if [ $? != "0" ]; then
                         echo "Mgcamd installation failed ..."
