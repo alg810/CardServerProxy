@@ -53,12 +53,14 @@ public class CacheTester implements Runnable {
         packet = new DatagramPacket(buf, buf.length);
         recvSock.receive(packet);
 
+        if(!parent.proxy.isAlive()) continue;
+
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(packet.getData(), 0, packet.getLength()));
         CamdNetMessage req = CamdNetMessage.parseGHttpReq(dis, null, true);
         if(config.getProfileById(req.getNetworkId(), req.getCaId()) != null)
           parent.proxy.messageReceived(dummy, req);
 
-      } catch (IOException e) {
+      } catch (Exception e) {
         e.printStackTrace();
       }
     }
@@ -71,7 +73,11 @@ public class CacheTester implements Runnable {
 
   public void testMessage(CamdNetMessage req) {
     if(testPort == -1 || testHosts.isEmpty()) return;
-    if(config.getProfileById(req.getNetworkId(), req.getCaId()) == null) return;
+    if(config.getProfileById(req.getNetworkId(), req.getCaId()) == null) {
+      // System.out.println("Ignoring: " + req.toDebugString());
+      return;
+    }
+    // System.out.println("Fallback: " + req.toDebugString());
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     DataOutputStream daos = new DataOutputStream(baos);
     try {

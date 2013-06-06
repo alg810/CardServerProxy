@@ -4,7 +4,7 @@ var xsltTrCcp = new BowWeb.XsltTransformer("/plugin/cachecoverageplugin/open/xsl
 
 var hideExpiredEntries = true, hideLocalSources = true, showMissingEntries = false, sidInHex = true, tidInHex = true;
 var sourceFilter = '';
-var excludedKeys = {};
+var includedKeys = {};
 
 //add the postProcess function to cs-status.js
 pluginsPostProcess.push("cacheCoveragePluginPostProcess()");
@@ -33,8 +33,8 @@ sections['cache'] = {
 
     var contexts = xml.getElementsByTagName('cache-context');
     for(i = 0; i < contexts.length; i++) {
-      if(excludedKeys[contexts[i].getAttribute('key')]) {
-        contexts[i].setAttribute("excluded", 'true');
+      if(includedKeys[contexts[i].getAttribute('key')]) {
+        contexts[i].setAttribute("included", 'true');
       }
     }
 
@@ -61,8 +61,8 @@ sections['cache'] = {
         inputs[i].onchange = function() {
           if(isBusy()) return false;
           var key = this.name;
-          if(!this.checked) excludedKeys[key] = 'true';
-          else delete excludedKeys[key];
+          if(this.checked) includedKeys[key] = 'true';
+          else delete includedKeys[key];
           updateCacheQuery();
           selectSection();
         };
@@ -124,9 +124,9 @@ function toggleSidDisplay() {
 
 function updateCacheQuery() {
   var keys = new Array();
-  for(var key in excludedKeys) keys.push(key);
+  for(var key in includedKeys) keys.push(key);
   sections.cache.queries[2] = 'cache-contents show-missing="' + showMissingEntries + '" hide-expired="' + hideExpiredEntries + '" source-filter="' + sourceFilter + '"';
-  if(keys.length > 0) sections.cache.queries[2] += ' exclude-keys="' + keys.join(",") + '"';
+  if(keys.length > 0) sections.cache.queries[2] += ' include-keys="' + keys.join(",") + '"';
 }
 
 function cacheCoveragePluginPostProcess() {

@@ -95,7 +95,7 @@
                 <span style="float: right;">
                   <input type="checkbox" id="toggleCb">
                     <xsl:attribute name="name"><xsl:value-of select="@key"/></xsl:attribute>
-                    <xsl:if test="not(@excluded)"><xsl:attribute name="checked">true</xsl:attribute></xsl:if>
+                    <xsl:if test="@included"><xsl:attribute name="checked">true</xsl:attribute></xsl:if>
                   </input>
                 </span>
               </div>

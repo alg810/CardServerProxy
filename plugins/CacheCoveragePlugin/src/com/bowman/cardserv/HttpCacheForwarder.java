@@ -284,7 +284,7 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
       conn = ssl?FileFetcher.socketFactory.createSocket():new Socket();
       conn.connect(new InetSocketAddress(host, port), CONNECT_TIMEOUT);
       if(conn == null) return;
-      conn.setSoTimeout(CONNECT_TIMEOUT);
+      conn.setSoTimeout(CONNECT_TIMEOUT / 2);
       dos = new DataOutputStream(new BufferedOutputStream(conn.getOutputStream()));
       br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "ISO-8859-1"));
       connected = true;
@@ -420,7 +420,6 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
                 ecmReq = CamdNetMessage.parseGHttpReq(new DataInputStream(new ByteArrayInputStream((byte[])i.next())),
                     conn.getInetAddress().getHostAddress(), true);
                 if(parent.tester != null) parent.tester.testMessage(ecmReq);
-                parent.proxy.messageReceived(dummySession, ecmReq);
                 ecmForwards++;
               } catch(Exception e) {
                 parent.logger.throwing(e);
@@ -481,7 +480,8 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
           if(!myQ.isEmpty()) {
             try {
               httpPost(myQ);
-              if(maxDelay > 0) Thread.sleep(maxDelay);
+              int curSize = redundant?localQ.size():singleQ.size();
+              if(maxDelay > 0 && curSize < 100) Thread.sleep(maxDelay);
             } catch (SocketException se) {
               // socket was closed gracefully, reconnect immediately
               parent.logger.throwing(se);
@@ -489,12 +489,12 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
               reconnects++;
             }
           }
-        } catch(SocketException e) { // probably graceful disconnect
+        } catch(SocketException e) { // probably connect failure?
           parent.logger.info("HttpCacheForwarder[" + name + "] disconnected");
           parent.logger.throwing(e);
           handleError(myQ, false);
         } catch(IOException e) { // abnormal disconnect
-          parent.logger.warning("HttpCacheForwarder[" + name + "] disconnected: " + e);
+          parent.logger.warning("HttpCacheForwarder[" + name + "] disconnected (sendQ size: " + myQ.size() + "): " + e);
           parent.logger.throwing(e);
           e.printStackTrace();
           handleError(myQ, false);
@@ -506,7 +506,8 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
 
     private void handleError(List sendQ, boolean disconnect) {
       if(!sendQ.isEmpty()) {
-        localQ.addAll(sendQ);
+        if(redundant) localQ.addAll(sendQ);
+        else singleQ.addAll(sendQ);
         sendQ.clear();
       }
       errors++;

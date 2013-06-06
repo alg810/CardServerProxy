@@ -46,6 +46,7 @@ Example config:
   <plugin class="com.bowman.cardserv.CacheCoveragePlugin" enabled="true" jar-file="cachecoverageplugin.jar">
     <plugin-config>
       <analyze-overwrites>false</analyze-overwrites> <!-- keep all contested cws in memory for manual inspection (will leak over time) -->
+      <analyze-continuity>false</analyze-continuity> <!-- check for continous cw cycle, only works if all traffic is correctly tagged with onid+caid -->
       <cache-context network-id="22f1" ca-id="0500" interval="20"/> <!-- context/profile has expected cw interval different from 10 secs-->
     </plugin-config>
   </plugin>

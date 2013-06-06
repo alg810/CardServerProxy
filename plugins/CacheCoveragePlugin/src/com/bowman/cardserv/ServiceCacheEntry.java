@@ -129,7 +129,7 @@ public class ServiceCacheEntry implements Comparable {
     }
 
     if(reply != null) {
-      if(reply.hasZeroDcw() || newReply.hasZeroDcw()) { // no continuity/overlap checking possible with zeroed out cws
+      if(!parent.analyzeContinuity || reply.hasZeroDcw() || newReply.hasZeroDcw()) { // no continuity/overlap checking possible with zeroed out cws
         setLastInterval(newRequest.getTimeStamp() - request.getTimeStamp());
         multiple = 0;
         continuityCount = -1;
