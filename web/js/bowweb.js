@@ -2,6 +2,8 @@
  * bowweb.js: Web utility functions and classes, using global symbol "BowWeb" as a namespace object
  **/
 
+if(!window.console){ window.console = {log: function(str){} }; }
+
 var BowWeb = {};
 
 BowWeb.testSessionCookie = function() {
@@ -164,9 +166,9 @@ BowWeb.AjaxHelper.prototype.executeRequest = function(url, xml, processFunc) {
                 caller.lastSize = request.getResponseHeader('Content-length');
                 processFunc(request.responseXML, request.responseText);
               }
-            } else caller.errorOccured('Server error:\n' + request.responseText);
+            } else caller.errorOccured('Server error' + (request.responseText ? ':\n' + request.responseText : ''));
           } else {
-            caller.errorOccured('HTTP Connection error: ' + request.status + '\n' + request.responseText);
+            caller.errorOccured('HTTP Connection error' + (request.status == 0 ? '' : ': ' + request.status + '\n' + request.responseText));
           }
         }
       } catch (e) {
@@ -184,9 +186,10 @@ BowWeb.AjaxHelper.prototype.executeRequest = function(url, xml, processFunc) {
 BowWeb.AjaxHelper.prototype.errorOccured = function(e) {
   if(timer) clearTimeout(timer);
   if(this.loadingImg && document.getElementById(this.loadingImg)) document.getElementById(this.loadingImg).style.visibility = 'hidden';
-  if(this.errorHandler()) this.errorHandler();
-  if(typeof e == 'string') alert(e);
-  else alert("Uncaught error: " + e.message);
+  if(typeof e != 'string') msg = "Uncaught error: " + e.message;
+  else msg = e;
+  console.log(msg);
+  if(this.errorHandler) this.errorHandler(msg);
   this.request = null;
 }
 

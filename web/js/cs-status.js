@@ -561,7 +561,11 @@ function processBouquetFile(xmlReply) {
   }
 }
 
-function logout() {
+function logout(msg) {
+  if(currentSection == null) {
+    currentSection = 'events';
+    return;
+  }
   for(var i = 0; i < pluginsLogout.length; i++) {
     eval(pluginsLogout[i]);
   }
@@ -574,7 +578,10 @@ function logout() {
   hide(getById('logOut'));
   setCookie('sessionId', '');
   setCookie('isAdmin', '');
-  writeLoginWindow('');
+  if(msg) {
+    msg = '<font color = "red"><pre>' + msg + '</pre></font>'
+  }
+  writeLoginWindow(msg);
 }
 
 function show(elem) {
