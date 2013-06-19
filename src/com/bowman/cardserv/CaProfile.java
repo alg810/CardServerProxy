@@ -32,7 +32,7 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
 
   private String name;
   private boolean enabled, cacheOnly, debug, mismatchedCards;
-  private Boolean requireProviderMatch;
+  private Boolean requireProviderMatch, checkLength;
   private int caId, networkId;
   private long maxCwWait, congestionLimit;
   private int serviceConflicts;
@@ -44,6 +44,7 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
   private Map services = new HashMap();
   private List listenPorts = new ArrayList();
   private Set predefinedProviders = new HashSet();
+  private Set predefinedLengths = new HashSet();
 
   public CaProfile() {}
 
@@ -59,11 +60,19 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
     enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
     debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "true"));
     cacheOnly = "true".equalsIgnoreCase(xml.getStringValue("cache-only", "false"));
-    requireProviderMatch = null;
+    requireProviderMatch = null; checkLength = null;
     try {
       if("true".equalsIgnoreCase(xml.getStringValue("require-provider-match"))) requireProviderMatch = Boolean.TRUE;
       else requireProviderMatch = Boolean.FALSE;
-    } catch (ConfigException e) {}
+    } catch (ConfigException e) {
+      requireProviderMatch = null;
+    }
+    try {
+      if("true".equalsIgnoreCase(xml.getStringValue("check-ecm-length"))) checkLength = Boolean.TRUE;
+      else checkLength = Boolean.FALSE;
+    } catch (ConfigException e) {
+      checkLength = null;
+    }
 
     try {
       maxCwWait = xml.getTimeValue("max-cw-wait", "s");
@@ -120,6 +129,9 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
       if(requireProviderMatch != null) {
         if(!requireProviderMatch.booleanValue()) predefinedProviders.add(defaultPi); // make sure pi 0 is included when it doesnt matter
       }
+
+      predefinedLengths.clear();
+      // todo
       
     }
 
@@ -329,6 +341,12 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
     } else return requireProviderMatch.booleanValue();
   }
 
+  public boolean isCheckLength() {
+    if(checkLength == null) {
+      return !getLengthSet().isEmpty();
+    } else return checkLength.booleanValue();
+  }
+
   public int getCaId() {
     return caId;
   }
@@ -429,6 +447,10 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
     Set set = cm==null?new TreeSet():cm.getMergedProviders(name);
     set.addAll(predefinedProviders);
     return set;
+  }
+
+  public Set getLengthSet() {
+    return predefinedLengths; // todo
   }
 
   public Integer[] getProviderIdents() {

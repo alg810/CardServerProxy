@@ -8,6 +8,8 @@ package com.bowman.cardserv.interfaces;
  */
 public interface GHttpConstants {
 
+  public static final int MAX_WAIT = 2400;
+
   public static final int T_INSTANCE_ID = 0, T_ECM_REQ = 1, T_CACHE_MISS = 2, T_STAT_UPDATE = 3;
 
   public static final String[] STAT_KEYS = {"isize", "msize", "ich", "mch", "iow", "me", "ct", "et", "da", "ch"};

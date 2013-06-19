@@ -84,9 +84,13 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
                 // client sent the same request again before receiving a reply or timeout to its previous attempt
                 // change the request in the transaction so that the reply will have the last sequence number the
                 // client sent, causing previous sequence numbers to be silently ignored
-                if(ProxyConfig.getInstance().isDebug())
-                  logger.warning("Duplicate request received for user '" + user +"', already pending: " + msg);
-                else logger.fine("Duplicate request received for user '" + user +"', already pending: " + msg);
+                if(this instanceof GHttpSession) {
+                  // duplicates expected
+                } else {
+                  if(ProxyConfig.getInstance().isDebug())
+                    logger.warning("Duplicate request received for user '" + user +"', already pending: " + msg);
+                  else logger.fine("Duplicate request received for user '" + user +"', already pending: " + msg);
+                }
                 currentTransaction = getTransaction(msg);
                 currentTransaction.setRequest(msg);
                 msg.setFilteredBy("Duplicate ECM");

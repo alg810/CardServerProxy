@@ -124,6 +124,14 @@ Contents (element paths in <strong>bold</strong> represent common changes, anyth
     <li><a href="#rmi/status-web/welcome-file">status-web/welcome-file</a></li>
     <li><a href="#rmi/status-web/log-file">status-web/log-file (attributes: rotate-count, rotate-max-size)</a></li>
     <li><a href="#rmi/status-web/super-users"><strong>status-web/super-users</strong></a></li>
+    <li><a href="#rmi/status-web/ghttp">status-web/ghttp (attributes: enabled)</a></li>
+    <ul>
+      <li><a href="#rmi/status-web/ghttp/alternate-port">ghttp/alternate-port</a></li>
+      <li><a href="#rmi/status-web/ghttp/alternate-bind-ip">ghttp/alternate-bind-ip</a></li>
+      <li><a href="#rmi/status-web/ghttp/log-file">ghttp/log-file (attributes: rotate-count, rotate-max-size)</a></li>
+      <li><a href="#rmi/status-web/ghttp/feeder-password">ghttp/feeder-password</a></li>
+      <li><a href="#rmi/status-web/ghttp/open-access-password">ghttp/open-access-password</a></li>
+    </ul>
   </ul>
 </ul>
 <br />
@@ -735,6 +743,59 @@ List of user names (separated by space) that should have access to the Config an
 <strong>NOTE: </strong>Users with admin set to true will still have access to other admin features in the web, even if they are not listed here.<br />
 <br />
 Example:  <em class='italic'>&lt;super-users>root admin&lt;/super-users></em><br />
+<br />
+</a>
+
+<a name="rmi/status-web/ghttp">
+<div class='indent'>rmi/status-web/ghttp (attributes: enabled)</div><br />
+Controls ghttp access in the status-web. Enabled by default. It is included here mainly for testing purpose, to allow local development without needing a remote google app. See <strong>README.GHttp.txt</strong> for full docs.<br /><br />
+- <strong class='bold'>enabled</strong>: true/false (default: true)<br />
+<br />
+Example: <br /><br />
+<em class='italic'>&lt;ghttp enabled="true"><br />
+&nbsp;&nbsp;&lt;alternate-port>8083&lt;/alternate-port><br />
+&nbsp;&nbsp;&lt;log-file>log/ghttp-access.log&lt;/log-file><br />
+&nbsp;&nbsp;&lt;feeder-password>secret1&lt;/feeder-password><br />
+&nbsp;&nbsp;&lt;open-access-password>secret2&lt;/open-access-password><br />
+&lt;/ghttp>
+</em><br />
+</a>
+
+<a name="rmi/status-web/ghttp/alternate-port">
+<div class='indent'><strong>rmi/status-web/ghttp/alternate-port</strong></div><br />
+Alternate TCP port for ghttp. Including this element creates a separate httpd for ghttp. This can be useful when the regular status-web uses SSL, which some ghttp clients may not support.<br />
+<br />
+</a>
+
+<a name="rmi/status-web/ghttp/alternate-bind-ip">
+<div class='indent'>rmi/status-web/ghttp/alternate-bind-ip</div><br />
+Optional local IP to bind the alternate ghttp httpd listen port to (default: all - 0.0.0.0).<br />
+<br />
+</a>
+
+<a name="rmi/status-web/ghttp/log-file">
+<div class='indent'>rmi/status-web/ghttp/log-file (attributes: rotate-count, rotate-max-size)</div><br />
+Standard web-access log for the alternate httpd used for ghttp (if alternate-port is set, ignored otherwise), using apache combined format. Omit this to disable ghttp access logging.<br />
+- <strong class='bold'>rotate-max-size</strong>: 1 or more to enable, value in kb (default: 0 = off). The maximum size the log file is allowed to reach, before rotating (moving on to the next file, or overwriting if count is set to 1).<br />
+- <strong class='bold'>rotate-count</strong>: 1 or more to enable (default: 0 = off). The number of log files to cycle through when max-size is reached. File names will be suffixed with .0, .1, .2 and so on. The file currently in use will have an additional corresponding .lck file.<br />
+<br />
+Example:  <em class='italic'>&lt;log-file>log/ghttp-access.log&lt;/log-file></em> <br />
+<br />
+</a>
+
+<a name="rmi/status-web/ghttp/feeder-password">
+<div class='indent'>rmi/status-web/ghttp/feeder-password</div><br />
+Optional password to allow cache feeder access via ghttp. If omitted, cache feeder posts will not be processed.<br />
+<br />
+Example:  <em class='italic'>&lt;feeder-password>secret1&lt;/feeder-password></em><br />
+<br />
+</a>
+
+<a name="rmi/status-web/ghttp/open-access-password">
+<div class='indent'>rmi/status-web/ghttp/open-access-password</div><br />
+Optional password for open access to ghttp (accepting any user name). If omitted, only proxy users (as defined by the user manager) will have access. Sessions resulting from open-access will have the user names prefixed by "anon:".<br />
+<br />
+Example:  <em class='italic'>&lt;open-access-password>secret1&lt;/open-access-password></em><br />
 <br />
 </a>
 

@@ -29,8 +29,8 @@ public class CspSession extends AbstractSession implements CwsListener {
   private String cacheHost;
 
   // keep track of sids communicated to this client, to minimize redundant status updates
-  private Map stateHashes = new HashMap();
-  private Map sentState = new HashMap();
+  private final Map stateHashes = new HashMap();
+  private final Map sentState = new HashMap();
 
   private CwsConnectorManager cm;
 
@@ -326,9 +326,11 @@ public class CspSession extends AbstractSession implements CwsListener {
       statusMsg.addSidUpdate(key, sid, false);
       logger.fine("Lost service caused state changed, sending incremental update...");
       try {
-        conn.sendCspMessage(statusMsg);
-        sentSids.add(sid);
-        stateHashes.put(key, new Integer(CspNetMessage.statusHashCode(state)));
+        synchronized(sentState) {
+          conn.sendCspMessage(statusMsg);
+          sentSids.add(sid);
+          stateHashes.put(key, new Integer(CspNetMessage.statusHashCode(state)));
+        }
       } catch(IOException e) {
         logger.throwing(e);
       }
@@ -348,9 +350,11 @@ public class CspSession extends AbstractSession implements CwsListener {
       statusMsg.addSidUpdate(key, sid, true);
       logger.fine("Found service caused state change, sending incremental update...");
       try {
-        conn.sendCspMessage(statusMsg);
-        sentSids.add(sid);
-        stateHashes.put(key, new Integer(CspNetMessage.statusHashCode(state)));
+        synchronized(sentState) {
+          conn.sendCspMessage(statusMsg);
+          sentSids.add(sid);
+          stateHashes.put(key, new Integer(CspNetMessage.statusHashCode(state)));
+        }
       } catch(IOException e) {
         logger.throwing(e);
       }      

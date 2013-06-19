@@ -32,7 +32,10 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
   private static final String bouquetPattern = "/userbouquet.*.tv";
   private static final String piconPattern = "/picon/*";
   private static final String pluginPattern = "/plugin/*";
+  private static final String ghttpPattern = GHttpBackend.API_PREFIX + "/*";
   private static final String connectPattern = "/cspHandler";
+
+  protected static final String anonPrefix = "anon:";
 
   Map sessions = new HashMap(), bouquets = new HashMap();
   Map userTransactions = new HashMap(), cwsTransactions = new HashMap();
@@ -44,7 +47,8 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
   private Set connecting = new HashSet(), invalid = new HashSet();
 
   private XmlHelper helper;
-  private PseudoHttpd httpd;
+  private GHttpBackend ghttpd;
+  protected PseudoHttpd httpd;
   private ProxyLogger httpdLogger;
   private boolean debugXml = false, allowCspConnect = true, ignoreCacheRequests = false;
 
@@ -174,11 +178,23 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
     String su = xml.getStringValue("super-users", "");
     if(su.length() > 0) superUsers.addAll(Arrays.asList(su.toLowerCase().split(" ")));
 
+    ProxyXmlConfig ghttpXml;
+    if(ghttpd == null) ghttpd = new GHttpBackend(this);
+    try {
+      ghttpXml = xml.getSubConfig("ghttp");
+    } catch (ConfigException e) {
+      ghttpd.configUpdated(null);
+      ghttpXml = null;
+    }
+    if(ghttpXml != null) ghttpd.configUpdated(ghttpXml);
+    if(ghttpd.isEnabled() && !ghttpd.hasAlternatePort()) httpd.setV11(true);
+
     httpd.addHttpRequestListener(xmlHandlerPattern, this);
     httpd.addHttpRequestListener(cfgHandlerPattern, this);
     httpd.addHttpRequestListener(bouquetPattern, this);
     httpd.addHttpRequestListener(piconPattern, this);
     httpd.addHttpRequestListener(pluginPattern, this);
+    httpd.addHttpRequestListener(ghttpPattern, this);
     httpd.addHttpRequestListener(connectPattern, this);
 
     if(autoStart) try {
@@ -198,7 +214,11 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
     }
   }
 
-  private String checkBasicAuth(HttpRequest req) { // return username if successful, null otherwise
+  private String checkBasicAuth(HttpRequest req) {
+    return checkBasicAuth(req, null);
+  }
+
+  protected String checkBasicAuth(HttpRequest req, String defaultPasswd) { // return username if successful, null otherwise
     String user;
     String basicAuth = req.getHeader("authorization");
 
@@ -210,6 +230,7 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
         user = userPass.substring(0, idx);
         String pass = userPass.substring(idx + 1);
         if(authUser(user, pass)) return user;
+        else if(pass.equals(defaultPasswd)) return anonPrefix + user;
         else {
           logger.warning("Http auth failed for user '" + user + "' (" +
               com.bowman.cardserv.util.CustomFormatter.formatAddress(req.getRemoteAddress()) + ").");
@@ -309,6 +330,8 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
         e.printStackTrace();
         return HttpResponse.getErrorResponse(e);
       }
+    } else if(ghttpPattern.equals(urlPattern)) {
+      return ghttpd.doGet(urlPattern, getRequest);
     }
 
     return null;
@@ -397,6 +420,8 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
         e.printStackTrace();
         return HttpResponse.getErrorResponse(e);
       }
+    } else if(ghttpPattern.equals(urlPattern)) {
+      return ghttpd.doPost(ghttpPattern, postRequest);
     }
     return null;
   }
@@ -455,37 +480,42 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
     } else if(!allowCspConnect) {
       return HttpResponse.getErrorResponse(503); // service not available
     } else {
-      ProxyConfig config = ProxyConfig.getInstance();
       String authUser = checkBasicAuth(connectRequest);
       if(authUser == null) return HttpResponse.getAuthReqResponse("Cardservproxy");
       else {
         // no ip check for regular web logins but these should have one
-        String ip = connectRequest.getRemoteAddress();
-        ListenPort listenPort = (ListenPort)CaProfile.MULTIPLE.getListenPorts().get(0);
-
-        if(listenPort.isDenied(ip)) {
-          logger.fine("Rejected connection for [" + listenPort.getProfile().getName() + ":" +
-              listenPort + "]: " + com.bowman.cardserv.util.CustomFormatter.formatAddress(ip) + " not allowed.");
-          SessionManager.getInstance().fireUserLoginFailed("?@" + ip, listenPort + "/" + CaProfile.MULTIPLE.getName(),
-              ip, "rejected by [" + listenPort + "] ip deny list.");
-          return HttpResponse.getErrorResponse(403, "Ip denied");
-        }
-
-        String ipMask = config.getUserManager().getIpMask(authUser);
-        if(!Globber.match(ipMask, ip, false)) {
-          if(config.isLogFailures())
-            logger.warning("User '" + authUser + "' (" + com.bowman.cardserv.util.CustomFormatter.formatAddress(ip) +
-                ") login denied, ip check failed: " + ipMask);
-          SessionManager.getInstance().fireUserLoginFailed(authUser, listenPort + "/" + CaProfile.MULTIPLE.getName(),
-              ip, "ip check failed: " + ipMask);
-          return HttpResponse.getErrorResponse(403, "Ip check failed");
-        }
-
+        HttpResponse error = doIpCheck(connectRequest, authUser);
+        if(error != null) return error;
         // do handoff
         acceptCspConnect(authUser, connectRequest);
         return HttpResponse.CONNECT_RESPONSE;
       }
     }
+  }
+
+  protected HttpResponse doIpCheck(HttpRequest req, String authUser) {
+    ProxyConfig config = ProxyConfig.getInstance();
+    String ip = req.getRemoteAddress();
+    ListenPort listenPort = (ListenPort)CaProfile.MULTIPLE.getListenPorts().get(0);
+
+    if(listenPort.isDenied(ip)) {
+      logger.fine("Rejected connection for [" + listenPort.getProfile().getName() + ":" +
+          listenPort + "]: " + com.bowman.cardserv.util.CustomFormatter.formatAddress(ip) + " not allowed.");
+      SessionManager.getInstance().fireUserLoginFailed("?@" + ip, listenPort + "/" + CaProfile.MULTIPLE.getName(),
+          ip, "rejected by [" + listenPort + "] ip deny list.");
+      return HttpResponse.getErrorResponse(403, "Ip denied");
+    }
+
+    String ipMask = config.getUserManager().getIpMask(authUser);
+    if(!Globber.match(ipMask, ip, false)) {
+      if(config.isLogFailures())
+        logger.warning("User '" + authUser + "' (" + com.bowman.cardserv.util.CustomFormatter.formatAddress(ip) +
+            ") login denied, ip check failed: " + ipMask);
+      SessionManager.getInstance().fireUserLoginFailed(authUser, listenPort + "/" + CaProfile.MULTIPLE.getName(),
+          ip, "ip check failed: " + ipMask);
+      return HttpResponse.getErrorResponse(403, "Ip check failed");
+    }
+    return null;
   }
 
   public void acceptCspConnect(String user, HttpRequest connectRequest) {

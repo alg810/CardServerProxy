@@ -25,7 +25,7 @@ public class ServiceMapping implements Serializable, Comparable {
 
   public ServiceMapping(int serviceId, long customData) {
     this.serviceId = serviceId;
-    this.customData = customData & 0xFFFFFFFFFFL;
+    this.customData = customData & 0xFFFFFFFFFFFFFFL;
   }
 
   public ServiceMapping(CamdNetMessage msg) {
@@ -34,7 +34,10 @@ public class ServiceMapping implements Serializable, Comparable {
     setProviderIdent(NO_PROVIDER);
     if(msg.getProfileName() != null) {
       CaProfile profile = ProxyConfig.getInstance().getProfile(msg.getProfileName());
-      if(profile != null && profile.isRequireProviderMatch()) setProviderIdent(msg.getProviderIdent());
+      if(profile != null) {
+        if(profile.isRequireProviderMatch()) setProviderIdent(msg.getProviderIdent());
+        if(profile.isCheckLength()) setLength(msg.getDataLength());
+      }
     }
   }
 
@@ -60,7 +63,8 @@ public class ServiceMapping implements Serializable, Comparable {
 
   public String toString() {
     return DESUtil.intToHexString(serviceId, 4) + (getCustomId() != 0?":" + DESUtil.intToHexString(getCustomId(), 4):"") +
-        (getProviderIdent() != NO_PROVIDER?":" + DESUtil.intToHexString(getProviderIdent(), 6):"");
+        (getProviderIdent() != NO_PROVIDER?":" + DESUtil.intToHexString(getProviderIdent(), 6):"") +
+        (getLength() != 0?":" + getLength():"");
   }
 
   public int compareTo(Object o) {
@@ -73,8 +77,17 @@ public class ServiceMapping implements Serializable, Comparable {
   }
 
   public void setCustomId(int customId) {
-    this.customData &= 0xFFFFFF0000L;
+    this.customData &= 0xFFFFFFFFFF0000L;
     this.customData |= (customId & 0xFFFF);
+  }
+
+  public int getLength() {
+    return (int)(customData >> 40 & 0xFFFF);
+  }
+
+  public void setLength(int length) {
+    this.customData &= 0x0000FFFFFFFFFFL;
+    this.customData |= (((long)length & 0xFFFF) << 40);
   }
 
   public int getProviderIdent() {
@@ -82,7 +95,7 @@ public class ServiceMapping implements Serializable, Comparable {
   }
 
   public void setProviderIdent(int ident) {
-    this.customData &= 0x000000FFFFL;
+    this.customData &= 0xFFFF000000FFFFL;
     this.customData |= (((long)ident & 0xFFFFFF) << 16);
   }
 

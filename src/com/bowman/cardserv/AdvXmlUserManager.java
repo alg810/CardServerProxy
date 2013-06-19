@@ -3,6 +3,7 @@ package com.bowman.cardserv;
 import com.bowman.cardserv.util.ProxyXmlConfig;
 
 import java.text.*;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -43,9 +44,24 @@ public class AdvXmlUserManager extends XmlUserManager {
     } catch(ConfigException e) {
       aue.ecmRate = -1;
     }
-    
+
     try {
       aue.displayName = xml.getStringValue("display-name");
+    } catch (ConfigException e) {}
+
+    try {
+      String allowedServices = xml.getStringValue("allowedServices");
+      for(StringTokenizer st = new StringTokenizer(allowedServices); st.hasMoreTokens(); ) aue.allowedServices.add(st.nextToken());
+    } catch (ConfigException e) {}
+
+    try {
+      String blockedServices = xml.getStringValue("blockedServices");
+      for(StringTokenizer st = new StringTokenizer(blockedServices); st.hasMoreTokens(); ) aue.blockedServices.add(st.nextToken());
+    } catch (ConfigException e) {}
+
+    try {
+      String allowedConnectors = xml.getStringValue("allowedConnectors");
+      for(StringTokenizer st = new StringTokenizer(allowedConnectors); st.hasMoreTokens(); ) aue.allowedConnectors.add(st.nextToken());
     } catch (ConfigException e) {}
 
     return aue;
@@ -64,6 +80,52 @@ public class AdvXmlUserManager extends XmlUserManager {
     return false;
   }
 
+  public Set getAllowedServices(String user, String profile) {
+    Set result = new HashSet();
+    AdvUserEntry entry = (AdvUserEntry)getUser(user);
+    if(entry != null && entry.allowedServices.isEmpty()) entry = (AdvUserEntry)defaultUser;
+    if(entry != null && !entry.allowedServices.isEmpty()) {
+      Iterator iterator = entry.allowedServices.iterator();
+      while(iterator.hasNext()) {
+        String service = (String) iterator.next();
+        if (service.matches("^" + profile + ":[a-zA-Z0-9]*")) {
+          result.add(new Integer(Integer.parseInt(service.replace(profile + ":", ""),16)));
+        }
+      }
+    } else {
+      result = null;
+    }
+    return result;
+  } // return Set of Integer, null for all
+
+  public Set getBlockedServices(String user, String profile) {
+    Set result = new HashSet();
+    AdvUserEntry entry = (AdvUserEntry)getUser(user);
+    if(entry != null && entry.blockedServices.isEmpty()) entry = (AdvUserEntry)defaultUser;
+    if(entry != null && !entry.blockedServices.isEmpty()) {
+      Iterator iterator = entry.blockedServices.iterator();
+      while(iterator.hasNext()) {
+        String service = (String) iterator.next();
+        if (service.matches("^" + profile + ":[a-zA-Z0-9]*")) {
+          result.add(new Integer(Integer.parseInt(service.replace(profile + ":", ""),16)));
+        }
+      }
+    } else {
+      result = null;
+    }
+    return result;
+  } // return Set of Integer, null for all
+
+  public Set getAllowedConnectors(String user) {
+    AdvUserEntry entry = (AdvUserEntry)getUser(user);
+    if(entry != null && entry.allowedConnectors.isEmpty()) entry = (AdvUserEntry)defaultUser;
+    if(entry != null && !entry.allowedConnectors.isEmpty()) {
+      return entry.allowedConnectors;
+    } else {
+      return null;
+    }
+  } // return Set of String, null for all
+
   public int getAllowedEcmRate(String user) {
     AdvUserEntry entry = (AdvUserEntry)getUser(user);
     if(entry == null) return -1;
@@ -73,6 +135,9 @@ public class AdvXmlUserManager extends XmlUserManager {
   static class AdvUserEntry extends UserEntry {
     int ecmRate;
     long startDate, expireDate;
+    Set allowedServices = new HashSet();
+    Set blockedServices = new HashSet();
+    Set allowedConnectors = new HashSet();
 
     public AdvUserEntry(UserEntry ue) {
       super(ue.name, ue.password, ue.ipMask, ue.email, ue.maxConnections, ue.enabled, ue.admin, ue.exclude, ue.debug);

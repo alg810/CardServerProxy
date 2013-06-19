@@ -5,6 +5,7 @@ import com.bowman.cardserv.web.*;
 import com.bowman.cardserv.crypto.DESUtil;
 import com.bowman.cardserv.session.*;
 import com.bowman.cardserv.interfaces.*;
+import com.bowman.util.*;
 
 import java.io.*;
 import java.net.*;
@@ -216,6 +217,8 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
       if(trackerUrl != null)
         new CtrlCommand("update", "Run tracker update", "Fetch the tracker list now.").register(this);
 
+      new CtrlCommand("ping-peers", "Ping peers", "Toggle test-pinging of all known peers continously, regardless of traffic.").register(this);
+
     } catch (NoSuchMethodException e) {
       e.printStackTrace();
     }
@@ -270,6 +273,26 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
       resultMsg = "Failed to remove peer: " + e;
     }
     return new CtrlCommandResult(result, resultMsg);
+  }
+
+  private CronTimer pingTimer = null;
+
+  public CtrlCommandResult runCtrlCmdPingPeers(Map params) {
+    sendPing();
+    if(pingTimer != null) {
+      pingTimer.stop();
+      pingTimer = null;
+      return new CtrlCommandResult(true, "Ping timer stopped.");
+    } else {
+      pingTimer = new CronTimer("* * * * *");
+      pingTimer.addTimerListener(new CronTimerListener() {
+        public void timeout(CronTimer cronTimer) {
+          sendPing();
+        }
+      } );
+      pingTimer.start();
+      return new CtrlCommandResult(true, "Ping timer started.");
+    }
   }
 
   public void setPeerList(Set peerList) {
@@ -814,21 +837,29 @@ public class ClusteredCache extends DefaultCache implements Runnable, StaleEntry
   protected String getServiceList() {
     Set ids = new HashSet();
     CamdNetMessage msg;
-    for(Iterator iter = new ArrayList(ecmMap.values()).iterator(); iter.hasNext(); ) {
-      msg = (CamdNetMessage)iter.next();
-      ids.add(Integer.toHexString(msg.getServiceId()));
+    try { // avoid sync as to not allow debug mode to affect timings
+      for(Iterator iter = new ArrayList(ecmMap.values()).iterator(); iter.hasNext(); ) {
+        msg = (CamdNetMessage)iter.next();
+        ids.add(Integer.toHexString(msg.getServiceId()));
+      }
+      return ids.toString();
+    } catch (ConcurrentModificationException e) {
+      return "(would block)";
     }
-    return ids.toString();
   }
 
   protected String getPendingList() {
     Set ids = new HashSet();
     CamdNetMessage msg;
-    for(Iterator iter = new ArrayList(pendingEcms.keySet()).iterator(); iter.hasNext(); ) {
-      msg = (CamdNetMessage)iter.next();
-      ids.add(Integer.toHexString(msg.getServiceId()));
+    try {
+      for(Iterator iter = new ArrayList(pendingEcms.keySet()).iterator(); iter.hasNext(); ) {
+        msg = (CamdNetMessage)iter.next();
+        ids.add(Integer.toHexString(msg.getServiceId()));
+      }
+      return ids.toString();
+    } catch (ConcurrentModificationException e) {
+      return "(would block)";
     }
-    return ids.toString();
   }
 
   protected void removeRequest(CamdNetMessage request) {

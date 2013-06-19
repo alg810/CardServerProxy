@@ -1,6 +1,6 @@
 package com.bowman.cardserv;
 
-import com.bowman.cardserv.interfaces.CamdConstants;
+import com.bowman.cardserv.interfaces.*;
 import com.bowman.cardserv.crypto.DESUtil;
 
 import java.awt.image.ImagingOpException;
@@ -164,6 +164,32 @@ public class CamdNetMessage implements CamdConstants, Serializable {
     return msg;
   }
 
+  public static CamdNetMessage parseGHttpReq(String[] s, String remoteAddr, byte[] ecm) {
+    int offs = (s[3].length() >= 6)?4:3;
+    int maxWait = GHttpConstants.MAX_WAIT;
+    CamdNetMessage msg;
+    if(ecm == null) {
+      msg = new CamdNetMessage(Integer.parseInt(s[offs++], 16) & 0xFF, (int)Long.parseLong(s[offs++], 16));
+      msg.rawIn = Arrays.asList(s).toString().getBytes(); // todo
+    } else {
+      byte[] data = new byte[ecm.length - 3];
+      System.arraycopy(ecm, 3, data, 0, data.length);
+      msg = new CamdNetMessage(ecm[0] & 0xFF, data);
+      msg.networkId = Integer.parseInt(s[offs++], 16);
+      msg.tid = Integer.parseInt(s[offs++], 16);
+      msg.pid = Integer.parseInt(s[offs++], 16);
+      msg.setServiceId(Integer.parseInt(s[offs++], 16));
+      msg.caId = Integer.parseInt(s[offs++], 16);
+      if(s.length > offs) msg.setProviderIdent(Integer.parseInt(s[offs++], 16));
+      msg.refreshDataHash();
+    }
+    if(s.length > offs) maxWait = Integer.parseInt(s[offs], 16);
+    msg.maxWait = maxWait;
+    msg.remoteAddress = remoteAddr;
+    msg.rawIn = msg.customData;
+    return msg;
+  }
+
   public static CamdNetMessage parseGHttpReq(DataInputStream dais, String remoteAddr, boolean full) throws IOException {
     CamdNetMessage msg = new CamdNetMessage(dais.readUnsignedByte());
     msg.type = TYPE_RECEIVED;
@@ -211,7 +237,7 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   private transient byte[] rawIn, rawOut;
   private transient String protocol, filteredBy, profileName;
   
-  private transient long cacheTime, queueTime, cwsTime, clientTime;
+  private transient long cacheTime, queueTime, cwsTime, clientTime, maxWait;
   private transient int originId;
 
   private CamdNetMessage() {
@@ -427,6 +453,10 @@ public class CamdNetMessage implements CamdConstants, Serializable {
 
   public String getRemoteAddress() {
     return remoteAddress;
+  }
+
+  public void setRemoteAddress(String remoteAddress) {
+    this.remoteAddress = remoteAddress;
   }
 
   public CamdNetMessage getEmptyReply() {
@@ -716,6 +746,10 @@ public class CamdNetMessage implements CamdConstants, Serializable {
 
   public long getClientTime() {
     return clientTime;
+  }
+
+  public long getMaxWait() {
+    return maxWait;
   }
 
   public void setFilteredBy(String filteredBy) {
