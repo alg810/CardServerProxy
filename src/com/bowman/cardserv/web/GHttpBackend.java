@@ -192,7 +192,7 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
   private CamdNetMessage waitForReply(CamdNetMessage request) {
     CamdNetMessage reply = cache.peekReply(request);
     if(reply != null) return reply;
-    else reply = cache.processRequest(-1, request, true, request.getMaxWait() * 2); // todo
+    else reply = cache.processRequest(-1, request, true, request.getMaxWait() * 3); // todo
     return reply;
   }
 
@@ -271,6 +271,7 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
       if(gs == null) throw new GHttpAuthException(getErrorResponse(401, "Authorization required"));
       CamdNetMessage request = CamdNetMessage.parseGHttpReq(s, req.getRemoteAddress(), null);
       CamdNetMessage reply = waitForReply(request);
+      if(reply == null) reply = cache.peekReply(request);
       HttpResponse res;
       if(reply == null) {
         res = getErrorResponse(503, "Cache timeout");
@@ -319,13 +320,14 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
         reply = gs.waitForReply(ecmReq);
       } else instant = true;
 
+      if(reply == null) cache.peekReply(ecmReq);
       if(reply == null) return getErrorResponse(503, "Ecm timeout");
       else {
         CaContext cc = new CaContext(ecmReq.getNetworkId(), ecmReq.getTid(), ecmReq.getServiceId());
         cc = (CaContext)contexts.get(cc.toString());
         if(cc != null) cc.addLength(ecmReq.getPid(), ecmReq.getDataLength());
         HttpResponse res = new HttpResponse(200, "OK", reply.getCustomData(), "application/octet-stream");
-        if(instant) res.setHeader("Pragma", "Cached");
+        if(instant) res.setHeader("Pragma", "cached");
         if(s.length < 10) res.setCookie("GSSID", gs.getGhttpSessionId());
         return res;
       }
@@ -382,6 +384,7 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
       if(pids.length == 0) res = new HttpResponse(204, "No Content");
       else res = new HttpResponse(200, "OK", pids, "application/octet-stream");
       if(s[3].length() < 6) res.setCookie("GSSID", gs.getGhttpSessionId());
+      res.setHeader("Pragma", "context-ignore=" + key);
       return res;
 
     } catch (GHttpAuthException e) {
