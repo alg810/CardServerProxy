@@ -117,6 +117,7 @@ public class UdpCacheForwarder implements CacheForwarder {
         byte[] buf = bos.toByteArray();
         DatagramPacket packet = new DatagramPacket(buf, buf.length, host, port);
         sendSock.send(packet);
+        sentAvg.addRecord(packet.getLength());
         replies++;
       } catch (Exception e) {
         e.printStackTrace();
