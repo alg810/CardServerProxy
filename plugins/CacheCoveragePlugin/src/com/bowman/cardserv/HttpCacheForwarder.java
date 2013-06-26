@@ -43,8 +43,6 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
   private long bytesOut, bytesIn;
   private TimedAverageList sentAvg = new TimedAverageList(10), recvAvg = new TimedAverageList(10);
 
-  private CacheDummySession dummySession = new CacheDummySession();
-
   public HttpCacheForwarder(CacheCoveragePlugin parent, String name) {
     this.parent = parent;
     this.name = name;
