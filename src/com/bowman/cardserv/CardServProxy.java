@@ -362,6 +362,8 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
               DESUtil.intToHexString(msg.getNetworkId(), 4));
           denyMessage(session, msg);
           return;
+        } else {
+          if(msg.getNetworkId() == -1) msg.setNetworkId(profile.getNetworkId());
         }
       } else { // allow plugins to move messages to other profiles regardless of origin
         if(msg.getNetworkId() != profile.getNetworkId()) {
@@ -552,7 +554,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
         logger.warning(session + " thread interrupted while in no-sid-delay, session closed?");
         return null;
       }
-      cached = cacheHandler.processRequest(successFactor, msg, session.getProfile().isCacheOnly(), connManager.getMaxCwWait(profile));
+      cached = cacheHandler.processRequest(successFactor, msg, session.getProfile().isCacheOnly() || config.isCatchAll(), connManager.getMaxCwWait(profile));
     } else {
       cached = cacheHandler.peekReply(msg);
       if(cached != null) session.setFlag(msg, 'W');

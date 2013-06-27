@@ -371,6 +371,7 @@ public class CwsConnectorManager implements XmlConfigurable, Runnable, CronTimer
     conn.setEnabled(false);
     conn.close();
     if(mapper != null) mapper.removeConnector(conn);
+    config.removeCatchAll(conn.getName());
     logger.fine("Removed connector: " + conn.getName());
   }
 

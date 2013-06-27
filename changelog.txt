@@ -1,8 +1,17 @@
 Cardservproxy changelog:
 ------------------------
 
-0.9.1 - RC3 (see README.0.9.0.txt for conceptual changes and tips)
+0.9.1 - RC4
 
+- Added: An experimental catch-all mode, that allows for unidentified traffic (unknown onid/caid or matching no profile).
+  Messages in this category with no onid will receive a dummy value (fffe). The mode is enabled either by adding at
+  least one chameleon-connector with catch-all set to true, or by setting catch-all true for the extended-newcamd port.
+  If enabled, block-caid-mismatch defaults to false (so no need to set it), and most warnings in the extended port and
+  the chameleon connector(s) will be hidden. This also changes cache-behavior to always wait the full max-cache-wait
+  before moving on to connector forward.
+  The dummy catch-all profile uses the global max-cw-wait set for the connector-manager (default 9000ms).
+- Added: Overwrites in the cache will now retain both cw candidates (up to 3 extra will be kept for a request). Unique
+  new candidates will be counted (new cache stat counter "contested" added).
 - Fixed: Handling for unknown sid (0 or a dummy sid listed in dummy-services) was broken in 0.9.0.
 - Fixed: Incoming requests for dummy sids should not retain the dummy when forwarded, now changed to 0.
 - Fixed: Per profile max-cw-wait could not be set below 1s (now both per profile and global allow down to 100 ms).
@@ -56,6 +65,10 @@ Cardservproxy changelog:
   Added: Attribute 'allow-different-ip' to <user-manager>, allows newcamd connections from different ip sources
   for the same user.
   Added: Element <hide-radio-services> to <mapper> (true/false, default: true). Show/hide radio services in web/xml api.
+  Added: Element <catch-all> to <chameleon-connector> (true/false, default: false). Ignore remote meta-data and forward
+  anything to this connector, regardless of properties.
+  Added: Attribute 'catch-all' to <extended-newcamd> (true/false, default: false). Allow unidentified traffic (that
+  doesn't match any profile). Only makes sense with a perfect cache, or a chameleon-connector with catch-all.
 
 - Changes to the http/xml api:
   Added: Attribute 'filtered-by' to <ecm> (transaction logs). Contains the reason for a B flag, or the filtering plugin.

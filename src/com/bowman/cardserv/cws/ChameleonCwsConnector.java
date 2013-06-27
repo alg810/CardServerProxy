@@ -24,6 +24,7 @@ public class ChameleonCwsConnector extends NewcamdCwsConnector implements MultiC
   private Map profileMap = new HashMap();
 
   private String remoteVersion;
+  private boolean catchAll;
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     super.configUpdated(xml);
@@ -33,6 +34,10 @@ public class ChameleonCwsConnector extends NewcamdCwsConnector implements MultiC
     asynchronous = true;
     noEncrypt = false;
     overrideChecks = true;
+
+    catchAll = "true".equalsIgnoreCase(xml.getStringValue("catch-all", "false"));
+    if(catchAll) ProxyConfig.getInstance().addCatchAll(name);
+    if(!enabled || !catchAll) ProxyConfig.getInstance().removeCatchAll(name);
 
     String profiles = xml.getStringValue("profiles", "");
     if(profiles.length() > 0) {
@@ -132,6 +137,7 @@ public class ChameleonCwsConnector extends NewcamdCwsConnector implements MultiC
   }
 
   public boolean canDecode(CamdNetMessage request) {
+    if(catchAll) return true;
     if(request.getCaId() <= 0 || request.getProviderIdent() == -1) return false; // require identified traffic
     else return profileMap.containsKey(new CaidProviderPair(request.getCaId(), request.getProviderIdent()));
   }
@@ -223,10 +229,12 @@ public class ChameleonCwsConnector extends NewcamdCwsConnector implements MultiC
     }
     if(remoteVersion != null) p.setProperty("remote-version", remoteVersion);
     if(!unmappedData.isEmpty()) p.setProperty("umapped-data", unmappedData.toString());
+    if(catchAll) p.setProperty("catch-all", "true");
     return p;
   }
 
   public boolean hasMatchingProfile(int networkId, int caId) {
+    if(catchAll) return true;
     if(networkId == 0 || caId == 0) return false;
     CaProfile profile; 
     for(Iterator iter = profileMap.values().iterator(); iter.hasNext(); ) { // todo, terrible to do this for every msg

@@ -24,6 +24,8 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
   private int mainCaId, mainNetworkId;
   private Integer[] mergedProviders;
 
+  private boolean catchAllExists;
+
   public ExtNewcamdSession(Socket conn, ListenPort listenPort, CamdMessageListener listener) {
     super(conn, listenPort, listener);
 
@@ -32,6 +34,7 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
       this.mainCaId = Integer.parseInt(mainCaId, 16);
       this.mergedProviders = getProvidersForCaId(this.mainCaId);
     }
+    catchAllExists = ProxyConfig.getInstance().isCatchAll();
     initSession();
   }
 
@@ -108,7 +111,8 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
         ProxyConfig.getInstance().getConnManager().addCwsListener(this);
 
         logger.fine("Sent extended state: " + sentData);
-        if(sentData.isEmpty()) logger.warning("No extended data available for user '" + user + "' (no provider-idents currently associated with any active and allowed profiles).");
+        if(sentData.isEmpty() && !catchAllExists)
+          logger.warning("No extended data available for user '" + user + "' (no provider-idents currently associated with any active and allowed profiles).");
         break;
       
       default:
@@ -172,9 +176,9 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
         msg.setNetworkId(-1);
 
         CaidProviderPair pair = new CaidProviderPair(msg.getCaId(), msg.getProviderIdent());
-        if(!sentData.containsKey(pair))
-          logger.warning("User '" + user + "' sent request for ca-id/provider-ident not previously communicated: " + pair);
-        else msg.setNetworkId(((CaProfile)sentData.get(pair)).getNetworkId());
+        if(!sentData.containsKey(pair)) {
+          if(!catchAllExists) logger.warning("User '" + user + "' sent request for ca-id/provider-ident not previously communicated: " + pair);
+        } else msg.setNetworkId(((CaProfile)sentData.get(pair)).getNetworkId());
       } else if(msg.isEmm()) {
         if(mainCard != null) {
           msg.setCaId(mainCard.getCaId());         
@@ -206,7 +210,7 @@ public class ExtNewcamdSession extends NewcamdSession implements CwsListener {
             if(!map.containsKey(record)) {
               map.put(record, profile);
             } else {
-              logger.warning("Ambigious situation - [" + record + "] (profile: " + profile.getName() +
+              if(!catchAllExists) logger.warning("Ambigious situation - [" + record + "] (profile: " + profile.getName() +
                   ") clashes with profile: " + ((CaProfile)map.get(record)).getName() +
                   " (both profiles can't be assigned to the same extended-newcamd port)");                  
             }

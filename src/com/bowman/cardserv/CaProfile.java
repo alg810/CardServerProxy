@@ -19,7 +19,7 @@ import java.io.*;
  */
 public class CaProfile implements XmlConfigurable, FileChangeListener {
 
-  public static final CaProfile MULTIPLE;
+  public static final CaProfile MULTIPLE, CATCHALL;
 
   static {
     MULTIPLE = new CaProfile("*");
@@ -28,6 +28,14 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
     ListenPort lp = new ListenPort("Csp"); // dummy lp for display
     lp.setProfile(MULTIPLE);
     MULTIPLE.listenPorts.add(lp);
+
+    CATCHALL = new CaProfile("**");
+    CATCHALL.setEnabled(true);
+    CATCHALL.caId = 0xFFFE;
+    CATCHALL.networkId = 0xFFFE;
+    CATCHALL.cacheOnly = true;
+    CATCHALL.maxCwWait = -1;
+    CATCHALL.congestionLimit = -1;
   }
 
   private String name;
@@ -54,8 +62,8 @@ public class CaProfile implements XmlConfigurable, FileChangeListener {
 
   public void configUpdated(ProxyXmlConfig xml) throws ConfigException {
     name = xml.getStringValue("name");
-    if(CaProfile.MULTIPLE.getName().equals(name))
-      throw new ConfigException(xml.getFullName(), "Invalid profile name: " + CaProfile.MULTIPLE.getName());
+    if(CaProfile.MULTIPLE.getName().equals(name) || CaProfile.CATCHALL.getName().equals(name))
+      throw new ConfigException(xml.getFullName(), "Invalid profile name: " + name);
 
     enabled = "true".equalsIgnoreCase(xml.getStringValue("enabled", "true"));
     debug = "true".equalsIgnoreCase(xml.getStringValue("debug", "true"));

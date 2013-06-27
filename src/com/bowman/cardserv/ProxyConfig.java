@@ -39,8 +39,9 @@ public class ProxyConfig implements FileChangeListener {
   private int logRotateCount, logRotateLimit;
   private String logFile, logLevel, wtBadFlags;
   private int wtMaxDelay, etMinCount, maxThreads, sessionTimeout, newcamdMaxMsgSize, maxPending, maxConnectionsIP;
-  private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs, blockCaidMismatch;
+  private boolean silent, debug, userAllowOnFailure, logFailures, logEcm, logEmm, logZap, hideIPs;
   private boolean wtIncludeFile, userAllowDifferentIp;
+  private Boolean blockCaidMismatch;
 
   private boolean firstRead = true, started = false;
   private byte[] defaultProfileDesKey, defaultConnectorDesKey, defaultClientId;
@@ -59,6 +60,7 @@ public class ProxyConfig implements FileChangeListener {
   private Map profiles = new HashMap();
   private Map profilesById = new HashMap();
   private Set disabledProfiles = new HashSet();
+  private Set catchAllConnectors = new HashSet();
 
   private boolean sidLinkerEnabled;
   private SidCacheLinker sidLinker;
@@ -72,6 +74,7 @@ public class ProxyConfig implements FileChangeListener {
   public Set getRealProfiles() {
     Set real = new HashSet(profiles.values());
     real.remove(CaProfile.MULTIPLE);
+    real.remove(CaProfile.CATCHALL);
     return real;
   }
   
@@ -85,8 +88,10 @@ public class ProxyConfig implements FileChangeListener {
   }
 
   public CaProfile getProfileById(int networkId, int caId) {
-    if(networkId == 0) return null;
-    return (CaProfile)profilesById.get(CaProfile.getKeyStr(networkId, caId));
+    if(networkId == 0 && !isCatchAll()) return null;
+    CaProfile profile = (CaProfile)profilesById.get(CaProfile.getKeyStr(networkId, caId));
+    if(profile == null && isCatchAll()) return CaProfile.CATCHALL;
+    else return profile;
   }
 
   public String getProfileNameById(int networkId, int caId) {
@@ -159,8 +164,21 @@ public class ProxyConfig implements FileChangeListener {
     return started;
   }
 
+  public void addCatchAll(String connectorName) {
+    this.catchAllConnectors.add(connectorName);
+  }
+
+  public void removeCatchAll(String connectorName) {
+    this.catchAllConnectors.remove(connectorName);
+  }
+
+  public boolean isCatchAll() {
+    return !this.catchAllConnectors.isEmpty();
+  }
+
   public boolean isBlockCaidMismatch() {
-    return blockCaidMismatch;
+    if(blockCaidMismatch == null) return !isCatchAll();
+    else return blockCaidMismatch.booleanValue();
   }
 
   public byte[] getDefaultProfileDesKey() {
@@ -260,7 +278,8 @@ public class ProxyConfig implements FileChangeListener {
 
   public TvService getService(String profileName, ServiceMapping id) {
     TvService service = getService(profileName, id.serviceId);
-    return new TvService(service, id.getCustomData());
+    if(service == null) return null;
+    else return new TvService(service, id.getCustomData());
   }
 
   public TvService getService(String profileName, int serviceId) {
@@ -269,6 +288,7 @@ public class ProxyConfig implements FileChangeListener {
 
     Integer id = new Integer(serviceId);
     CaProfile profile = (CaProfile)profiles.get(profileName);
+    if(profile == null) return TvService.getUnknownService(profileName, serviceId);
     TvService service = (TvService)profile.getServices().get(id);
     if(service == null) return TvService.getUnknownService(profileName, serviceId);
     else return service;
@@ -388,8 +408,13 @@ public class ProxyConfig implements FileChangeListener {
     maxPending = profileConf.getIntValue("max-pending", 3);
     sessionTimeout = profileConf.getTimeValue("session-timeout", 240, "m");
     newcamdMaxMsgSize = profileConf.getIntValue("newcamd-maxmsgsize", 400);
-    blockCaidMismatch = "true".equalsIgnoreCase(profileConf.getStringValue("block-caid-mismatch", "true"));
     maxConnectionsIP = profileConf.getIntValue("max-connections-ip", 0);
+
+    try {
+      blockCaidMismatch = new Boolean("true".equalsIgnoreCase(profileConf.getStringValue("block-caid-mismatch")));
+    } catch (ConfigException e) {
+      blockCaidMismatch = null;
+    }
 
     ProxyXmlConfig keepAliveConf = null;
     try {
@@ -521,7 +546,7 @@ public class ProxyConfig implements FileChangeListener {
     String name;
     for(iter = new ArrayList(profiles.keySet()).iterator(); iter.hasNext(); ) {
       name = (String)iter.next();
-      if(CaProfile.MULTIPLE.getName().equals(name)) continue;
+      if(CaProfile.MULTIPLE.getName().equals(name) || CaProfile.CATCHALL.getName().equals(name)) continue;
       if(!newProfiles.contains(name)) {
         profile = (CaProfile)profiles.remove(name);
         profilesById.remove(profile.getKeyStr());
@@ -532,6 +557,7 @@ public class ProxyConfig implements FileChangeListener {
       }
     }
     if(!profiles.containsKey(CaProfile.MULTIPLE.getName())) addProfile(CaProfile.MULTIPLE);
+    if(!profiles.containsKey(CaProfile.CATCHALL.getName())) addProfile(CaProfile.CATCHALL);
     loadExtendedPort(profileConf);
   }
 
@@ -581,6 +607,8 @@ public class ProxyConfig implements FileChangeListener {
         }
       }
       extendedPort = new ListenPort("ExtNewcamd");
+      if("true".equalsIgnoreCase(port.getStringValue("catch-all", "false"))) addCatchAll(extendedPort.getProtocol());
+      else removeCatchAll(extendedPort.getProtocol());
       extendedPort.configUpdated(port);
       if(defaultListener != null) extendedPort.start(defaultListener, CaProfile.MULTIPLE);
       CaProfile.MULTIPLE.addListenPort(extendedPort);
@@ -588,6 +616,7 @@ public class ProxyConfig implements FileChangeListener {
     } else {
       if(extendedPort != null) {
         CaProfile.MULTIPLE.removeListenPort(extendedPort);
+        removeCatchAll(extendedPort.getProtocol());
         extendedPort.destroy();
         extendedPort = null;
       }

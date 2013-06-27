@@ -240,6 +240,8 @@ public class CamdNetMessage implements CamdConstants, Serializable {
   private transient long cacheTime, queueTime, cwsTime, clientTime, maxWait;
   private transient int originId;
 
+  private transient Set candidates;
+
   private CamdNetMessage() {
     this.timeStamp = System.currentTimeMillis();
   }
@@ -826,5 +828,21 @@ public class CamdNetMessage implements CamdConstants, Serializable {
 
   public String getLinkedService() {
     return linkedService;
+  }
+
+  public boolean addCandidate(CamdNetMessage msg) {
+    if(candidates == null)
+      candidates = msg.candidates == null ? new HashSet() : msg.candidates;
+    candidates.remove(this);
+    if(candidates.size() > 3) throw new IllegalStateException("Too many cw candidates (" + candidates.size() + ")");
+    return candidates.add(msg);
+  }
+
+  public Set getCandidates() {
+    return candidates;
+  }
+
+  public boolean isContested() {
+    return candidates != null;
   }
 }

@@ -13,5 +13,6 @@ public interface CacheListener {
   boolean lockRequest(int successFactor, CamdNetMessage req);
   void onRequest(int successFactor, CamdNetMessage req);
   void onReply(CamdNetMessage req, CamdNetMessage reply);
+  void onContested(CamdNetMessage req, CamdNetMessage reply);
 
 }

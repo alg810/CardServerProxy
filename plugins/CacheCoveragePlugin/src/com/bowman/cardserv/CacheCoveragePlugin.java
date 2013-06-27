@@ -89,6 +89,10 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       if(!forwarders.isEmpty()) forwardReply(request, reply);
   }
 
+  public void onContested(CamdNetMessage request, CamdNetMessage reply) {
+    if(!forwarders.isEmpty()) forwardReply(request, reply);
+  }
+
   public boolean replyStat(CamdNetMessage request, CamdNetMessage reply) {
     ServiceCacheEntry entry = getServiceEntry(request);
     SourceCacheEntry source = getSourceEntry(request);

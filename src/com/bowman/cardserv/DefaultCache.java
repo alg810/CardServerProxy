@@ -22,7 +22,7 @@ public class DefaultCache implements CacheHandler {
   private long maxCacheWait;
   private int maxWaitPercent;
 
-  private int timeouts, instantHits, waitHits, remoteHits, pendingPeak;
+  private int timeouts, instantHits, waitHits, remoteHits, pendingPeak, contested;
 
   public DefaultCache() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
@@ -57,6 +57,7 @@ public class DefaultCache implements CacheHandler {
     timeouts = 0;
     instantHits = 0;
     waitHits = 0;
+    contested = 0;
   }
 
   public CamdNetMessage processRequest(int successFactor, CamdNetMessage request, boolean alwaysWait, long maxCwWait) {
@@ -171,6 +172,7 @@ public class DefaultCache implements CacheHandler {
     p.setProperty("timeouts", String.valueOf(timeouts));
     p.setProperty("instant-hits", String.valueOf(instantHits));
     p.setProperty("wait-hits", String.valueOf(waitHits));
+    p.setProperty("contested", String.valueOf(contested));
     if(remoteHits > 0) p.setProperty("remote-hits", String.valueOf(remoteHits));    
     return p;
   }
@@ -197,22 +199,31 @@ public class DefaultCache implements CacheHandler {
     if(reply.getProfileName() == null) reply.setProfileName(request.getProfileName());
     if(reply.getNetworkId() == 0) reply.setNetworkId(request.getNetworkId());
     CamdNetMessage oldReply = (CamdNetMessage)ecmMap.put(request, reply);
-    if(oldReply != null) { // overwrite
-      if(reply.getOriginAddress() != null) logger.fine("Cache reply " + reply.hashCodeStr() + " late by: " +
-        (reply.getTimeStamp() - oldReply.getTimeStamp()) + " ms");      
+    if(oldReply != null) {
       if(!oldReply.equals(reply)) {
-        if(!oldReply.equalsSingleDcw(reply)) // completely different reply
-          logger.warning("Overwrote cache reply with different DCW! - Previous: " + oldReply.toDebugString() +
-              " Current: " + reply.toDebugString() + " (time difference: " + (reply.getTimeStamp() - oldReply.getTimeStamp()) + "ms)");
-        else { // one cw matches
-          if(oldReply.hasZeroDcw() || reply.hasZeroDcw()) // one was zeroes only, probably harmless so avoid logging warning in this case
-            logger.info("Overwrote cache reply with reply that has a different opposing DCW - Previous: " + oldReply.toDebugString() +
-              " Current: " + reply.toDebugString());
-          else logger.warning("Overwrote cache reply with reply that has a different opposing DCW - Previous: " + oldReply.toDebugString() +
-              " Current: " + reply.toDebugString());
+        contested++;
+        try {
+          if(reply.addCandidate(oldReply)) // something is different, save the previous reply
+            if(monitor != null) monitor.onContested(request, reply); // a new candidate was added, notify
+        } catch (IllegalStateException e) {
+          logger.warning("Could not retain cache reply for " + request.hashCodeStr() + ": " + e.getMessage());
         }
+        if(!oldReply.equalsSingleDcw(reply)) { // completely different reply
+          logger.warning("Contested cache reply for " + request.hashCodeStr() + ", both DCW differ - Previous: "
+              + oldReply.toDebugString() + " Current: " + reply.toDebugString() + " (time difference: " +
+              (reply.getTimeStamp() - oldReply.getTimeStamp()) + "ms)");
+        } else { // one cw matches
+          if(oldReply.hasZeroDcw() || reply.hasZeroDcw()) // one was zeroes only, probably harmless so avoid logging warning in this case
+            logger.info("Contested cache reply for " + request.hashCodeStr() + ", different opposing DCW - Previous: " +
+                oldReply.toDebugString() + " Current: " + reply.toDebugString());
+          else logger.warning("Contested cache reply for " + request.hashCodeStr() + ", different opposing DCW - Previous: "
+              + oldReply.toDebugString() + " Current: " + reply.toDebugString());
+        }
+      } else { // same reply, duplicate
+        if(reply.getOriginAddress() != null) logger.fine("Duplicate cache reply for " + request.hashCodeStr() + " late by: " +
+            (reply.getTimeStamp() - oldReply.getTimeStamp()) + " ms");
       }
-    } // else if(listener != null) listener.onReply(request, reply);
+    }
   }
 
   protected void removeRequest(CamdNetMessage request) {

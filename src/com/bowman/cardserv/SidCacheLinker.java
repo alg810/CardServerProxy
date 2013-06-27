@@ -431,6 +431,10 @@ public class SidCacheLinker implements CacheListener, FileChangeListener, CronTi
     }
   }
 
+  public void onContested(CamdNetMessage req, CamdNetMessage reply) {
+    // nothing to do
+  }
+
   private void processReply(CamdNetMessage origReq, CamdNetMessage linkedReq, CamdNetMessage reply, String linkStr, boolean undecodable) {
     if(undecodable && testService == null) reportAddedService(linkedReq, origReq);
     linkedReq.setLinkedService(linkStr);

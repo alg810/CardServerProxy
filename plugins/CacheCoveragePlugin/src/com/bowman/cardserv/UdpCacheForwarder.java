@@ -20,7 +20,7 @@ public class UdpCacheForwarder implements CacheForwarder {
   private DatagramSocket sendSock;
   private InetAddress host;
   private int port;
-  private Set profiles;
+  private Set profiles, caids;
   private boolean sendLocks, hideNames;
 
   private int requests, replies, filtered;
@@ -46,6 +46,9 @@ public class UdpCacheForwarder implements CacheForwarder {
       String profileStr = xml.getStringValue("profiles", "").trim().toLowerCase();
       if(profileStr.length() > 0) profiles = new HashSet(Arrays.asList(profileStr.split(" ")));
       else profiles = null;
+      String caidStr = xml.getStringValue("caids", "").trim();
+      if(caidStr.length() > 0) caids = ProxyXmlConfig.getIntTokens("caids", caidStr);
+      else caids = null;
 
       try {
         sendSock = new DatagramSocket();
@@ -78,11 +81,10 @@ public class UdpCacheForwarder implements CacheForwarder {
 
   public void forwardRequest(CamdNetMessage req) {
     if(!sendLocks) return;
-    if(profiles != null)
-      if(req.getProfileName() == null || !profiles.contains(req.getProfileName().toLowerCase())) {
-        filtered++;
-        return;
-      }
+    if(isFiltered(req)) {
+      filtered++;
+      return;
+    }
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     DataOutputStream dos = new DataOutputStream(bos);
     try {
@@ -101,12 +103,10 @@ public class UdpCacheForwarder implements CacheForwarder {
 
   public void forwardReply(CamdNetMessage req, CamdNetMessage reply) {
     if(reply.getDataLength() == 16) {
-      if(profiles != null)
-        if(req.getProfileName() == null || !profiles.contains(req.getProfileName().toLowerCase())) {
-          filtered++;
-          return;
-        }
-
+      if(isFiltered(req)) {
+        filtered++;
+        return;
+      }
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       DataOutputStream dos = new DataOutputStream(bos);
       try {
@@ -125,5 +125,12 @@ public class UdpCacheForwarder implements CacheForwarder {
     }
   }
 
+  public boolean isFiltered(CamdNetMessage req) {
+    if(profiles != null)
+      if(req.getProfileName() == null || !profiles.contains(req.getProfileName().toLowerCase())) return true;
+    if(caids != null)
+      if(!caids.contains(new Integer(req.getCaId()))) return true;
+    return false;
+  }
 
 }

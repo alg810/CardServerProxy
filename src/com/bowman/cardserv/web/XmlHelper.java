@@ -782,7 +782,7 @@ public class XmlHelper implements CommandManager {
         xb.appendElement("profile");
         xb.appendAttr("name", profiles[i].getName());
         xb.appendAttr("enabled", profiles[i].isEnabled());
-        if(!CaProfile.MULTIPLE.getName().equals(profiles[i].getName())) {
+        if(!CaProfile.MULTIPLE.getName().equals(profiles[i].getName()) && !CaProfile.CATCHALL.getName().equals(profiles[i].getName())) {
           xb.appendAttr("cache-only", profiles[i].isCacheOnly());
           xb.appendAttr("ca-id", profiles[i].getCaId());
           xb.appendAttr("network-id", profiles[i].getNetworkId());
@@ -799,10 +799,14 @@ public class XmlHelper implements CommandManager {
           if(profiles[i].getAllowedStr() != null)
             xb.appendAttr("allowed-services", profiles[i].getAllowedStr());
         }
-        xb.appendAttr("mapped-services", mappedServices);
         xb.appendAttr("debug", profiles[i].isDebug());
-        xb.appendAttr("capacity", capacity);
-        xb.appendAttr("sessions", profiles[i].getSessions());
+        if(!CaProfile.CATCHALL.getName().equals(profiles[i].getName())) {
+          xb.appendAttr("mapped-services", mappedServices);
+          xb.appendAttr("capacity", capacity);
+          xb.appendAttr("sessions", profiles[i].getSessions());
+        } else {
+          xb.appendAttr("network-id", profiles[i].getNetworkId());
+        }
         xb.appendAttr("max-cw-wait", profiles[i].getMaxCwWait());
         xb.appendAttr("max-cache-wait", profiles[i].getMaxCacheWait());
         if(profiles[i].getCongestionLimit() != profiles[i].getMaxCwWait())

@@ -187,7 +187,7 @@ public class WebBackend implements HttpRequestListener, RemoteListener, XmlConfi
       ghttpXml = null;
     }
     if(ghttpXml != null) ghttpd.configUpdated(ghttpXml);
-    if(ghttpd.isEnabled() && !ghttpd.hasAlternatePort()) httpd.setV11(true);
+    if(ghttpd.isEnabled()) httpd.setV11(true);
 
     httpd.addHttpRequestListener(xmlHandlerPattern, this);
     httpd.addHttpRequestListener(cfgHandlerPattern, this);

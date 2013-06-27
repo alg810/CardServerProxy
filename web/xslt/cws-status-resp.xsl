@@ -735,14 +735,17 @@
                 <xsl:if test="not(@network-id)">
                   <div style="position: relative; left: -70px">(multi-context connectors/sessions)</div>
                 </xsl:if>
+                <xsl:if test="@name='**'">
+                  <div style="position: relative; left: -70px">(unidentified traffic)</div>
+                </xsl:if>
               </td>
-              <td width="15%"><strong>Sessions: </strong><xsl:value-of select="@sessions"/></td>
-              <td width="19%"><strong>
+              <td width="15%"><xsl:if test="@name!='**'"><strong>Sessions: </strong><xsl:value-of select="@sessions"/></xsl:if></td>
+              <td width="19%"><xsl:if test="@name!='**'"><strong>
                 <xsl:choose>
                   <xsl:when test="@network-id">Local services: </xsl:when>
                   <xsl:otherwise>Services: </xsl:otherwise>
                 </xsl:choose>
-                </strong><xsl:value-of select="@mapped-services"/>
+                </strong><xsl:value-of select="@mapped-services"/></xsl:if>
               </td>
               <td width="1%">&#160;</td>
               <td width="20%" align="right">&#160;(<xsl:value-of select="sum(//connector[@profile=$profile]/@ecm-load)"/>)
@@ -766,14 +769,16 @@
               <xsl:if test="@debug='true'"> (backlog of 100 transactions kept for every session - memory intensive)</xsl:if>
               <xsl:if test="@debug='false'"> (no transaction backlogs kept)</xsl:if>
               <br />
-              <strong>Estimated capacity: </strong> <xsl:value-of select="@capacity"/><br />
-              <strong>Estimated load: </strong><xsl:value-of select="sum(//connector[@profile=$profile]/@ecm-load)"/><br />
-              <strong>
-                <xsl:choose>
-                  <xsl:when test="@network-id">Locally mapped services: </xsl:when>
-                  <xsl:otherwise>Services: </xsl:otherwise>
-                </xsl:choose>
-              </strong><xsl:value-of select="@mapped-services"/>
+              <xsl:if test="@capacity">
+                <strong>Estimated capacity: </strong> <xsl:value-of select="@capacity"/><br />
+                <strong>Estimated load: </strong><xsl:value-of select="sum(//connector[@profile=$profile]/@ecm-load)"/><br />
+                <strong>
+                  <xsl:choose>
+                    <xsl:when test="@network-id">Locally mapped services: </xsl:when>
+                    <xsl:otherwise>Services: </xsl:otherwise>
+                  </xsl:choose>
+                </strong><xsl:value-of select="@mapped-services"/>
+              </xsl:if>
               <xsl:if test="@parsed-services"> (<xsl:value-of select="@parsed-services"/> parsed from services file, with <xsl:value-of select="@parsed-conflicts"/> conflicts)</xsl:if>
               <br />
               <xsl:if test="@reset-services"><strong>Reset services: </strong><xsl:value-of select="@reset-services"/><br /></xsl:if>

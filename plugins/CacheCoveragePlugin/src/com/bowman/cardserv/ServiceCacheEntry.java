@@ -116,11 +116,12 @@ public class ServiceCacheEntry implements Comparable {
     updateCount++;
     if(source != null) source.updateCount++;
     if(backLog.containsKey(newRequest) && !newReply.equals(backLog.get(newRequest))) {
+      CamdNetMessage oldReply = (CamdNetMessage)backLog.get(newRequest);
       // overwritten with different dcw
       if(source != null && parent.analyzeOverwrites) {
-        if(source.reportOverWrite(this, newRequest, (CamdNetMessage)backLog.get(newRequest), newReply)) overwriteCount++;
+        if(source.reportOverWrite(this, newRequest, oldReply, newReply)) overwriteCount++;
       } else overwriteCount++;
-      return true; // don't block on overwrite, forward all candidates
+      return false;
     }
     if(backLog.containsKey(newRequest)) {
       duplicateCount++;

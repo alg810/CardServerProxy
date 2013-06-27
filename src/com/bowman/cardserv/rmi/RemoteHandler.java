@@ -323,7 +323,8 @@ public class RemoteHandler extends UnicastRemoteObject implements RemoteProxy, U
   }
 
   public ProfileStatus[] getProfiles() {
-    Collection profiles = config.getProfiles().values();
+    Collection profiles = new ArrayList(config.getProfiles().values());
+    if(!config.isCatchAll()) profiles.remove(CaProfile.CATCHALL);
     ProfileStatus[] ps = new ProfileStatus[profiles.size()]; int i = 0;
     for(Iterator iter = profiles.iterator(); iter.hasNext(); )
       ps[i++] = new ProfileStatus((CaProfile)iter.next());

@@ -60,7 +60,7 @@ Contents (element paths in <strong>bold</strong> represent common changes, anyth
 <li><a href="#ca-profiles/newcamd-maxmsgsize">ca-profiles/newcamd-maxmsgsize</a></li>
 <li><a href="#ca-profiles/block-caid-mismatch">ca-profiles/block-caid-mismatch</a></li>
 <br />
-<li><a href="#ca-profiles/extended-newcamd"><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled, debug)</strong></a></li>
+<li><a href="#ca-profiles/extended-newcamd"><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled, catch-all, debug)</strong></a></li>
 <ul>
   <li><a href="#ca-profiles/extended-newcamd/des-key">extended-newcamd/des-key</a></li>
   <li><a href="#ca-profiles/extended-newcamd/exclude-profiles"><strong>extended-newcamd/exclude-profiles</strong></a></li>
@@ -230,6 +230,7 @@ Contents (element paths in <strong>bold</strong> represent common changes, anyth
       <li><a href="#connection-manager/cws-connectors/[newcamd-connector|radegast-connector]/port">chameleon-connector/port</a></li>
       <li><a href="#connection-manager/cws-connectors/newcamd-connector/userpass">chameleon-connector/user &amp; pass</a></li>
       <li><a href="#connection-manager/cws-connectors/chameleon-connector/profiles">chameleon-connector/profiles</a></li>
+      <li><a href="#connection-manager/cws-connectors/chameleon-connector/catch-all">chameleon-connector/catch-all</a></li>
     </ul>
   </ul>
 </ul>
@@ -326,18 +327,20 @@ Example: <em class='italic'>&lt;newcamd-maxmsgsize>480&lt;/newcamd-maxmsgsize></
 <a name="ca-profiles/block-caid-mismatch">
 <div class='indent'>ca-profiles/block-caid-mismatch</div><br />
 true/false (default: true) Block all replies where the request had a different ca-id. Determines whether M flag transactions are blocked or not (i.e returned as failures to the clients). Since the cache is global, it is possible for a client to send requests to the wrong port and still get valid replies (which may cause it to ignore the caid in the card-data and keep sending to the wrong port - potentially destroying the service mapping for that profile).<br />
-<br /><strong>NOTE: </strong>As of 0.9.1, this will also apply to cross-profile cache hits that have the same ca-id (but where ecms were sent to different profiles). Such configurations with several profiles receiving the same traffic aren't really supported, but if you you know what you're doing and you're sure you understand the implications - it will continue to work as before if you set this to false.<br />  
+<br /><strong>NOTE: </strong>As of 0.9.1, this will also apply to cross-profile cache hits that have the same ca-id (but where ecms were sent to different profiles). Such configurations with several profiles receiving the same traffic aren't really supported, but if you you know what you're doing and you're sure you understand the implications - it will continue to work as before if you set this to false.<br />
+<strong>NOTE: </strong>If catch-all is set to true for either the extended-newcamd port, or for at least one chameleon-connector, this setting defaults to false.<br />
 <br />
 </a>
 
 <a name="ca-profiles/extended-newcamd">
-<div class='indent'><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled, debug)</strong></div><br />
+<div class='indent'><strong>ca-profiles/extended-newcamd (attributes: *listen-port, bind-ip, enabled, catch-all, debug)</strong></div><br />
 Defines a listener for the extended version of the newcamd protocol used between mgcamd and newcs, allowing multiple systems to be accessed over one session. This will behave like newcs does when chameleon is used, and mgcamd clients (or any other that implement these protocol extensions) will receive a list of multiple cards when connecting.<br />
 The proxy will compile the list of available cards (or rather ca-id/provider-ident pairs) when a new session is created, based on which connectors and profiles are available at the time. If new connectors/profiles are added or removed after the client has connected, the extended protocol allows them to receive real-time updates without having to reconnect.<br />
 <br /><strong>NOTE: </strong>AU will work over this port, but only if the au-user in question is configured to only update a single card (across all profiles). If there are more, dummy data will be returned instead.<br /><br />
 - <strong class='bold'>listen-port</strong>: TCP port number.<br />
 - <strong class='bold'>bind-ip</strong>: Optional local IP to bind the listener to (default: all - 0.0.0.0).<br />
 - <strong class='bold'>enabled</strong>: true/false (default: true).<br />
+- <strong class='bold'>catch-all</strong>: true/false (default: false). Allow unidentified traffic (sets the onid to 'fffe' for anything not matching an existing profile). This only makes sense when wishing to make use of unidentified cache data, via extended newcamd. If chameleon-connectors with catch-all true exists, this is automatically considered true.<br />
 - <strong class='bold'>debug</strong>: true/false (default: true).<br />
 <br />
 Example:  <em class='italic'>&lt;extended-newcamd listen-port="5556"/></em> <br />
@@ -1333,6 +1336,13 @@ Optional list of profile names that should be mapped for this connector (use thi
 <br /><strong>NOTE: </strong>If you DO have profiles that share one or more ca-id/ident pairs then this list is mandatory, or the connector will accept no traffic (and remember that provider idents are associated with profiles not only from manual config but also automatically - based on card-data received from servers that are part of the profile - unless this is manually overridden). <br />
 <br />
 Example: <em class='italic'>&lt;profiles>satprofile1 satprofile2&lt;/profiles></em>  <br />
+<br />
+</a>
+
+<a name="connection-manager/cws-connectors/chameleon-connector/catch-all">
+<div class='indent'>connection-manager/cws-connectors/chameleon-connector/catch-all</div><br />
+Set to true (default: false) to make this connector except any traffic, regardless of what the remote server says can decode here. Setting catch-all to true for one or more connectors enables this mode globally, which allows for completely unidentified traffic throughout the proxy.<br />
+<br /><strong>NOTE: </strong>The remote server must be prepared to receive traffic that is outside the caid/ident lists and sid lists it may have communicated to this client.<br />
 <br />
 </a>
 

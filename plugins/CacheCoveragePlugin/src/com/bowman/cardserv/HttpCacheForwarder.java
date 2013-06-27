@@ -38,7 +38,7 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
   private boolean connected, redundant;
   private int counter, reconnects, errors, ecmForwards, delayAlerts, filtered;
   private int maxDelay;
-  private Set profiles;
+  private Set profiles, caids;
 
   private long bytesOut, bytesIn;
   private TimedAverageList sentAvg = new TimedAverageList(10), recvAvg = new TimedAverageList(10);
@@ -70,7 +70,9 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
       String profileStr = xml.getStringValue("profiles", "").trim().toLowerCase();
       if(profileStr.length() > 0) profiles = new HashSet(Arrays.asList(profileStr.split(" ")));
       else profiles = null;
-
+      String caidStr = xml.getStringValue("caids", "").trim();
+      if(caidStr.length() > 0) caids = ProxyXmlConfig.getIntTokens("caids", caidStr);
+      else caids = null;
       for(int i = 0; i < threads.length; i++) {
         threads[i] = new FeederThread(i);
         threads[i].start();
@@ -154,6 +156,11 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
       if(reply.getDataLength() == 16) {
         if(profiles != null)
           if(req.getProfileName() == null || !profiles.contains(req.getProfileName().toLowerCase())) {
+            filtered++;
+            return;
+          }
+        if(caids != null)
+          if(!caids.contains(new Integer(req.getCaId()))) {
             filtered++;
             return;
           }
