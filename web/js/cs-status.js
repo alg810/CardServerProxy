@@ -1,4 +1,4 @@
-﻿
+
 var timer;
 var helper = new BowWeb.AjaxHelper(logout, 'busyImg');
 var xsltTr = new BowWeb.XsltTransformer("/xslt/cws-status-resp.xsl", postProcess);

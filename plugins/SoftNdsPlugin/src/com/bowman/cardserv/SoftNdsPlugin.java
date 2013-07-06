@@ -34,9 +34,11 @@ public class SoftNdsPlugin implements ProxyPlugin {
     config = ProxyConfig.getInstance();
   }
 
-  public void start(CardServProxy cardServProxy) {}
+  public void start(CardServProxy cardServProxy) {
+  }
 
-  public void stop() {}
+  public void stop() {
+  }
 
   public String getName() {
     return PLUGIN_NAME;
@@ -45,7 +47,7 @@ public class SoftNdsPlugin implements ProxyPlugin {
   public String getDescription() {
     return PLUGIN_DESC;
   }
-  
+
   public Properties getProperties() {
     Properties p = new Properties();
     String caids = "";
@@ -214,14 +216,15 @@ public class SoftNdsPlugin implements ProxyPlugin {
 
     try {
       byte[] testEcm = xml.getBytesValue("testEcm");
-      if (testEcm != null) {
+      if(testEcm != null) {
         EcmData ecmData = parseEcm(testEcm);
         if(ecmData != null) {
           byte[] DW = calculateDW(0, ecmData);
-          if (DW != null) logger.finest("Test DCW: " + DESUtil.bytesToString(DW));
+          if(DW != null) logger.finest("Test DCW: " + DESUtil.bytesToString(DW));
         }
       }
-    } catch (ConfigException e) {}
+    } catch(ConfigException e) {
+    }
 
     logger.fine("Configuration updated.");
   }

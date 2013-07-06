@@ -15,6 +15,5 @@ TODO / suggestions:
 
 Example config:
 ---------------
-    <plugin class="com.bowman.cardserv.MySQLWebManagementPlugin" enabled="true" jar-file="mysqlwebmanagementplugin.jar">
-    </plugin>
+    <plugin class="com.bowman.cardserv.MySQLWebManagementPlugin" enabled="true" jar-file="mysqlwebmanagementplugin.jar"/>
 
