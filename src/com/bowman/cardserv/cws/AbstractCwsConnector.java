@@ -17,7 +17,7 @@ import java.io.IOException;
  */
 public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsConnector {
 
-  private static final int RAMPUP_ECM_TIME = 400;
+  private static final int RAMPUP_ECM_TIME = 200, BEST_ECM_TIME = 50;
 
   protected static final int LOGIN_SO_TIMEOUT = 30 * 1000;
   protected static final int SESSION_SO_TIMEOUT = 0;
@@ -233,6 +233,7 @@ public abstract class AbstractCwsConnector implements Comparable, Runnable, CwsC
 
   public int getEstimatedQueueTime() {
     if(successEcmCount == 0) return RAMPUP_ECM_TIME;
+    else if(config.isCatchAll() && getQueueSize() == 0) return BEST_ECM_TIME; // be optimistic
     else return (getQueueSize() + 1) * getCurrentEcmTime();
   }
 
