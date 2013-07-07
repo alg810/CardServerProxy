@@ -9,7 +9,7 @@ import java.io.*;
  * Date: Feb 10, 2010
  * Time: 10:59:40 PM
  */
-public class WrappedFileHandler extends FileHandler {
+public class WrappedFileHandler extends StreamHandler {
   static FileHandler wrappedHandler;
 
   public WrappedFileHandler() throws IOException, SecurityException {
