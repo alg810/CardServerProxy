@@ -410,7 +410,7 @@ public class CacheCoveragePlugin implements ProxyPlugin, CacheListener {
       source = (SourceCacheEntry)iter.next();
       if(hideLocal && source.isLocal()) continue;
       if(name != null && !source.sourceStr.equalsIgnoreCase(name)) continue;
-      if(name != null && !name.equals(name.toUpperCase())) continue;
+      if(!source.sourceStr.equals(source.sourceStr.toUpperCase())) continue;
       xb.appendElement("source", "name", source.sourceStr);
       xb.appendAttr("label", source.label);
       xb.appendAttr("update-count", source.updateCount);
