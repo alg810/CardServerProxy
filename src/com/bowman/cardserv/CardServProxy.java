@@ -399,7 +399,7 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
         logger.finer("Allowed connectors '" + modified + "' for: " + msg.hashCodeStr());
         modified = filterConnectors(msg, modified); // remove connectors that claim they cant decode this message
 
-        if(modified.isEmpty() && !profile.isCacheOnly()) {
+        if(modified.isEmpty() && !(profile.isCacheOnly() || config.isCatchAll())) {
           logger.fine("Denying message with no connector candidates from '" + session + "': " + msg.hashCodeStr());
           denyMessage(session, msg);
           return;
