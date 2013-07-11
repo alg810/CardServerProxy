@@ -24,6 +24,8 @@ public class DefaultCache implements CacheHandler {
 
   private int timeouts, instantHits, waitHits, remoteHits, pendingPeak, contested;
 
+  private Set caids = new HashSet();
+
   public DefaultCache() {
     logger = ProxyLogger.getLabeledLogger(getClass().getName());
   }
@@ -161,6 +163,23 @@ public class DefaultCache implements CacheHandler {
     return false;
   }
 
+  public synchronized void processReplies(Map replies) {
+    boolean lockFound = false;
+    CamdNetMessage request, reply;
+    for(Iterator iter = replies.keySet().iterator(); iter.hasNext(); ) {
+      request = (CamdNetMessage)iter.next();
+      reply = (CamdNetMessage)replies.get(request);
+      // if(monitor != null) monitor.onReply(request, reply);
+      if(listener != null) listener.onReply(request, reply);
+      if(pendingEcms.containsKey(request)) {
+        removeRequest(request);
+        lockFound = true;
+      }
+      addReply(request, reply);
+    }
+    if(lockFound) notifyAll();
+  }
+
   public CamdNetMessage peekReply(CamdNetMessage request) {
     return (CamdNetMessage)ecmMap.get(request);
   }
@@ -185,10 +204,15 @@ public class DefaultCache implements CacheHandler {
     return pendingEcms.containsKey(request);
   }
 
+  public boolean containsCaid(int caid) {
+    return caids.contains(new Integer(caid));
+  }
+
   protected synchronized void addRequest(int successFactor, CamdNetMessage request, boolean alwaysWait) {
     CamdNetMessage oldRequest = (CamdNetMessage)pendingEcms.put(request, request);
     if(pendingEcms.size() > pendingPeak) pendingPeak = pendingEcms.size();
     if(oldRequest == null) {
+      caids.add(new Integer(request.getCaId()));
       if(monitor != null) monitor.onRequest(successFactor, request);
       if(listener != null) listener.onRequest(successFactor, request);
     }

@@ -400,9 +400,11 @@ public class CardServProxy implements CamdMessageListener, XmlConfigurable, Runn
         modified = filterConnectors(msg, modified); // remove connectors that claim they cant decode this message
 
         if(modified.isEmpty() && !(profile.isCacheOnly() || config.isCatchAll())) {
-          logger.fine("Denying message with no connector candidates from '" + session + "': " + msg.hashCodeStr());
-          denyMessage(session, msg);
-          return;
+          if(!cacheHandler.containsCaid(msg.getCaId())) {
+            logger.fine("Denying message with no connector candidates from '" + session + "': " + msg.hashCodeStr());
+            denyMessage(session, msg);
+            return;
+          }
         }
 
         ServiceMapping id = new ServiceMapping(msg);

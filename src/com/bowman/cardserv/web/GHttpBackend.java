@@ -39,6 +39,7 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
   private Map sessions = new HashMap();
   private Map sessionsByUser = new HashMap();
   private Map contexts = Collections.synchronizedMap(new LinkedHashMap());
+  private Set blackList = new HashSet();
 
   private StatusCommand contextsCmd;
 
@@ -143,6 +144,10 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
         }
       }
 
+      blackList.clear();
+      String bl = FileFetcher.getProperty("cache.bl");
+      if(bl != null) blackList.addAll(Arrays.asList(bl.split(" ")));
+
     } else {
       if(httpd != null) {
         httpd.stop();
@@ -190,9 +195,11 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
   }
 
   private CamdNetMessage waitForReply(CamdNetMessage request) {
+    // long start = System.currentTimeMillis();
     CamdNetMessage reply = cache.peekReply(request);
     if(reply != null) return reply;
-    else reply = cache.processRequest(-1, request, true, request.getMaxWait() * 3); // todo
+    else reply = cache.processRequest(-1, request, true, request.getMaxWait() * 2); // todo
+    // System.out.println((System.currentTimeMillis() - start) + " - " + reply);
     return reply;
   }
 
@@ -210,36 +217,40 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
     return gs;
   }
 
-  private GHttpSession getSession(String id, String ip) {
+  private GHttpSession getSession(String id, String ip) throws GHttpAuthException {
     GHttpSession gs = (GHttpSession)sessions.get(id);
     if(gs != null && gs.isExpired()) {
       sessionsByUser.remove(gs.getUser());
       sessions.remove(id);
-      gs = null;
+      throw new GHttpAuthException(getErrorResponse(401, "Authorization required"));
     }
     if(gs != null && ip.equals(gs.getRemoteAddress())) return gs;
     else return null;
   }
 
-  private GHttpSession findSession(String user, String ip) {
+  private GHttpSession findSession(String user, String ip) throws GHttpAuthException {
     GHttpSession gs = (GHttpSession)sessionsByUser.get(user);
     if(gs != null && gs.isExpired()) {
       sessionsByUser.remove(user);
       sessions.remove(gs.getGhttpSessionId());
-      gs = null;
+      throw new GHttpAuthException(getErrorResponse(401, "Authorization required"));
     }
     if(gs != null && ip.equals(gs.getRemoteAddress())) return gs;
     else return null;
   }
 
   private synchronized GHttpSession doGhttpAuth(HttpRequest req, String[] s) throws GHttpAuthException {
+    return doGhttpAuth(req, s, accessPasswd);
+  }
+
+  private synchronized GHttpSession doGhttpAuth(HttpRequest req, String[] s, String passwd) throws GHttpAuthException {
     GHttpSession gs = null;
-    if(s[3].length() >= 6) { // session id included
+    if(s.length > 3 && s[3].length() >= 6) { // session id included
       gs = getSession(s[3], req.getRemoteAddress());
     }
     if(gs == null) { // no session id in query string (or invalid/expired session), check for auth
-      String user = parent.checkBasicAuth(req, accessPasswd);
-      if(user == null) throw new GHttpAuthException(getErrorResponse(401, "Authorization required"));
+      String user = parent.checkBasicAuth(req, passwd);
+      if(user == null) throw new GHttpAuthException(getErrorResponse(403, "Forbidden"));
       if(!user.startsWith(WebBackend.anonPrefix)) {
         HttpResponse error = parent.doIpCheck(req, user);
         if(error != null) throw new GHttpAuthException(getErrorResponse(403, "IP check failed"));
@@ -297,9 +308,44 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
       } else if(q.startsWith(API_CAPMT)) {
          return doPmtGetOrPost(req);
       } else if(q.startsWith(API_FEEDER_POST)) {
-        // todo
+        return doCachePost(req);
       }
       return getErrorResponse(503, "Not implemented"); // todo
+    }
+  }
+
+  private HttpResponse doCachePost(HttpRequest req) {
+    if(feederPasswd == null) return getErrorResponse(403, "Disabled");
+    if(cache == null) cache = config.getCacheHandler();
+    try {
+      String[] s = req.getQueryString().split("/");
+      GHttpSession gs = doGhttpAuth(req, s, feederPasswd);
+      if(gs == null) return getErrorResponse(403, "Forbidden");
+      byte[] content = req.getContent();
+      String addr = req.getRemoteAddress();
+      if(content.length >= RECORD_SIZE) {
+        Map replies = new HashMap();
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(content));
+        while(dis.available() >= RECORD_SIZE) {
+          CamdNetMessage request = CamdNetMessage.parseCacheReq(dis, false);
+          CamdNetMessage reply = CamdNetMessage.parseCacheRpl(dis, request, false);
+          if(!blackList.contains(addr)) {
+            request.setOriginAddress(addr);
+            reply.setOriginAddress(addr);
+          }
+          replies.put(request, reply);
+        }
+        cache.processReplies(replies);
+        if(dis.available() != 0) parent.logger.warning("Trailing bytes in feed post: " + dis.available());
+        HttpResponse res = new HttpResponse(204, "No Content"); // todo: include stats
+        if(s.length <= 3) res.setCookie("GSSID", gs.getGhttpSessionId());
+        return res;
+      } else throw new IOException("Invalid content length (" + content.length + ")");
+    } catch (GHttpAuthException e) {
+      return getErrorResponse(403, "Forbidden");
+    } catch (Exception e) {
+      parent.logger.throwing("Bad ghttp feeder request: " + req.getQueryString(), e);
+      return HttpResponse.getErrorResponse(400, req.getQueryString());
     }
   }
 
@@ -316,11 +362,13 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
       if(reply == null) {
         if(ProxyConfig.getInstance().getProfileById(ecmReq.getNetworkId(), ecmReq.getCaId()) == null)
           return getErrorResponse(503, "Unknown system: " + CaProfile.getKeyStr(ecmReq.getNetworkId(), ecmReq.getCaId()));
+        else if(!cache.containsCaid(ecmReq.getCaId()))
+          return getErrorResponse(503, "Unknown caid: " + CaProfile.getKeyStr(ecmReq.getNetworkId(), ecmReq.getCaId()));
         gs.fireCamdMessage(ecmReq, false);
         reply = gs.waitForReply(ecmReq);
       } else instant = true;
 
-      if(reply == null) cache.peekReply(ecmReq);
+      if(reply == null) reply = cache.peekReply(ecmReq);
       if(reply == null) return getErrorResponse(503, "Ecm timeout");
       else {
         CaContext cc = new CaContext(ecmReq.getNetworkId(), ecmReq.getTid(), ecmReq.getServiceId());

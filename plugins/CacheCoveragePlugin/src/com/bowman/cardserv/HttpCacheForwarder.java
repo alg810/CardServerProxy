@@ -7,6 +7,7 @@ import com.bowman.cardserv.util.*;
 import com.bowman.cardserv.web.FileFetcher;
 
 import java.io.*;
+import java.lang.System;
 import java.net.*;
 import java.util.*;
 
@@ -36,7 +37,7 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
   private String host, prefix, passwd;
   private int port;
   private boolean connected, redundant;
-  private int counter, reconnects, errors, ecmForwards, delayAlerts, filtered;
+  private int counter, reconnects, timeouts, errors, ecmForwards, delayAlerts, filtered;
   private int maxDelay;
   private Set profiles, caids;
 
@@ -104,6 +105,7 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
     p.setProperty("delay-alerts", String.valueOf(delayAlerts));
     p.setProperty("reconnects", String.valueOf(reconnects));
     p.setProperty("errors", String.valueOf(errors));
+    p.setProperty("timeouts", String.valueOf(timeouts));
     return p;
   }
 
@@ -222,7 +224,10 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
         String[] s = line.split(": ");
         headers.setProperty(s[0], s[1]);
         if(s[0].equals("Set-Cookie")) {
-          s = s[1].split("=");
+          if(s[1].indexOf(";") != -1) {
+            s = s[1].split(";"); // ignore all except 1st
+            s = s[0].split("=");
+          } else s = s[1].split("=");
           cookies.setProperty(s[0], s[1]);
         }
       }
@@ -344,10 +349,12 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
         } while(!"".equals(line));
         reply.body = sb.toString().toCharArray();
       } else {
-        reply.body = new char[reply.getContentLength()];
-        if(br.read(reply.body) != reply.body.length) {
-          throw new IOException("Assertation failed"); // todo
-        }
+        if(reply.getContentLength() > 0) {
+          reply.body = new char[reply.getContentLength()];
+          if(br.read(reply.body) != reply.body.length) {
+            throw new IOException("Assertation failed"); // todo
+          }
+        } else reply.body = new char[0];
       }
 
       recvBytes(reply.getSize());
@@ -487,7 +494,7 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
               httpPost(myQ);
               int curSize = redundant?localQ.size():singleQ.size();
               if(maxDelay > 0 && curSize < 100) Thread.sleep(maxDelay);
-            } catch (SocketException se) {
+            } catch(SocketException se) {
               // socket was closed gracefully, reconnect immediately
               parent.logger.throwing(se);
               initConn();
@@ -495,8 +502,13 @@ public class HttpCacheForwarder implements GHttpConstants, CacheForwarder {
             }
           }
         } catch(SocketException e) { // probably connect failure?
-          parent.logger.info("HttpCacheForwarder[" + name + "] disconnected");
+          parent.logger.info("HttpCacheForwarder[" + name + "] failed to connect: " + e);
           parent.logger.throwing(e);
+          handleError(myQ, false);
+        } catch(SocketTimeoutException e) { // timeout
+          parent.logger.warning("HttpCacheForwarder[" + name + "] timeout (sendQ size: " + myQ.size() + "): " + e);
+          parent.logger.throwing(e);
+          timeouts++;
           handleError(myQ, false);
         } catch(IOException e) { // abnormal disconnect
           parent.logger.warning("HttpCacheForwarder[" + name + "] disconnected (sendQ size: " + myQ.size() + "): " + e);

@@ -2,7 +2,7 @@ package com.bowman.cardserv.interfaces;
 
 import com.bowman.cardserv.CamdNetMessage;
 
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,6 +17,8 @@ public interface CacheHandler extends XmlConfigurable {
   boolean processReply(CamdNetMessage request, CamdNetMessage reply);
   CamdNetMessage peekReply(CamdNetMessage request);
   long getMaxCacheWait(long maxCwWait);
+  boolean containsCaid(int caid);
+  void processReplies(Map replies);
 
   Properties getUsageStats();
   void setListener(CacheListener listener);
