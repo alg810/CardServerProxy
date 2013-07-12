@@ -342,7 +342,7 @@ public class GHttpBackend implements XmlConfigurable, HttpRequestListener {
         return res;
       } else throw new IOException("Invalid content length (" + content.length + ")");
     } catch (GHttpAuthException e) {
-      return getErrorResponse(403, "Forbidden");
+      return e.getResponse();
     } catch (Exception e) {
       parent.logger.throwing("Bad ghttp feeder request: " + req.getQueryString(), e);
       return HttpResponse.getErrorResponse(400, req.getQueryString());

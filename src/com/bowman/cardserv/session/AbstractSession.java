@@ -360,6 +360,33 @@ public abstract class AbstractSession implements CamdConstants, ProxySession, Ru
         } else logger.fine(s);
       }
 
+      if(ecmReply.isContested()) {
+        boolean saved = false;
+        if(lastTransaction != null) {
+          CamdNetMessage prevDcw = lastTransaction.getReply();
+          if(!prevDcw.isEmpty()) {
+            Set candidates = new HashSet(ecmReply.getCandidates());
+            CamdNetMessage c;
+            candidates.add(ecmReply);
+            // if there are multiple candidates, look for one in sequence with the previously sent (only works for single-user/single-tuner clients)
+            for(Iterator iter = candidates.iterator(); iter.hasNext(); ) {
+              c = (CamdNetMessage)iter.next();
+              if(prevDcw.equalsSingleDcw(c)) {
+                saved = true;
+                ecmReply = c;
+                break;
+              }
+            }
+          }
+        }
+        if(saved) {
+          setFlag(ecmRequest, '!');
+        } else {
+          setFlag(ecmRequest, '?');
+          logger.warning("Client encountered contested cw: " + ecmReply.toDebugString() + " (alternatives: " + ecmReply.getCandidates() + ")");
+        }
+      }
+
       ecmRequest = ((EcmTransaction)transactions.get(ecmRequest)).getRequest(); // make sure original instance is used
       if(ecmRequest.getCommandTag() != ecmReply.getCommandTag()) { // ensure table id is same as it was in request
         logger.fine("Table-id mismatch, response (from " + ecmReply.getConnectorName() + ") had table-id " +
